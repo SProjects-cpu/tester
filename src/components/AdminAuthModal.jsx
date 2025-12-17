@@ -51,7 +51,8 @@ export default function AdminAuthModal({
     setLoading(true);
 
     try {
-      const token = localStorage.getItem('authToken');
+      // Use 'token' key (matching what login stores)
+      const token = localStorage.getItem('token');
       
       if (!token) {
         setError('Session expired. Please login again.');
@@ -61,7 +62,7 @@ export default function AdminAuthModal({
         return;
       }
 
-      // Verify admin credentials
+      // Verify admin credentials via login endpoint
       const response = await fetch('/api/auth/verify-admin', {
         method: 'POST',
         headers: {
@@ -86,8 +87,8 @@ export default function AdminAuthModal({
         if (data.message?.includes('token') || data.message?.includes('expired') || data.message?.includes('authorized')) {
           setError('Your session has expired. Please login again.');
           setTimeout(() => {
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('authUser');
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
             window.location.reload();
           }, 2000);
         } else {
@@ -168,7 +169,7 @@ export default function AdminAuthModal({
               onChange={(e) => setEmail(e.target.value)}
               required
               className="w-full px-4 py-2.5 border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-magic-500 focus:border-magic-500 outline-none transition-all"
-              placeholder="admin@example.com"
+              placeholder="admin@magic.com"
               autoComplete="email"
             />
           </div>
