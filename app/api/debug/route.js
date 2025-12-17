@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
+import prisma from '@/lib/prisma';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  return NextResponse.json({
+  const result = {
     status: 'OK',
     timestamp: new Date().toISOString(),
     env: {
@@ -12,6 +13,26 @@ export async function GET() {
       hasDirectUrl: !!process.env.DIRECT_URL,
       hasJwtSecret: !!process.env.JWT_SECRET,
       nodeEnv: process.env.NODE_ENV,
+    },
+    database: {
+      connected: false,
+      error: null,
+      userCount: null
     }
-  });
+  };
+
+  try {
+    // Test database connection
+    await prisma.$connect();
+    result.database.connected = true;
+    
+    // Try to count users
+    const userCount = await prisma.user.count();
+    result.database.userCount = userCount;
+  } catch (error) {
+    result.database.error = error.message;
+    result.status = 'DB_ERROR';
+  }
+
+  return NextResponse.json(result);
 }
