@@ -1,6 +1,24 @@
 // API utilities for communicating with the backend
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
+// Determine API URL - always use /api in production, ignore localhost settings
+const getApiUrl = () => {
+  // In browser, check if we're on production (not localhost)
+  if (typeof window !== 'undefined') {
+    const isProduction = !window.location.hostname.includes('localhost');
+    if (isProduction) {
+      return '/api'; // Always use relative /api in production
+    }
+  }
+  // In development or SSR, use env var or default to /api
+  const envUrl = process.env.NEXT_PUBLIC_API_URL;
+  // Ignore localhost URLs that might be misconfigured
+  if (envUrl && envUrl.includes('localhost')) {
+    return '/api';
+  }
+  return envUrl || '/api';
+};
+
+const API_URL = getApiUrl();
 
 // Get auth token from localStorage
 const getToken = () => {
