@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .error {
+            color: red;
+            padding: 10px;
+            background: #ffebee;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success {
+            color: green;
+            padding: 10px;
+            background: #e8f5e9;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        pre {
+            background: #263238;
+            color: #aed581;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Authentication Test Tool</h1>
+        
+        <div class="section">
+            <h2>1. Login</h2>
+            <input type="text" id="username" placeholder="Username" value="admin">
+            <input type="password" id="password" placeholder="Password" value="magic2024">
+            <button onclick="login()">Login</button>
+            <div id="loginResult"></div>
+        </div>
+
+        <div class="section">
+            <h2>2. Verify Admin (Update Credentials)</h2>
+            <input type="email" id="adminEmail" placeholder="Admin Email" value="rutvik@gmail.com">
+            <input type="password" id="adminPassword" placeholder="Admin Password" value="magic2024">
+            <button onclick="verifyAdmin()">Verify Admin</button>
+            <div id="verifyResult"></div>
+        </div>
+
+        <div class="section">
+            <h2>3. Update Admin Credentials</h2>
+            <input type="password" id="currentPassword" placeholder="Current Password" value="magic2024">
+            <input type="email" id="newEmail" placeholder="New Email (optional)">
+            <input type="password" id="newPassword" placeholder="New Password (optional)">
+            <button onclick="updateCredentials()">Update Credentials</button>
+            <div id="updateResult"></div>
+        </div>
+
+        <div class="section">
+            <h2>Current Token</h2>
+            <pre id="tokenDisplay">No token yet</pre>
+            <button onclick="clearToken()">Clear Token</button>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        let currentToken = localStorage.getItem('token');
+
+        function updateTokenDisplay() {
+            const tokenEl = document.getElementById('tokenDisplay');
+            currentToken = localStorage.getItem('token');
+            if (currentToken) {
+                tokenEl.textContent = currentToken.substring(0, 50) + '...';
+            } else {
+                tokenEl.textContent = 'No token yet';
+            }
+        }
+
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const resultEl = document.getElementById('loginResult');
+
+            try {
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    localStorage.setItem('token', data.token);
+                    currentToken = data.token;
+                    updateTokenDisplay();
+                    resultEl.innerHTML = `<div class="success">✅ Login successful!<br>User: ${data.user.username}<br>Role: ${data.user.role}</div>`;
+                } else {
+                    resultEl.innerHTML = `<div class="error">❌ ${data.message}</div>`;
+                }
+            } catch (error) {
+                resultEl.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function verifyAdmin() {
+            const email = document.getElementById('adminEmail').value;
+            const password = document.getElementById('adminPassword').value;
+            const resultEl = document.getElementById('verifyResult');
+
+            if (!currentToken) {
+                resultEl.innerHTML = '<div class="error">❌ Please login first!</div>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/auth/verify-admin`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.verified) {
+                    resultEl.innerHTML = `<div class="success">✅ Admin verified!<br>Admin: ${data.admin.username}<br>Email: ${data.admin.email}</div>`;
+                } else {
+                    resultEl.innerHTML = `<div class="error">❌ ${data.message}</div>`;
+                }
+            } catch (error) {
+                resultEl.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function updateCredentials() {
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newEmail = document.getElementById('newEmail').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const resultEl = document.getElementById('updateResult');
+
+            if (!currentToken) {
+                resultEl.innerHTML = '<div class="error">❌ Please login first!</div>';
+                return;
+            }
+
+            try {
+                const body = { currentPassword };
+                if (newEmail) body.newEmail = newEmail;
+                if (newPassword) body.newPassword = newPassword;
+
+                const response = await fetch(`${API_URL}/auth/update-admin-credentials`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify(body)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultEl.innerHTML = `<div class="success">✅ ${data.message}<br>Updated: ${data.updated.join(', ')}</div>`;
+                    if (newEmail) {
+                        setTimeout(() => {
+                            alert('Email updated! Please login again.');
+                            clearToken();
+                        }, 2000);
+                    }
+                } else {
+                    resultEl.innerHTML = `<div class="error">❌ ${data.message}</div>`;
+                }
+            } catch (error) {
+                resultEl.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        function clearToken() {
+            localStorage.removeItem('token');
+            currentToken = null;
+            updateTokenDisplay();
+            alert('Token cleared! Please login again.');
+        }
+
+        // Initialize
+        updateTokenDisplay();
+    </script>
+</body>
+</html>

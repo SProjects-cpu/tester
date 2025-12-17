@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Authentication Fix</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .info-box {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .info-box h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .info-box p {
+            color: #666;
+            line-height: 1.6;
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        .info-box code {
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin: 10px 5px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background: #6c757d;
+        }
+
+        .token-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            word-break: break-all;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: 600;
+            margin: 5px 5px 5px 0;
+        }
+
+        .badge.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .badge.danger {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Authentication Fix Test</h1>
+        <p class="subtitle">Test the new authentication system</p>
+
+        <div id="status"></div>
+
+        <div class="info-box">
+            <h3>Current Token Status</h3>
+            <p id="tokenStatus">Checking...</p>
+            <p id="expiryStatus"></p>
+        </div>
+
+        <div class="actions">
+            <button onclick="checkToken()">Check Token</button>
+            <button onclick="testAPI()">Test API Call</button>
+            <button onclick="clearToken()" class="secondary">Clear Token</button>
+            <button onclick="viewToken()">View Token</button>
+        </div>
+
+        <div id="tokenInfo" class="token-info" style="display: none;"></div>
+
+        <div class="info-box">
+            <h3>✅ What's Fixed</h3>
+            <p>✓ Tokens now last <strong>30 days</strong> instead of 7</p>
+            <p>✓ Automatic token refresh before expiration</p>
+            <p>✓ Better error handling and messages</p>
+            <p>✓ Automatic retry on token expiration</p>
+        </div>
+
+        <div class="info-box">
+            <h3>🚀 Next Steps</h3>
+            <p>1. Clear old tokens using the button above</p>
+            <p>2. Login to your application</p>
+            <p>3. Enjoy 30 days of uninterrupted access!</p>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.textContent = message;
+            statusDiv.style.display = 'block';
+        }
+
+        function checkToken() {
+            const token = localStorage.getItem('token');
+            const tokenExpiry = localStorage.getItem('tokenExpiry');
+            const statusEl = document.getElementById('tokenStatus');
+            const expiryEl = document.getElementById('expiryStatus');
+
+            if (!token) {
+                statusEl.innerHTML = '<span class="badge danger">No Token Found</span>';
+                expiryEl.textContent = 'You need to login first.';
+                showStatus('No authentication token found. Please login.', 'error');
+                return;
+            }
+
+            statusEl.innerHTML = '<span class="badge success">Token Found</span>';
+
+            if (tokenExpiry) {
+                const expiry = new Date(parseInt(tokenExpiry));
+                const now = new Date();
+                const daysLeft = Math.floor((expiry - now) / (1000 * 60 * 60 * 24));
+                const hoursLeft = Math.floor((expiry - now) / (1000 * 60 * 60));
+
+                if (expiry > now) {
+                    expiryEl.innerHTML = `<span class="badge success">Valid</span> Expires in ${daysLeft} days (${hoursLeft} hours)`;
+                    showStatus(`Token is valid! Expires in ${daysLeft} days.`, 'success');
+                } else {
+                    expiryEl.innerHTML = '<span class="badge danger">Expired</span> Token has expired';
+                    showStatus('Token has expired. Please login again.', 'error');
+                }
+            } else {
+                expiryEl.innerHTML = '<span class="badge warning">Unknown</span> Expiry time not tracked (old token)';
+                showStatus('Old token format detected. Please clear and login again.', 'info');
+            }
+        }
+
+        async function testAPI() {
+            const token = localStorage.getItem('token');
+
+            if (!token) {
+                showStatus('No token found. Please login first.', 'error');
+                return;
+            }
+
+            showStatus('Testing API call...', 'info');
+
+            try {
+                const response = await fetch(`${API_URL}/auth/me`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showStatus(`✅ API call successful! Logged in as: ${data.username} (${data.role})`, 'success');
+                } else {
+                    const error = await response.json();
+                    showStatus(`❌ API call failed: ${error.message}`, 'error');
+                }
+            } catch (error) {
+                showStatus(`❌ API call failed: ${error.message}`, 'error');
+            }
+        }
+
+        function clearToken() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('tokenExpiry');
+            showStatus('✅ Token cleared successfully! You can now login again.', 'success');
+            checkToken();
+        }
+
+        function viewToken() {
+            const token = localStorage.getItem('token');
+            const tokenExpiry = localStorage.getItem('tokenExpiry');
+            const tokenInfoDiv = document.getElementById('tokenInfo');
+
+            if (!token) {
+                showStatus('No token to display.', 'error');
+                return;
+            }
+
+            let info = `Token: ${token}\n\n`;
+            
+            if (tokenExpiry) {
+                const expiry = new Date(parseInt(tokenExpiry));
+                info += `Expiry: ${expiry.toLocaleString()}\n`;
+                info += `Expiry Timestamp: ${tokenExpiry}\n`;
+            }
+
+            // Try to decode JWT
+            try {
+                const parts = token.split('.');
+                if (parts.length === 3) {
+                    const payload = JSON.parse(atob(parts[1]));
+                    info += `\nDecoded Payload:\n${JSON.stringify(payload, null, 2)}`;
+                }
+            } catch (e) {
+                info += '\nCould not decode token payload.';
+            }
+
+            tokenInfoDiv.textContent = info;
+            tokenInfoDiv.style.display = 'block';
+            showStatus('Token details displayed below.', 'info');
+        }
+
+        // Check token on load
+        window.onload = checkToken;
+    </script>
+</body>
+</html>

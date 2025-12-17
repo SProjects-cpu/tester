@@ -1,0 +1,89 @@
+========================================
+VERCEL ENVIRONMENT VARIABLES
+Copy-Paste Ready Format
+========================================
+
+IMPORTANT: Add these in Vercel Dashboard → Settings → Environment Variables
+Select "Production, Preview, Development" for all unless noted otherwise.
+
+========================================
+1. DATABASE_URL
+========================================
+postgresql://postgres.fbvmfrmdbnsrabpoweqq:SrVRfCPgU0iN2HOF@aws-0-ap-south-1.pooler.supabase.com:6543/postgres?pgbouncer=true
+
+========================================
+2. DIRECT_URL
+========================================
+postgresql://postgres.fbvmfrmdbnsrabpoweqq:SrVRfCPgU0iN2HOF@aws-0-ap-south-1.pooler.supabase.com:5432/postgres
+
+========================================
+3. SUPABASE_URL
+========================================
+https://fbvmfrmdbnsrabpoweqq.supabase.co
+
+========================================
+4. SUPABASE_ANON_KEY
+========================================
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZidm1mcm1kYm5zcmFicG93ZXFxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ0MzI0NzksImV4cCI6MjA1MDAwODQ3OX0.gGLabXw8vudmFu5GvwjL4g_psCUSvTrs
+
+========================================
+5. SUPABASE_SERVICE_KEY
+========================================
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZidm1mcm1kYm5zcmFicG93ZXFxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczNDQzMjQ3OSwiZXhwIjoyMDUwMDA4NDc5fQ.0feIQ0mepF4cdTij8Fu0pw_rtCdiunVt
+
+========================================
+6. JWT_SECRET
+========================================
+your-super-secret-jwt-key-change-this-in-production-magic-2024-secure
+
+========================================
+7. JWT_EXPIRE
+========================================
+30d
+
+========================================
+8. ADMIN_USERNAME
+========================================
+admin
+
+========================================
+9. ADMIN_PASSWORD
+========================================
+magic2024
+
+========================================
+10. NODE_ENV (Production only!)
+========================================
+production
+
+========================================
+11. PORT
+========================================
+5000
+
+========================================
+12. CORS_ORIGIN (Update after deployment!)
+========================================
+[Leave blank initially, then update to: https://your-project-name.vercel.app]
+
+========================================
+13. VITE_API_URL (Update after deployment!)
+========================================
+[Leave blank initially, then update to: https://your-project-name.vercel.app/api]
+
+========================================
+14. VERCEL (Important!)
+========================================
+1
+
+========================================
+TOTAL: 14 Variables
+========================================
+
+AFTER DEPLOYMENT:
+1. Get your Vercel URL
+2. Update CORS_ORIGIN to: https://your-actual-url.vercel.app
+3. Update VITE_API_URL to: https://your-actual-url.vercel.app/api
+4. Redeploy
+
+========================================

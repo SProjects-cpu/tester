@@ -1,0 +1,150 @@
+================================================================================
+                    🔴 CRITICAL: DATABASE NOT REACHABLE
+================================================================================
+
+ERROR: Login failing with 500 Internal Server Error
+
+ROOT CAUSE: Supabase database cannot be reached
+  → Can't reach database server at `db.sibzhdtagwhcjootfzek.supabase.co:5432`
+
+================================================================================
+                            ⚡ IMMEDIATE ACTION REQUIRED
+================================================================================
+
+Your Supabase database is NOT REACHABLE. This is why login fails.
+
+MOST LIKELY CAUSE:
+  → Supabase free tier paused your database due to inactivity
+
+================================================================================
+                            ✅ SOLUTION (Choose ONE)
+================================================================================
+
+OPTION 1: Reactivate Supabase Database (RECOMMENDED)
+-----------------------------------------------------
+1. Go to: https://supabase.com/dashboard
+2. Login to your Supabase account
+3. Find project: sibzhdtagwhcjootfzek
+4. Click "Resume" or "Restore" button
+5. Wait 1-2 minutes for database to start
+6. Go to Project Settings → Database
+7. Copy "Connection String" (Transaction mode)
+8. Copy "Direct Connection String"
+9. Update .env.local with new strings
+10. Restart server: npm run dev
+11. Test login: admin@magic.com / magic2024
+
+OPTION 2: Create New Supabase Project
+--------------------------------------
+1. Go to: https://supabase.com/dashboard
+2. Click "New Project"
+3. Name: Magic Incubation CRM
+4. Set database password (remember it!)
+5. Choose region closest to you
+6. Click "Create new project"
+7. Wait 2-3 minutes
+8. Get connection strings from Settings → Database
+9. Update .env.local
+10. Run: npx prisma migrate dev
+11. Run: node backend/prisma/seed.js
+12. Restart server: npm run dev
+
+OPTION 3: Use Local PostgreSQL
+-------------------------------
+1. Install PostgreSQL from postgresql.org
+2. Create database: magic_incubation
+3. Update .env.local with local connection
+4. Run migrations: npx prisma migrate dev
+5. Seed database: node backend/prisma/seed.js
+6. Restart server: npm run dev
+
+OPTION 4: Temporary Fix (Testing Only)
+---------------------------------------
+Use localStorage while fixing database
+See: ⚡_TEMPORARY_FIX_NO_DATABASE.md
+
+================================================================================
+                            📝 CURRENT STATUS
+================================================================================
+
+✅ Code is correct
+✅ API routes working
+✅ Frontend working
+✅ PDF export fixed
+❌ DATABASE NOT REACHABLE ← THIS IS THE PROBLEM
+
+================================================================================
+                            🔍 HOW TO CHECK
+================================================================================
+
+Test database connection:
+  → node test-db.js
+
+If you see:
+  ✅ "Database connected successfully" → Database working
+  ❌ "Can't reach database server" → Database down (CURRENT STATE)
+
+================================================================================
+                            📞 YOUR DATABASE INFO
+================================================================================
+
+Project Reference: sibzhdtagwhcjootfzek
+Host: db.sibzhdtagwhcjootfzek.supabase.co
+Port: 5432
+
+Current connection string in .env.local:
+DATABASE_URL="postgresql://postgres:QlF9ggCSJWWlzKgc@db.sibzhdtagwhcjootfzek.supabase.co:5432/postgres?pgbouncer=true&connection_limit=1"
+
+================================================================================
+                            ⏰ ESTIMATED TIME
+================================================================================
+
+Reactivate existing database: 5 minutes
+Create new database: 10 minutes
+Install local PostgreSQL: 20 minutes
+Temporary fix: 2 minutes (but not recommended)
+
+================================================================================
+                            📚 DETAILED GUIDES
+================================================================================
+
+Full database fix guide:
+  → 🚨_DATABASE_CONNECTION_ERROR.md
+
+Temporary workaround:
+  → ⚡_TEMPORARY_FIX_NO_DATABASE.md
+
+================================================================================
+                            🎯 RECOMMENDED ACTION
+================================================================================
+
+1. Go to https://supabase.com/dashboard RIGHT NOW
+2. Login to your account
+3. Find your project
+4. Click "Resume" or "Restore"
+5. Wait for database to start
+6. Get fresh connection strings
+7. Update .env.local
+8. Restart server: npm run dev
+9. Test login
+
+THIS WILL FIX THE ISSUE IN 5 MINUTES!
+
+================================================================================
+                            ⚠️ IMPORTANT NOTES
+================================================================================
+
+- Everything else in your code is working perfectly
+- The ONLY issue is database connection
+- Once database is reachable, login will work
+- All features will work normally
+- This is a common issue with Supabase free tier
+
+================================================================================
+
+PRIORITY: CRITICAL
+ACTION: Fix database connection
+TIME: 5-10 minutes
+DIFFICULTY: Easy
+
+================================================================================

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Old Auth Data</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            background: white;
+            color: #333;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        h1 { color: #667eea; }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover { background: #764ba2; }
+        .success { color: #10b981; font-weight: bold; }
+        .info { background: #f0f9ff; padding: 15px; border-radius: 5px; margin: 15px 0; }
+        ul { text-align: left; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Clear Old Authentication Data</h1>
+        <p>This will remove old localStorage authentication data and prepare for the new RBAC system.</p>
+ECHO is off.
+        <div class="info">
+            <strong>What will be cleared:</strong>
+            <ul>
+                <li>adminSession</li>
+                <li>token</li>
+                <li>tokenExpiry</li>
+                <li>Any old auth data</li>
+            </ul>
+            <strong>What will be kept:</strong>
+            <ul>
+                <li>darkMode setting</li>
+                <li>Other app settings</li>
+            </ul>
+        </div>
+ECHO is off.
+        <button onclick="clearOldAuth^(^)">Clear Old Auth Data</button>
+        <button onclick="clearAll^(^)">Clear Everything</button>
+        <button onclick="showData^(^)">Show Current Data</button>
+ECHO is off.
+        <div id="result" style="margin-top: 20px;"></div>
+    </div>
+ECHO is off.
+    <script>
+        function clearOldAuth() {
+            // Remove old auth data
+            localStorage.removeItem('adminSession');
+            localStorage.removeItem('token');
+            localStorage.removeItem('tokenExpiry');
+ECHO is off.
+            document.getElementById('result').innerHTML = 
+                '<p class="success">✅ Old authentication data cleared!</p>' +
+                '<p>You can now use the new RBAC system.</p>' +
+                '<p><a href="http://localhost:5173">Go to Login</a></p>';
+        }
+ECHO is off.
+        function clearAll() {
+            localStorage.clear();
+            document.getElementById('result').innerHTML = 
+                '<p class="success">✅ All localStorage data cleared!</p>' +
+                '<p><a href="http://localhost:5173">Go to Login</a></p>';
+        }
+ECHO is off.
+        function showData() {
+            let html = '<h3>Current localStorage Data:</h3><ul style="text-align: left;">';
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                const value = localStorage.getItem(key);
+                html += `<li><strong>${key}:</strong> ${value.substring(0, 50)}...</li>`;
+            }
+            html += '</ul>';
+            document.getElementById('result').innerHTML = html;
+        }
+    </script>
+</body>
+</html>

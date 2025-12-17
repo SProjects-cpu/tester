@@ -1,0 +1,140 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("user")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Startup {
+  id               String            @id @default(uuid())
+  name             String
+  founder          String
+  email            String?
+  phone            String?
+  sector           String
+  stage            String            @default("Onboarded")
+  onboardedDate    DateTime          @default(now())
+  graduatedDate    DateTime?
+  description      String?
+  website          String?
+  fundingReceived  Float?            @default(0)
+  employeeCount    Int?              @default(0)
+  revenueGenerated Float?            @default(0)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  dpiitNo          String?
+  recognitionDate  DateTime?
+  bhaskarId        String?
+  achievements     Achievement[]
+  agreements       Agreement[]
+  oneOnOneMeetings OneOnOneMeeting[]
+  progressHistory  ProgressHistory[]
+  smcMeetings      SMCMeeting[]
+
+  @@map("startups")
+}
+
+model Achievement {
+  id          String   @id @default(uuid())
+  startupId   String
+  title       String
+  description String?
+  type        String
+  date        DateTime @default(now())
+  mediaUrl    String?
+  isGraduated Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  startup     Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+
+  @@index([startupId])
+  @@map("achievements")
+}
+
+model ProgressHistory {
+  id        String   @id @default(uuid())
+  startupId String
+  metric    String
+  value     Float
+  date      DateTime @default(now())
+  notes     String?
+  createdAt DateTime @default(now())
+  startup   Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+
+  @@index([startupId])
+  @@map("progress_history")
+}
+
+model OneOnOneMeeting {
+  id          String   @id @default(uuid())
+  startupId   String
+  date        DateTime
+  mentor      String?
+  topic       String?
+  notes       String?
+  actionItems String?
+  status      String   @default("scheduled")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  startup     Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+
+  @@index([startupId])
+  @@map("one_on_one_meetings")
+}
+
+model SMCMeeting {
+  id        String   @id @default(uuid())
+  startupId String
+  date      DateTime
+  agenda    String?
+  decisions String?
+  attendees String?
+  status    String   @default("scheduled")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  startup   Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+
+  @@index([startupId])
+  @@map("smc_meetings")
+}
+
+model Agreement {
+  id         String    @id @default(uuid())
+  startupId  String
+  title      String
+  type       String
+  fileUrl    String
+  uploadDate DateTime  @default(now())
+  expiryDate DateTime?
+  status     String    @default("active")
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  startup    Startup   @relation(fields: [startupId], references: [id], onDelete: Cascade)
+
+  @@index([startupId])
+  @@map("agreements")
+}
+
+model Settings {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}

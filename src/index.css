@@ -1,0 +1,122 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    margin: 0;
+    font-family: 'Anton', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+      sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  code {
+    font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+      monospace;
+  }
+
+  /* Keep card text readable */
+  .card-text {
+    color: inherit;
+  }
+}
+
+@layer utilities {
+  .magic-gradient {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+  
+  .magic-gradient-hover {
+    background: linear-gradient(135deg, #5568d3 0%, #63408a 100%);
+  }
+
+  .magic-text-gradient {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: #a0aec0;
+  }
+
+  .dark .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #4a5568;
+  }
+
+  .dark .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: #718096;
+  }
+
+  /* Global Anton font */
+  h1, h2, h3, h4, h5, h6, p, span, div, label, button, input, textarea, select {
+    font-family: 'Anton', 'Inter', sans-serif;
+    font-weight: normal;
+  }
+
+  /* Text visibility fixes */
+  .text-contrast {
+    color: #1f2937 !important; /* dark gray for light backgrounds */
+  }
+
+  .dark .text-contrast {
+    color: #f9fafb !important; /* light gray for dark backgrounds */
+  }
+
+  /* Ensure readable text on cards */
+  .card-text {
+    color: #1f2937;
+  }
+
+  .dark .card-text {
+    color: #f9fafb;
+  }
+
+  /* Fix input/select text visibility */
+  input, textarea, select {
+    color: #1f2937 !important;
+    font-weight: normal !important;
+  }
+
+  .dark input, .dark textarea, .dark select {
+    color: #f9fafb !important;
+    font-weight: normal !important;
+  }
+
+  /* Fix placeholder visibility */
+  ::placeholder {
+    color: #9ca3af !important;
+    opacity: 1;
+  }
+
+  .dark ::placeholder {
+    color: #6b7280 !important;
+  }
+
+  /* Remove bold from all elements */
+  * {
+    font-weight: normal !important;
+  }
+
+  /* Keep only necessary bold for specific UI elements */
+  .font-bold, .font-semibold {
+    font-weight: normal !important;
+  }
+}

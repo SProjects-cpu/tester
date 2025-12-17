@@ -1,0 +1,166 @@
+// Prisma Schema for Supabase PostgreSQL
+// This is optimized for Supabase deployment
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// User model for authentication
+model User {
+  id        String    @id @default(uuid())
+  email     String    @unique
+  password  String
+  name      String
+  role      String    @default("user") // admin, user, guest
+  username  String    @unique
+  isActive  Boolean   @default(true)
+  lastLogin DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("users")
+}
+
+// Startup model - main entity
+model Startup {
+  id               String    @id @default(uuid())
+  name             String
+  founder          String
+  email            String?
+  phone            String?
+  sector           String
+  stage            String    @default("Onboarded") // Onboarded, Graduated, Inactive
+  onboardedDate    DateTime  @default(now())
+  graduatedDate    DateTime?
+  description      String?
+  website          String?
+  fundingReceived  Float?    @default(0)
+  employeeCount    Int?      @default(0)
+  revenueGenerated Float?    @default(0)
+
+  // DPIIT and Bhaskar fields
+  dpiitNo         String?
+  recognitionDate DateTime?
+  bhaskarId       String?
+
+  // Relationships
+  achievements     Achievement[]
+  progressHistory  ProgressHistory[]
+  oneOnOneMeetings OneOnOneMeeting[]
+  smcMeetings      SMCMeeting[]
+  agreements       Agreement[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("startups")
+  @@index([stage])
+  @@index([email])
+}
+
+// Achievement model
+model Achievement {
+  id          String   @id @default(uuid())
+  startupId   String
+  startup     Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  type        String // milestone, award, funding, partnership, product_launch
+  date        DateTime @default(now())
+  mediaUrl    String? // URL to image/document
+  isGraduated Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("achievements")
+  @@index([startupId])
+  @@index([type])
+}
+
+// Progress History model
+model ProgressHistory {
+  id        String   @id @default(uuid())
+  startupId String
+  startup   Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  metric    String // revenue, funding, employees, etc.
+  value     Float
+  date      DateTime @default(now())
+  notes     String?
+  createdAt DateTime @default(now())
+
+  @@map("progress_history")
+  @@index([startupId])
+  @@index([metric])
+}
+
+// One-on-One Meeting model
+model OneOnOneMeeting {
+  id          String   @id @default(uuid())
+  startupId   String
+  startup     Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  date        DateTime
+  mentor      String?
+  topic       String?
+  notes       String?
+  actionItems String?
+  status      String   @default("scheduled") // scheduled, completed, cancelled
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("one_on_one_meetings")
+  @@index([startupId])
+  @@index([status])
+}
+
+// SMC (Startup Management Committee) Meeting model
+model SMCMeeting {
+  id        String   @id @default(uuid())
+  startupId String
+  startup   Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  date      DateTime
+  agenda    String?
+  decisions String?
+  attendees String?
+  status    String   @default("scheduled") // scheduled, completed, cancelled
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("smc_meetings")
+  @@index([startupId])
+  @@index([status])
+}
+
+// Agreement/Document model
+model Agreement {
+  id         String    @id @default(uuid())
+  startupId  String
+  startup    Startup   @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  title      String
+  type       String // NDA, MOU, Agreement, etc.
+  fileUrl    String
+  uploadDate DateTime  @default(now())
+  expiryDate DateTime?
+  status     String    @default("active") // active, expired, terminated
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@map("agreements")
+  @@index([startupId])
+  @@index([status])
+}
+
+// Settings model for application configuration
+model Settings {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}

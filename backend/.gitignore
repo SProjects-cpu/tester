@@ -1,0 +1,11 @@
+node_modules/
+.env
+uploads/
+logs/
+*.log
+.DS_Store
+dist/
+coverage/
+
+# Uncomment to ignore data in production
+# data/

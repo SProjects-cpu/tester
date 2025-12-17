@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear Token - Fix JWT Malformed Error</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .error-box {
+            background: #ffebee;
+            border: 2px solid #ef5350;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .error-box h2 {
+            color: #c62828;
+            margin: 0 0 10px 0;
+        }
+        .error-box code {
+            background: #ffcdd2;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 10px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+        .success {
+            background: #e8f5e9;
+            border: 2px solid #4caf50;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            display: none;
+        }
+        .success h2 {
+            color: #2e7d32;
+            margin: 0 0 10px 0;
+        }
+        .info {
+            background: #e3f2fd;
+            border: 2px solid #2196f3;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .info h3 {
+            color: #1565c0;
+            margin-top: 0;
+        }
+        .info ol {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .info li {
+            margin: 8px 0;
+        }
+        .token-display {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .status.invalid {
+            background: #ffcdd2;
+            color: #c62828;
+        }
+        .status.valid {
+            background: #c8e6c9;
+            color: #2e7d32;
+        }
+        .status.none {
+            background: #e0e0e0;
+            color: #616161;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Fix JWT Malformed Error</h1>
+        
+        <div class="error-box">
+            <h2>❌ Error Detected</h2>
+            <p>Your browser has an invalid JWT token causing:</p>
+            <code>Token verification error: jwt malformed</code>
+        </div>
+
+        <div id="tokenStatus"></div>
+
+        <button onclick="clearToken()">🗑️ Clear Invalid Token</button>
+        <button onclick="checkToken()">🔍 Check Token Status</button>
+
+        <div id="successMessage" class="success">
+            <h2>✅ Token Cleared Successfully!</h2>
+            <p>The invalid token has been removed from your browser.</p>
+        </div>
+
+        <div class="info">
+            <h3>📋 Next Steps:</h3>
+            <ol>
+                <li>Click <strong>"Clear Invalid Token"</strong> button above</li>
+                <li>Go to your application: <a href="http://localhost:5173" target="_blank">http://localhost:5173</a></li>
+                <li>Login again with:
+                    <ul>
+                        <li>Username: <code>admin</code></li>
+                        <li>Password: <code>magic2024</code></li>
+                    </ul>
+                </li>
+                <li>✅ Error should be gone!</li>
+            </ol>
+        </div>
+
+        <div class="info">
+            <h3>🤔 Why This Happened:</h3>
+            <p>The JWT token in your browser's localStorage is corrupted or invalid. This can happen when:</p>
+            <ul>
+                <li>The JWT_SECRET was changed on the server</li>
+                <li>An old token from a previous session exists</li>
+                <li>The token was manually edited</li>
+                <li>The token format is incorrect</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function checkToken() {
+            const token = localStorage.getItem('token');
+            const statusDiv = document.getElementById('tokenStatus');
+            
+            if (!token) {
+                statusDiv.innerHTML = `
+                    <div class="token-display">
+                        <span class="status none">No Token Found</span>
+                        <p>Your browser has no JWT token stored.</p>
+                    </div>
+                `;
+            } else {
+                // Check if token looks valid (JWT format: xxx.yyy.zzz)
+                const parts = token.split('.');
+                const isValidFormat = parts.length === 3;
+                
+                statusDiv.innerHTML = `
+                    <div class="token-display">
+                        <span class="status ${isValidFormat ? 'invalid' : 'invalid'}">Token Found (${isValidFormat ? 'Malformed' : 'Invalid Format'})</span>
+                        <p><strong>Current Token:</strong></p>
+                        <div style="background: #fff; padding: 10px; border-radius: 5px; margin-top: 10px;">
+                            ${token.substring(0, 100)}${token.length > 100 ? '...' : ''}
+                        </div>
+                        <p style="margin-top: 10px; color: #c62828;">
+                            ⚠️ This token is causing the "jwt malformed" error
+                        </p>
+                    </div>
+                `;
+            }
+        }
+
+        function clearToken() {
+            // Clear the token
+            localStorage.removeItem('token');
+            
+            // Also clear any other auth-related items
+            localStorage.removeItem('user');
+            localStorage.removeItem('userRole');
+            
+            // Show success message
+            document.getElementById('successMessage').style.display = 'block';
+            
+            // Update status
+            setTimeout(() => {
+                checkToken();
+            }, 500);
+            
+            // Auto-hide success message after 5 seconds
+            setTimeout(() => {
+                document.getElementById('successMessage').style.display = 'none';
+            }, 5000);
+        }
+
+        // Check token on page load
+        window.onload = function() {
+            checkToken();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,140 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("user")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Startup {
+  id               String            @id @default(uuid())
+  name             String
+  founder          String
+  email            String?
+  phone            String?
+  sector           String
+  stage            String            @default("Onboarded")
+  onboardedDate    DateTime          @default(now()) @map("onboarded_date")
+  graduatedDate    DateTime?         @map("graduated_date")
+  description      String?
+  website          String?
+  fundingReceived  Float?            @default(0) @map("funding_received")
+  employeeCount    Int?              @default(0) @map("employee_count")
+  revenueGenerated Float?            @default(0) @map("revenue_generated")
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+  dpiitNo          String?           @map("dpiit_no")
+  recognitionDate  DateTime?         @map("recognition_date")
+  bhaskarId        String?           @map("bhaskar_id")
+  achievements     Achievement[]
+  agreements       Agreement[]
+  oneOnOneMeetings OneOnOneMeeting[]
+  progressHistory  ProgressHistory[]
+  smcMeetings      SMCMeeting[]
+
+  @@map("startups")
+}
+
+model Achievement {
+  id          String   @id @default(uuid())
+  startupId   String   @map("startup_id")
+  title       String
+  description String?
+  type        String
+  date        DateTime @default(now())
+  mediaUrl    String?  @map("media_url")
+  isGraduated Boolean  @default(false) @map("is_graduated")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  startup     Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+
+  @@index([startupId])
+  @@map("achievements")
+}
+
+model ProgressHistory {
+  id        String   @id @default(uuid())
+  startupId String   @map("startup_id")
+  metric    String
+  value     Float
+  date      DateTime @default(now())
+  notes     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  startup   Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+
+  @@index([startupId])
+  @@map("progress_history")
+}
+
+model OneOnOneMeeting {
+  id          String   @id @default(uuid())
+  startupId   String   @map("startup_id")
+  date        DateTime
+  mentor      String?
+  topic       String?
+  notes       String?
+  actionItems String?  @map("action_items")
+  status      String   @default("scheduled")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  startup     Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+
+  @@index([startupId])
+  @@map("one_on_one_meetings")
+}
+
+model SMCMeeting {
+  id        String   @id @default(uuid())
+  startupId String   @map("startup_id")
+  date      DateTime
+  agenda    String?
+  decisions String?
+  attendees String?
+  status    String   @default("scheduled")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  startup   Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+
+  @@index([startupId])
+  @@map("smc_meetings")
+}
+
+model Agreement {
+  id         String    @id @default(uuid())
+  startupId  String    @map("startup_id")
+  title      String
+  type       String
+  fileUrl    String    @map("file_url")
+  uploadDate DateTime  @default(now()) @map("upload_date")
+  expiryDate DateTime? @map("expiry_date")
+  status     String    @default("active")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  startup    Startup   @relation(fields: [startupId], references: [id], onDelete: Cascade)
+
+  @@index([startupId])
+  @@map("agreements")
+}
+
+model Settings {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("settings")
+}

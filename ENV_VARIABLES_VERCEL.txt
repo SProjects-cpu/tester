@@ -1,0 +1,101 @@
+# ========================================
+# VERCEL ENVIRONMENT VARIABLES
+# ========================================
+# Copy these to Vercel Dashboard → Settings → Environment Variables
+# Replace the placeholder values with your actual values
+# ========================================
+
+# ========================================
+# BACKEND VARIABLES (Production)
+# ========================================
+
+DATABASE_URL=postgresql://user:password@host:5432/database?pgbouncer=true&connection_limit=1
+# ↑ Use your Supabase connection string with connection pooling
+
+JWT_SECRET=your_super_secure_random_jwt_secret_here_min_32_chars
+# ↑ Generate a secure random string (min 32 characters)
+
+NODE_ENV=production
+
+CORS_ORIGIN=https://your-vercel-domain.vercel.app
+# ↑ Will be updated after first deployment
+
+VERCEL=1
+# ↑ Tells the app it's running on Vercel
+
+# ========================================
+# SUPABASE VARIABLES
+# ========================================
+
+SUPABASE_URL=https://your-project.supabase.co
+# ↑ From Supabase Dashboard → Settings → API
+
+SUPABASE_ANON_KEY=your_supabase_anon_key_here
+# ↑ From Supabase Dashboard → Settings → API → anon public
+
+SUPABASE_SERVICE_KEY=your_supabase_service_key_here
+# ↑ From Supabase Dashboard → Settings → API → service_role (KEEP SECRET!)
+
+# ========================================
+# FRONTEND VARIABLES (Production)
+# ========================================
+
+VITE_API_URL=https://your-vercel-domain.vercel.app/api
+# ↑ Will be updated after first deployment
+
+VITE_SUPABASE_URL=https://your-project.supabase.co
+# ↑ Same as SUPABASE_URL above
+
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key_here
+# ↑ Same as SUPABASE_ANON_KEY above (safe for frontend)
+
+# ========================================
+# OPTIONAL VARIABLES
+# ========================================
+
+MAX_FILE_SIZE=5242880
+# ↑ 5MB in bytes (optional, defaults to 5MB)
+
+# ========================================
+# SECURITY NOTES
+# ========================================
+# 
+# ✅ SAFE for frontend:
+#    - VITE_* variables
+#    - SUPABASE_ANON_KEY
+#    - SUPABASE_URL
+#
+# ❌ NEVER expose to frontend:
+#    - DATABASE_URL
+#    - JWT_SECRET
+#    - SUPABASE_SERVICE_KEY
+#
+# ========================================
+# HOW TO ADD IN VERCEL
+# ========================================
+#
+# 1. Go to Vercel Dashboard
+# 2. Select your project
+# 3. Go to Settings → Environment Variables
+# 4. Add each variable:
+#    - Name: DATABASE_URL
+#    - Value: your_actual_value
+#    - Environment: Production (check)
+# 5. Click "Save"
+# 6. Repeat for all variables
+# 7. Redeploy your project
+#
+# ========================================
+# GENERATE JWT_SECRET
+# ========================================
+#
+# Option 1 - Node.js:
+# node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+#
+# Option 2 - Online:
+# https://generate-secret.vercel.app/32
+#
+# Option 3 - OpenSSL:
+# openssl rand -hex 32
+#
+# ========================================

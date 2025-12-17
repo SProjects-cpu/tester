@@ -1,0 +1,23 @@
+[
+  {
+    "username": "admin",
+    "password": "$2a$10$9yy8oJNsmH7dFLYUNX1x8eDnKQL365sR97hvQa54n.daXo6YIq.Zy",
+    "role": "admin",
+    "email": "rutvik@gmail.com",
+    "isActive": true,
+    "id": "mioe8b3xqnja5jqksse",
+    "createdAt": "2025-12-02T09:46:22.653Z",
+    "updatedAt": "2025-12-16T06:18:07.389Z",
+    "lastLogin": "2025-12-16T06:18:07.389Z"
+  },
+  {
+    "username": "guest",
+    "password": "$2a$10$HDx55pcurYCCkjE24GOl6efQiWh1Trj3LUmhMGIW.zMTmLf.mU.y6",
+    "role": "guest",
+    "email": "guest@magic.com",
+    "isActive": true,
+    "id": "mioe8b5k2bo9g2crieb",
+    "createdAt": "2025-12-02T09:46:22.712Z",
+    "updatedAt": "2025-12-02T09:46:22.712Z"
+  }
+]
