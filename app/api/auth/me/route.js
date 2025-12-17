@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
 
+// Force dynamic rendering to avoid build-time database access
+export const dynamic = 'force-dynamic';
+
 export const GET = requireAuth(async (request) => {
   try {
     const user = await prisma.user.findUnique({

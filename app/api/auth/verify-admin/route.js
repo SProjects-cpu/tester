@@ -1,14 +1,15 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import prisma from '@/lib/prisma';
-import { requireAuth, requireRole } from '@/lib/auth';
+import { requireRole } from '@/lib/auth';
 
-// POST /api/auth/verify-admin - Verify admin credentials for sensitive operations
+// Force dynamic rendering to avoid build-time database access
+export const dynamic = 'force-dynamic';
+
 export const POST = requireRole(['admin'])(async (request) => {
   try {
     const { email, password } = await request.json();
 
-    // Validation
     if (!email || !password) {
       return NextResponse.json(
         { verified: false, message: 'Email and password are required' },
@@ -16,7 +17,6 @@ export const POST = requireRole(['admin'])(async (request) => {
       );
     }
 
-    // Find user by email
     const user = await prisma.user.findUnique({
       where: { email: email.toLowerCase() }
     });
@@ -28,7 +28,6 @@ export const POST = requireRole(['admin'])(async (request) => {
       );
     }
 
-    // Verify password
     const isMatch = await bcrypt.compare(password, user.password);
     
     if (!isMatch) {
@@ -37,9 +36,6 @@ export const POST = requireRole(['admin'])(async (request) => {
         { status: 401 }
       );
     }
-
-    // Log the verification attempt
-    console.log(`Admin verification successful for ${email} at ${new Date().toISOString()}`);
 
     return NextResponse.json({
       verified: true,

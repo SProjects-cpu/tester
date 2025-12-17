@@ -3,6 +3,9 @@ import bcrypt from 'bcryptjs';
 import prisma from '@/lib/prisma';
 import { signToken } from '@/lib/auth';
 
+// Force dynamic rendering to avoid build-time database access
+export const dynamic = 'force-dynamic';
+
 export async function POST(request) {
   try {
     const { username, password } = await request.json();
@@ -42,12 +45,12 @@ export async function POST(request) {
       token,
       user: {
         id: user.id,
-        username: user.email, // Use email as username for compatibility
+        username: user.email,
         role: user.role,
         email: user.email,
         name: user.name
       },
-      expiresIn: 30 * 24 * 60 * 60 * 1000 // 30 days in milliseconds
+      expiresIn: 30 * 24 * 60 * 60 * 1000
     });
   } catch (error) {
     console.error('Login error:', error);

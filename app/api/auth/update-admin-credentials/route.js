@@ -3,12 +3,13 @@ import bcrypt from 'bcryptjs';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
 
-// PUT /api/auth/update-admin-credentials - Update admin email and/or password
+// Force dynamic rendering to avoid build-time database access
+export const dynamic = 'force-dynamic';
+
 export const PUT = requireRole(['admin'])(async (request) => {
   try {
     const { currentPassword, newEmail, newPassword } = await request.json();
 
-    // Validation
     if (!currentPassword) {
       return NextResponse.json(
         { message: 'Current password is required' },
@@ -34,7 +35,6 @@ export const PUT = requireRole(['admin'])(async (request) => {
       );
     }
     
-    // Verify current password
     const isMatch = await bcrypt.compare(currentPassword, user.password);
     if (!isMatch) {
       return NextResponse.json(
@@ -45,9 +45,7 @@ export const PUT = requireRole(['admin'])(async (request) => {
 
     const updates = {};
 
-    // Update email if provided
     if (newEmail && newEmail !== user.email) {
-      // Check if email already exists
       const existingUser = await prisma.user.findUnique({
         where: { email: newEmail.toLowerCase() }
       });
@@ -60,7 +58,6 @@ export const PUT = requireRole(['admin'])(async (request) => {
       updates.email = newEmail.toLowerCase();
     }
 
-    // Update password if provided
     if (newPassword) {
       updates.password = await bcrypt.hash(newPassword, 10);
     }

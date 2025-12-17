@@ -3,6 +3,9 @@ import jwt from 'jsonwebtoken';
 import prisma from '@/lib/prisma';
 import { signToken } from '@/lib/auth';
 
+// Force dynamic rendering to avoid build-time database access
+export const dynamic = 'force-dynamic';
+
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
 export async function POST(request) {
@@ -18,27 +21,25 @@ export async function POST(request) {
 
     const token = authHeader.substring(7);
 
-    // Verify token (even if expired, we can still decode it)
     const decoded = jwt.verify(token, JWT_SECRET, { ignoreExpiration: true });
     const user = await prisma.user.findUnique({
       where: { id: decoded.id }
     });
 
-    if (!user || !user.isActive) {
+    if (!user) {
       return NextResponse.json(
-        { message: 'User not found or inactive' },
+        { message: 'User not found' },
         { status: 401 }
       );
     }
 
-    // Generate new token
     const newToken = signToken({ id: user.id, role: user.role });
 
     return NextResponse.json({
       token: newToken,
       user: {
         id: user.id,
-        username: user.username,
+        username: user.email,
         role: user.role,
         email: user.email
       },
