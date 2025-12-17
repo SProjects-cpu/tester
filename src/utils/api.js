@@ -33,6 +33,50 @@ const apiRequest = async (endpoint, options = {}) => {
   return response.json();
 };
 
+// Main API object used by useAuth hook
+export const api = {
+  // Check if user is authenticated (has token)
+  isAuthenticated: () => {
+    return !!getToken();
+  },
+
+  // Login user
+  login: async (username, password) => {
+    const response = await apiRequest('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ username, password }),
+    });
+    
+    // Store token in localStorage
+    if (response.token) {
+      localStorage.setItem('token', response.token);
+    }
+    
+    return response;
+  },
+
+  // Logout user
+  logout: () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+    }
+  },
+
+  // Get current user
+  getCurrentUser: async () => {
+    return apiRequest('/auth/me');
+  },
+
+  // Change password
+  changePassword: async (currentPassword, newPassword) => {
+    return apiRequest('/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+  },
+};
+
 // Startup API methods
 export const startupApi = {
   // Get all startups
