@@ -8,11 +8,13 @@ export async function GET() {
   const result = {
     status: 'OK',
     timestamp: new Date().toISOString(),
+    version: '2', // Force redeploy
     env: {
       hasDbUrl: !!process.env.DATABASE_URL,
       hasDirectUrl: !!process.env.DIRECT_URL,
       hasJwtSecret: !!process.env.JWT_SECRET,
       nodeEnv: process.env.NODE_ENV,
+      dbUrlPreview: process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 50) + '...' : 'NOT SET',
     },
     database: {
       connected: false,
