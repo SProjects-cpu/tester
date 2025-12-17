@@ -2,7 +2,9 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
 
-// GET /api/startups/:id - Get single startup
+// Force dynamic rendering to avoid build-time database access
+export const dynamic = 'force-dynamic';
+
 export const GET = requireAuth(async (request, { params }) => {
   try {
     const { id } = params;
@@ -10,42 +12,25 @@ export const GET = requireAuth(async (request, { params }) => {
     const startup = await prisma.startup.findUnique({
       where: { id },
       include: {
-        achievements: {
-          orderBy: { date: 'desc' }
-        },
-        progressHistory: {
-          orderBy: { date: 'desc' }
-        },
-        oneOnOneMeetings: {
-          orderBy: { date: 'desc' }
-        },
-        smcMeetings: {
-          orderBy: { date: 'desc' }
-        },
-        agreements: {
-          orderBy: { uploadDate: 'desc' }
-        }
+        achievements: { orderBy: { date: 'desc' } },
+        progressHistory: { orderBy: { date: 'desc' } },
+        oneOnOneMeetings: { orderBy: { date: 'desc' } },
+        smcMeetings: { orderBy: { date: 'desc' } },
+        agreements: { orderBy: { uploadDate: 'desc' } }
       }
     });
 
     if (!startup) {
-      return NextResponse.json(
-        { message: 'Startup not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ message: 'Startup not found' }, { status: 404 });
     }
 
     return NextResponse.json(startup);
   } catch (error) {
     console.error('Error fetching startup:', error);
-    return NextResponse.json(
-      { message: 'Server error', error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: 'Server error', error: error.message }, { status: 500 });
   }
 });
 
-// PUT /api/startups/:id - Update startup
 export const PUT = requireAuth(async (request, { params }) => {
   try {
     const { id } = params;
@@ -75,28 +60,17 @@ export const PUT = requireAuth(async (request, { params }) => {
     return NextResponse.json(startup);
   } catch (error) {
     console.error('Error updating startup:', error);
-    return NextResponse.json(
-      { message: 'Server error', error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: 'Server error', error: error.message }, { status: 500 });
   }
 });
 
-// DELETE /api/startups/:id - Delete startup
 export const DELETE = requireAuth(async (request, { params }) => {
   try {
     const { id } = params;
-    
-    await prisma.startup.delete({
-      where: { id }
-    });
-
+    await prisma.startup.delete({ where: { id } });
     return NextResponse.json({ message: 'Startup deleted successfully' });
   } catch (error) {
     console.error('Error deleting startup:', error);
-    return NextResponse.json(
-      { message: 'Server error', error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: 'Server error', error: error.message }, { status: 500 });
   }
 });

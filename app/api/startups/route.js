@@ -2,7 +2,9 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
 
-// GET /api/startups - Get all startups
+// Force dynamic rendering to avoid build-time database access
+export const dynamic = 'force-dynamic';
+
 export const GET = requireAuth(async (request) => {
   try {
     const { searchParams } = new URL(request.url);
@@ -46,7 +48,6 @@ export const GET = requireAuth(async (request) => {
   }
 });
 
-// POST /api/startups - Create new startup
 export const POST = requireAuth(async (request) => {
   try {
     const body = await request.json();

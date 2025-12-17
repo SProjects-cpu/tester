@@ -2,12 +2,13 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
 
-// GET /api/settings - Get all settings
-export const GET = requireAuth(async (request) => {
+// Force dynamic rendering to avoid build-time database access
+export const dynamic = 'force-dynamic';
+
+export const GET = requireAuth(async () => {
   try {
     const settings = await prisma.settings.findMany();
     
-    // Convert to key-value object
     const settingsObj = settings.reduce((acc, setting) => {
       try {
         acc[setting.key] = JSON.parse(setting.value);
@@ -20,9 +21,6 @@ export const GET = requireAuth(async (request) => {
     return NextResponse.json(settingsObj);
   } catch (error) {
     console.error('Error fetching settings:', error);
-    return NextResponse.json(
-      { message: 'Server error', error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: 'Server error', error: error.message }, { status: 500 });
   }
 });

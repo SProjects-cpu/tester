@@ -2,20 +2,16 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
 
-// GET /api/settings/:key - Get single setting
+// Force dynamic rendering to avoid build-time database access
+export const dynamic = 'force-dynamic';
+
 export const GET = requireAuth(async (request, { params }) => {
   try {
     const { key } = params;
-    
-    const setting = await prisma.settings.findUnique({
-      where: { key }
-    });
+    const setting = await prisma.settings.findUnique({ where: { key } });
 
     if (!setting) {
-      return NextResponse.json(
-        { message: 'Setting not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ message: 'Setting not found' }, { status: 404 });
     }
 
     try {
@@ -25,22 +21,15 @@ export const GET = requireAuth(async (request, { params }) => {
     }
   } catch (error) {
     console.error('Error fetching setting:', error);
-    return NextResponse.json(
-      { message: 'Server error', error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: 'Server error', error: error.message }, { status: 500 });
   }
 });
 
-// PUT /api/settings/:key - Update setting
 export const PUT = requireAuth(async (request, { params }) => {
   try {
     const { key } = params;
     const body = await request.json();
-    
-    const value = typeof body.value === 'string' 
-      ? body.value 
-      : JSON.stringify(body.value);
+    const value = typeof body.value === 'string' ? body.value : JSON.stringify(body.value);
 
     const setting = await prisma.settings.upsert({
       where: { key },
@@ -55,9 +44,6 @@ export const PUT = requireAuth(async (request, { params }) => {
     }
   } catch (error) {
     console.error('Error updating setting:', error);
-    return NextResponse.json(
-      { message: 'Server error', error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: 'Server error', error: error.message }, { status: 500 });
   }
 });
