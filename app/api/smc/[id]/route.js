@@ -2,7 +2,9 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
 
-// PUT /api/smc/:id - Update SMC meeting
+// Force dynamic rendering to avoid build-time database access
+export const dynamic = 'force-dynamic';
+
 export const PUT = requireAuth(async (request, { params }) => {
   try {
     const { id } = params;
@@ -17,42 +19,23 @@ export const PUT = requireAuth(async (request, { params }) => {
         attendees: body.attendees,
         status: body.status
       },
-      include: {
-        startup: {
-          select: {
-            id: true,
-            name: true,
-            founder: true
-          }
-        }
-      }
+      include: { startup: { select: { id: true, name: true, founder: true } } }
     });
 
     return NextResponse.json(meeting);
   } catch (error) {
     console.error('Error updating SMC meeting:', error);
-    return NextResponse.json(
-      { message: 'Server error', error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: 'Server error', error: error.message }, { status: 500 });
   }
 });
 
-// DELETE /api/smc/:id - Delete SMC meeting
 export const DELETE = requireAuth(async (request, { params }) => {
   try {
     const { id } = params;
-    
-    await prisma.sMCMeeting.delete({
-      where: { id }
-    });
-
+    await prisma.sMCMeeting.delete({ where: { id } });
     return NextResponse.json({ message: 'SMC meeting deleted successfully' });
   } catch (error) {
     console.error('Error deleting SMC meeting:', error);
-    return NextResponse.json(
-      { message: 'Server error', error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: 'Server error', error: error.message }, { status: 500 });
   }
 });

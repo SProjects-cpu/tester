@@ -2,7 +2,9 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
 
-// POST /api/achievements/:startupId - Add achievement
+// Force dynamic rendering to avoid build-time database access
+export const dynamic = 'force-dynamic';
+
 export const POST = requireAuth(async (request, { params }) => {
   try {
     const { startupId } = params;
@@ -23,9 +25,6 @@ export const POST = requireAuth(async (request, { params }) => {
     return NextResponse.json(achievement, { status: 201 });
   } catch (error) {
     console.error('Error creating achievement:', error);
-    return NextResponse.json(
-      { message: 'Server error', error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: 'Server error', error: error.message }, { status: 500 });
   }
 });
