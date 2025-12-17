@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Search, Filter, Upload, Download, ChevronDown, FileJson, FileSpreadsheet } from 'lucide-react';
+import { Plus, Search, Filter, Upload } from 'lucide-react';
 import { storage, generateId } from '../utils/storage';
+import { startupApi } from '../utils/api';
 import { exportStartupsComprehensive } from '../utils/exportUtils';
 import ExportMenu from './ExportMenu';
 import StartupCard from './StartupCard';
@@ -58,9 +59,36 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
     filterStartups();
   }, [startups, searchTerm, filterStage, filterSector]);
 
-  const loadStartups = () => {
-    const data = storage.get('startups', []);
-    setStartups(data);
+  const loadStartups = async () => {
+    try {
+      // Try to load from API first
+      const token = localStorage.getItem('token');
+      if (token) {
+        const data = await startupApi.getAll();
+        // Map API fields to frontend fields for compatibility
+        const mappedData = data.map(s => ({
+          ...s,
+          companyName: s.name || s.companyName,
+          founderName: s.founder || s.founderName,
+          founderEmail: s.email || s.founderEmail,
+          founderMobile: s.phone || s.founderMobile,
+          teamSize: s.employeeCount || s.teamSize,
+          totalRevenue: s.revenueGenerated || s.totalRevenue,
+        }));
+        setStartups(mappedData);
+        // Also sync to localStorage for offline access
+        storage.set('startups', mappedData);
+      } else {
+        // Fallback to localStorage if not authenticated
+        const data = storage.get('startups', []);
+        setStartups(data);
+      }
+    } catch (error) {
+      console.error('Error loading startups from API:', error);
+      // Fallback to localStorage on error
+      const data = storage.get('startups', []);
+      setStartups(data);
+    }
   };
 
   const filterStartups = () => {
@@ -69,7 +97,9 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
     if (searchTerm) {
       filtered = filtered.filter(s => 
         s.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        s.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         s.founderName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        s.founder?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         s.magicCode?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
@@ -85,7 +115,7 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
     setFilteredStartups(filtered);
   };
 
-  const handleAddStartup = (startupData) => {
+  const handleAddStartup = async (startupData) => {
     const newStartup = {
       id: generateId(),
       ...startupData,
@@ -96,6 +126,31 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
       createdAt: new Date().toISOString()
     };
 
+    try {
+      // Save to API
+      const apiStartup = {
+        name: startupData.companyName || startupData.name,
+        founder: startupData.founderName || startupData.founder,
+        email: startupData.founderEmail || startupData.email,
+        phone: startupData.founderMobile || startupData.phone,
+        sector: startupData.sector,
+        stage: 'Onboarded',
+        description: startupData.problemSolving || startupData.description,
+        website: startupData.website,
+        fundingReceived: parseFloat(startupData.fundingReceived) || 0,
+        employeeCount: parseInt(startupData.teamSize) || 0,
+        revenueGenerated: parseFloat(startupData.totalRevenue) || 0,
+        dpiitNo: startupData.dpiitNo,
+        recognitionDate: startupData.recognitionDate,
+        bhaskarId: startupData.bhaskarId
+      };
+      
+      await startupApi.create(apiStartup);
+    } catch (error) {
+      console.error('Error saving to API:', error);
+    }
+
+    // Also save to localStorage
     const updated = [...startups, newStartup];
     storage.set('startups', updated);
     setStartups(updated);
@@ -108,12 +163,65 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
       title: 'Import Startups',
       message: `You are about to import ${importedStartups.length} startup(s). Please authenticate to proceed with this operation.`,
       actionType: 'warning',
-      onConfirm: () => {
-        const updated = [...startups, ...importedStartups];
-        storage.set('startups', updated);
-        setStartups(updated);
-        setShowImport(false);
-        alert(`✅ Successfully imported ${importedStartups.length} startup(s)!`);
+      onConfirm: async () => {
+        try {
+          // Import to database via API
+          let successCount = 0;
+          let errorCount = 0;
+          const errors = [];
+          
+          for (const startup of importedStartups) {
+            try {
+              // Map frontend fields to API fields
+              const apiStartup = {
+                name: startup.companyName || startup.name,
+                founder: startup.founderName || startup.founder,
+                email: startup.founderEmail || startup.email,
+                phone: startup.founderMobile || startup.phone,
+                sector: startup.sector,
+                stage: startup.status === 'Onboarded' ? 'Onboarded' : (startup.stage || 'S0'),
+                description: startup.problemSolving || startup.description,
+                website: startup.website,
+                fundingReceived: parseFloat(startup.fundingReceived) || 0,
+                employeeCount: parseInt(startup.teamSize) || 0,
+                revenueGenerated: parseFloat(startup.totalRevenue) || 0,
+                dpiitNo: startup.dpiitNo,
+                recognitionDate: startup.recognitionDate,
+                bhaskarId: startup.bhaskarId
+              };
+              
+              await startupApi.create(apiStartup);
+              successCount++;
+            } catch (error) {
+              errorCount++;
+              errors.push(`${startup.companyName}: ${error.message}`);
+            }
+          }
+          
+          // Also update localStorage for immediate UI update
+          const updated = [...startups, ...importedStartups];
+          storage.set('startups', updated);
+          setStartups(updated);
+          
+          // Reload from API to get the actual data
+          await loadStartups();
+          
+          setShowImport(false);
+          
+          if (errorCount > 0) {
+            alert(`✅ Imported ${successCount} startup(s) to database.\n⚠️ ${errorCount} failed:\n${errors.slice(0, 5).join('\n')}${errors.length > 5 ? '\n...' : ''}`);
+          } else {
+            alert(`✅ Successfully imported ${successCount} startup(s) to database!`);
+          }
+        } catch (error) {
+          console.error('Import error:', error);
+          // Fallback to localStorage only
+          const updated = [...startups, ...importedStartups];
+          storage.set('startups', updated);
+          setStartups(updated);
+          setShowImport(false);
+          alert(`⚠️ Database import failed. Startups saved locally only.\nError: ${error.message}`);
+        }
       }
     });
   };
@@ -122,9 +230,27 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
     setAdminAuthModal({
       isOpen: true,
       title: 'Edit Startup',
-      message: `You are about to edit "${updatedStartup.companyName}". Please authenticate to save changes.`,
+      message: `You are about to edit "${updatedStartup.companyName || updatedStartup.name}". Please authenticate to save changes.`,
       actionType: 'warning',
-      onConfirm: () => {
+      onConfirm: async () => {
+        try {
+          // Update via API if startup has database ID
+          if (updatedStartup.id && !updatedStartup.id.includes('-')) {
+            await startupApi.update(updatedStartup.id, {
+              name: updatedStartup.companyName || updatedStartup.name,
+              founder: updatedStartup.founderName || updatedStartup.founder,
+              email: updatedStartup.founderEmail || updatedStartup.email,
+              phone: updatedStartup.founderMobile || updatedStartup.phone,
+              sector: updatedStartup.sector,
+              stage: updatedStartup.stage,
+              description: updatedStartup.problemSolving || updatedStartup.description,
+              website: updatedStartup.website,
+            });
+          }
+        } catch (error) {
+          console.error('Error updating via API:', error);
+        }
+        
         const updated = startups.map(s => s.id === updatedStartup.id ? updatedStartup : s);
         storage.set('startups', updated);
         setStartups(updated);
@@ -138,9 +264,18 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
     setAdminAuthModal({
       isOpen: true,
       title: 'Delete Startup',
-      message: `You are about to permanently delete "${startup?.companyName}". This action cannot be undone. Please authenticate to proceed.`,
+      message: `You are about to permanently delete "${startup?.companyName || startup?.name}". This action cannot be undone. Please authenticate to proceed.`,
       actionType: 'danger',
-      onConfirm: () => {
+      onConfirm: async () => {
+        try {
+          // Delete via API if startup has database ID
+          if (id && !id.includes('-')) {
+            await startupApi.delete(id);
+          }
+        } catch (error) {
+          console.error('Error deleting via API:', error);
+        }
+        
         const updated = startups.filter(s => s.id !== id);
         storage.set('startups', updated);
         setStartups(updated);
