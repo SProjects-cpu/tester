@@ -314,14 +314,46 @@ export default function Settings({ darkMode, toggleDarkMode, isGuest = false }) 
     setAuthModal({
       isOpen: true,
       title: 'Clear All Data',
-      message: 'This will permanently delete ALL startups, schedules, and sessions. This action cannot be undone. Please authenticate to proceed.',
+      message: 'This will permanently delete ALL startups, schedules, and sessions from the database. This action cannot be undone. Please authenticate to proceed.',
       actionType: 'danger',
-      onConfirm: () => {
-        storage.set('startups', []);
-        storage.set('smcSchedules', []);
-        storage.set('oneOnOneSessions', []);
-        alert('All data cleared successfully!');
-        window.location.reload();
+      onConfirm: async () => {
+        try {
+          const token = localStorage.getItem('authToken');
+          const API_URL = import.meta.env.VITE_API_URL || '/api';
+          
+          const response = await fetch(`${API_URL}/admin/clear-all-data`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            // Also clear localStorage for consistency
+            storage.set('startups', []);
+            storage.set('smcSchedules', []);
+            storage.set('oneOnOneSessions', []);
+            
+            alert(`✅ All data cleared successfully!\n\n` +
+              `Deleted from database:\n` +
+              `• Startups: ${data.deleted?.startups || 0}\n` +
+              `• Achievements: ${data.deleted?.achievements || 0}\n` +
+              `• Progress History: ${data.deleted?.progressHistory || 0}\n` +
+              `• One-on-One Meetings: ${data.deleted?.oneOnOneMeetings || 0}\n` +
+              `• SMC Meetings: ${data.deleted?.smcMeetings || 0}\n` +
+              `• Agreements: ${data.deleted?.agreements || 0}`
+            );
+            window.location.reload();
+          } else {
+            alert('❌ Failed to clear data: ' + (data.message || 'Unknown error'));
+          }
+        } catch (error) {
+          console.error('Clear data error:', error);
+          alert('❌ Error clearing data: ' + error.message);
+        }
       }
     });
   };
