@@ -296,7 +296,8 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
   return (
     <div className="max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
-        <div>
+        {/* Added pl-14 lg:pl-0 to give space for hamburger menu on mobile */}
+        <div className="pl-14 lg:pl-0">
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold magic-text-gradient">
             All Startups
           </h1>
