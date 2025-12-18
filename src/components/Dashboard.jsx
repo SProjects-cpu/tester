@@ -118,10 +118,9 @@ export default function Dashboard({ onNavigate, onNavigateWithSector }) {
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+        className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pl-14 lg:pl-0"
       >
-        {/* Added pl-14 lg:pl-0 to give space for hamburger menu on mobile */}
-        <div className="pl-14 lg:pl-0">
+        <div>
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold magic-text-gradient">
             Dashboard
           </h1>
