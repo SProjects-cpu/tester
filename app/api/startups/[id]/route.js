@@ -28,9 +28,9 @@ const transformStartup = (startup) => ({
   dpiitNo: startup.dpiitNo,
   recognitionDate: startup.recognitionDate ? startup.recognitionDate.toISOString().split('T')[0] : null,
   bhaskarId: startup.bhaskarId,
-  onboardedDate: startup.onboardedDate,
-  graduatedDate: startup.graduatedDate,
-  createdAt: startup.createdAt,
+  onboardedDate: startup.onboardedDate ? startup.onboardedDate.toISOString().split('T')[0] : null,
+  graduatedDate: startup.graduatedDate ? startup.graduatedDate.toISOString().split('T')[0] : null,
+  createdAt: startup.createdAt ? startup.createdAt.toISOString().split('T')[0] : null,
   updatedAt: startup.updatedAt,
   // Registration Info fields
   magicCode: startup.magicCode,

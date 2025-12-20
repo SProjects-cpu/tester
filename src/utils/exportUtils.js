@@ -26,6 +26,8 @@ export const filterByDateRange = (data, dateField, fromDate, toDate) => {
         dateValue = item.date || item.registrationDate;
       } else if (dateField === 'registrationDate') {
         dateValue = item.registeredDate || item.date;
+      } else if (dateField === 'onboardedDate') {
+        dateValue = item.createdAt; // fallback to createdAt if onboardedDate is missing
       }
     }
     
