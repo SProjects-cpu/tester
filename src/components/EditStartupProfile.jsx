@@ -29,10 +29,10 @@ const Input = ({ label, name, type = 'text', required = false, value, onChange, 
     <input
       type={type}
       name={name}
-      value={value}
+      value={value || ''}
       onChange={onChange}
-      required={required}
-      className="w-full px-3 sm:px-4 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-magic-500 focus:border-magic-500 outline-none transition-all text-sm sm:text-base"
+      placeholder={props.placeholder || 'undefined'}
+      className="w-full px-3 sm:px-4 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-magic-500 focus:border-magic-500 outline-none transition-all text-sm sm:text-base placeholder:text-gray-400 placeholder:italic"
       {...props}
     />
   </div>
@@ -45,9 +45,8 @@ const Select = ({ label, name, options, required = false, value, onChange }) => 
     </label>
     <select
       name={name}
-      value={value}
+      value={value || ''}
       onChange={onChange}
-      required={required}
       className="w-full px-3 sm:px-4 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-magic-500 focus:border-magic-500 outline-none transition-all text-sm sm:text-base"
     >
       <option value="">Select...</option>
@@ -65,11 +64,11 @@ const Textarea = ({ label, name, required = false, value, onChange }) => (
     </label>
     <textarea
       name={name}
-      value={value}
+      value={value || ''}
       onChange={onChange}
-      required={required}
+      placeholder="undefined"
       rows={3}
-      className="w-full px-3 sm:px-4 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-magic-500 focus:border-magic-500 outline-none transition-all text-sm sm:text-base resize-none"
+      className="w-full px-3 sm:px-4 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-magic-500 focus:border-magic-500 outline-none transition-all text-sm sm:text-base resize-none placeholder:text-gray-400 placeholder:italic"
     />
   </div>
 );
@@ -292,18 +291,18 @@ export default function EditStartupProfile({ startup, onClose, onUpdate }) {
           {/* Startup Information */}
           <Section title="🚀 Startup Information" section="startup" expandedSections={expandedSections} toggleSection={toggleSection}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Input label="Magic Code" name="magicCode" value={formData.magicCode} onChange={handleChange} required />
-              <Input label="Company Name" name="companyName" value={formData.companyName} onChange={handleChange} required />
+              <Input label="Magic Code" name="magicCode" value={formData.magicCode} onChange={handleChange} />
+              <Input label="Company Name" name="companyName" value={formData.companyName} onChange={handleChange} />
               <Input label="DPIIT No." name="dpiitNo" value={formData.dpiitNo} onChange={handleChange} placeholder="Enter DPIIT Number" />
               <Input label="Recognition Date" name="recognitionDate" type="date" value={formData.recognitionDate} onChange={handleChange} />
               <Input label="Bhaskar ID" name="bhaskarId" value={formData.bhaskarId} onChange={handleChange} placeholder="Enter Bhaskar ID" />
-              <Input label="City" name="city" value={formData.city} onChange={handleChange} required />
-              <Input label="Sector" name="sector" value={formData.sector} onChange={handleChange} required />
+              <Input label="City" name="city" value={formData.city} onChange={handleChange} />
+              <Input label="Sector" name="sector" value={formData.sector} onChange={handleChange} />
               <Input label="Stage of Startup Idea" name="stageOfIdea" value={formData.stageOfIdea} onChange={handleChange} />
               <Input label="Team Size" name="teamSize" type="number" value={formData.teamSize} onChange={handleChange} />
             </div>
-            <Textarea label="What Problem Are You Solving" name="problemSolving" value={formData.problemSolving} onChange={handleChange} required />
-            <Textarea label="What Is Your Solution" name="solution" value={formData.solution} onChange={handleChange} required />
+            <Textarea label="What Problem Are You Solving" name="problemSolving" value={formData.problemSolving} onChange={handleChange} />
+            <Textarea label="What Is Your Solution" name="solution" value={formData.solution} onChange={handleChange} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Select label="Do You Have a Patent" name="hasPatent" value={formData.hasPatent} onChange={handleChange} options={['Yes', 'No']} />
               {formData.hasPatent === 'Yes' && (
@@ -321,12 +320,12 @@ export default function EditStartupProfile({ startup, onClose, onUpdate }) {
           {/* Founder Information */}
           <Section title="👤 Founder Information" section="founder" expandedSections={expandedSections} toggleSection={toggleSection}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Input label="Founder Name" name="founderName" value={formData.founderName} onChange={handleChange} required />
+              <Input label="Founder Name" name="founderName" value={formData.founderName} onChange={handleChange} />
               <Input label="Founder Age" name="founderAge" type="number" value={formData.founderAge} onChange={handleChange} />
               <Select label="Founder Gender" name="founderGender" value={formData.founderGender} onChange={handleChange} options={['Male', 'Female', 'Other']} />
               <Input label="College" name="college" value={formData.college} onChange={handleChange} />
-              <Input label="Email" name="email" type="email" value={formData.email} onChange={handleChange} required />
-              <Input label="Mobile Number" name="mobile" type="tel" value={formData.mobile} onChange={handleChange} required />
+              <Input label="Email" name="email" type="email" value={formData.email} onChange={handleChange} />
+              <Input label="Mobile Number" name="mobile" type="tel" value={formData.mobile} onChange={handleChange} />
               <Input label="Referred From" name="referredFrom" value={formData.referredFrom} onChange={handleChange} />
             </div>
             <Textarea label="Address" name="address" value={formData.address} onChange={handleChange} />

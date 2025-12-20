@@ -29,10 +29,10 @@ const Input = ({ label, name, type = 'text', required = false, value, onChange, 
     <input
       type={type}
       name={name}
-      value={value}
+      value={value || ''}
       onChange={onChange}
-      required={required}
-      className={`w-full px-3 sm:px-4 py-2 border-2 ${error ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-magic-500 focus:border-magic-500 outline-none transition-all text-sm sm:text-base`}
+      placeholder={props.placeholder || 'undefined'}
+      className={`w-full px-3 sm:px-4 py-2 border-2 ${error ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-magic-500 focus:border-magic-500 outline-none transition-all text-sm sm:text-base placeholder:text-gray-400 placeholder:italic`}
       {...props}
     />
     {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
@@ -46,9 +46,8 @@ const Select = ({ label, name, options, required = false, value, onChange, error
     </label>
     <select
       name={name}
-      value={value}
+      value={value || ''}
       onChange={onChange}
-      required={required}
       className={`w-full px-3 sm:px-4 py-2 border-2 ${error ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-magic-500 focus:border-magic-500 outline-none transition-all text-sm sm:text-base`}
     >
       <option value="">Select...</option>
@@ -67,11 +66,11 @@ const Textarea = ({ label, name, required = false, value, onChange, error, rows 
     </label>
     <textarea
       name={name}
-      value={value}
+      value={value || ''}
       onChange={onChange}
-      required={required}
+      placeholder="undefined"
       rows={rows}
-      className={`w-full px-3 sm:px-4 py-2 border-2 ${error ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-magic-500 focus:border-magic-500 outline-none transition-all text-sm sm:text-base resize-none`}
+      className={`w-full px-3 sm:px-4 py-2 border-2 ${error ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-magic-500 focus:border-magic-500 outline-none transition-all text-sm sm:text-base resize-none placeholder:text-gray-400 placeholder:italic`}
     />
     {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
   </div>
@@ -219,31 +218,8 @@ export default function RegistrationForm({ onClose, onSubmit, initialData = null
   const validateForm = () => {
     const newErrors = {};
     
-    // Startup Info - Required fields
-    if (!formData.magicCode) newErrors.magicCode = 'Magic Code is required';
+    // Only require company name - all other fields are optional
     if (!formData.companyName) newErrors.companyName = 'Company Name is required';
-    if (!formData.city) newErrors.city = 'City is required';
-    if (!formData.sector) newErrors.sector = 'Sector is required';
-    if (!formData.domain) newErrors.domain = 'Domain is required';
-    if (!formData.isRegistered) newErrors.isRegistered = 'This field is required';
-    if (!formData.teamSize) newErrors.teamSize = 'Team Size is required';
-    if (!formData.stageOfIdea) newErrors.stageOfIdea = 'Stage of Startup Idea is required';
-    if (!formData.problemSolving) newErrors.problemSolving = 'Problem description is required';
-    if (!formData.solution) newErrors.solution = 'Solution description is required';
-    if (!formData.hasPatent) newErrors.hasPatent = 'This field is required';
-    if (formData.hasPatent === 'Yes' && !formData.patentNumber) {
-      newErrors.patentNumber = 'Patent Number is required';
-    }
-    
-    // Founder Info - Required fields
-    if (!formData.founderName) newErrors.founderName = 'Founder Name is required';
-    if (!formData.founderAge) newErrors.founderAge = 'Age is required';
-    if (!formData.founderGender) newErrors.founderGender = 'Gender is required';
-    if (!formData.founderEmail) newErrors.founderEmail = 'Email is required';
-    if (!formData.founderMobile) newErrors.founderMobile = 'Mobile Number is required';
-    
-    // Registration Info - Required fields
-    if (!formData.registrationDate) newErrors.registrationDate = 'Registration Date is required';
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -300,7 +276,6 @@ export default function RegistrationForm({ onClose, onSubmit, initialData = null
                 value={formData.magicCode} 
                 onChange={handleChange} 
                 error={errors.magicCode}
-                required
                 readOnly
                 disabled
                 title="Auto-generated based on total startups"
@@ -339,8 +314,6 @@ export default function RegistrationForm({ onClose, onSubmit, initialData = null
                 name="city" 
                 value={formData.city} 
                 onChange={handleChange} 
-                error={errors.city}
-                required 
               />
               <Select 
                 label="Sector" 
@@ -348,8 +321,6 @@ export default function RegistrationForm({ onClose, onSubmit, initialData = null
                 value={formData.sector} 
                 onChange={handleChange} 
                 options={sectorOptions}
-                error={errors.sector}
-                required 
               />
               {formData.sector === 'Other' && (
                 <Input 
@@ -365,9 +336,7 @@ export default function RegistrationForm({ onClose, onSubmit, initialData = null
                 name="domain" 
                 value={formData.domain} 
                 onChange={handleChange} 
-                error={errors.domain}
                 placeholder="e.g., AI, IoT, Fintech"
-                required 
               />
               <Select 
                 label="Is your Startup Registered?" 
@@ -375,8 +344,6 @@ export default function RegistrationForm({ onClose, onSubmit, initialData = null
                 value={formData.isRegistered} 
                 onChange={handleChange} 
                 options={['Yes', 'No']}
-                error={errors.isRegistered}
-                required 
               />
               <Input 
                 label="Team Size" 
@@ -384,18 +351,14 @@ export default function RegistrationForm({ onClose, onSubmit, initialData = null
                 type="number" 
                 value={formData.teamSize} 
                 onChange={handleChange} 
-                error={errors.teamSize}
                 min="1"
-                required 
               />
               <Input 
                 label="Stage of Startup Idea" 
                 name="stageOfIdea" 
                 value={formData.stageOfIdea} 
                 onChange={handleChange} 
-                error={errors.stageOfIdea}
                 placeholder="e.g., Ideation, MVP, Growth"
-                required 
               />
             </div>
             
@@ -405,18 +368,14 @@ export default function RegistrationForm({ onClose, onSubmit, initialData = null
                 name="problemSolving" 
                 value={formData.problemSolving} 
                 onChange={handleChange} 
-                error={errors.problemSolving}
                 rows={4}
-                required 
               />
               <Textarea 
                 label="What Is Your Solution?" 
                 name="solution" 
                 value={formData.solution} 
                 onChange={handleChange} 
-                error={errors.solution}
                 rows={4}
-                required 
               />
             </div>
 
@@ -427,8 +386,6 @@ export default function RegistrationForm({ onClose, onSubmit, initialData = null
                 value={formData.hasPatent} 
                 onChange={handleChange} 
                 options={['Yes', 'No']}
-                error={errors.hasPatent}
-                required 
               />
               {formData.hasPatent === 'Yes' && (
                 <Input 
@@ -436,8 +393,6 @@ export default function RegistrationForm({ onClose, onSubmit, initialData = null
                   name="patentNumber" 
                   value={formData.patentNumber} 
                   onChange={handleChange} 
-                  error={errors.patentNumber}
-                  required 
                 />
               )}
             </div>
@@ -515,8 +470,6 @@ export default function RegistrationForm({ onClose, onSubmit, initialData = null
                 name="founderName" 
                 value={formData.founderName} 
                 onChange={handleChange} 
-                error={errors.founderName}
-                required 
               />
               <Input 
                 label="Age" 
@@ -524,10 +477,8 @@ export default function RegistrationForm({ onClose, onSubmit, initialData = null
                 type="number" 
                 value={formData.founderAge} 
                 onChange={handleChange} 
-                error={errors.founderAge}
                 min="18"
                 max="100"
-                required 
               />
               <Select 
                 label="Gender" 
@@ -535,8 +486,6 @@ export default function RegistrationForm({ onClose, onSubmit, initialData = null
                 value={formData.founderGender} 
                 onChange={handleChange} 
                 options={['Male', 'Female', 'Other', 'Prefer not to say']}
-                error={errors.founderGender}
-                required 
               />
               <Input 
                 label="Email" 
@@ -544,9 +493,7 @@ export default function RegistrationForm({ onClose, onSubmit, initialData = null
                 type="email" 
                 value={formData.founderEmail} 
                 onChange={handleChange} 
-                error={errors.founderEmail}
                 placeholder="founder@example.com"
-                required 
               />
               <Input 
                 label="Mobile Number" 
@@ -554,10 +501,7 @@ export default function RegistrationForm({ onClose, onSubmit, initialData = null
                 type="tel" 
                 value={formData.founderMobile} 
                 onChange={handleChange} 
-                error={errors.founderMobile}
                 placeholder="+91 XXXXXXXXXX"
-                pattern="[0-9+\s-]+"
-                required 
               />
               <Input 
                 label="Education" 
