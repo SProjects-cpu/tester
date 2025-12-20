@@ -29,7 +29,7 @@ export async function DELETE(request) {
     const deletedAchievements = await prisma.achievement.deleteMany({});
     const deletedProgress = await prisma.progressHistory.deleteMany({});
     const deletedOneOnOne = await prisma.oneOnOneMeeting.deleteMany({});
-    const deletedSMC = await prisma.smcMeeting.deleteMany({});
+    const deletedSMC = await prisma.sMCMeeting.deleteMany({});
     const deletedAgreements = await prisma.agreement.deleteMany({});
     const deletedStartups = await prisma.startup.deleteMany({});
     const deletedSettings = await prisma.settings.deleteMany({});
