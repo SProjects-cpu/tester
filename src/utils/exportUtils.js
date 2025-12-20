@@ -17,10 +17,22 @@ export const filterByDateRange = (data, dateField, fromDate, toDate) => {
   if (!fromDate && !toDate) return data;
   
   return data.filter(item => {
-    const dateValue = item[dateField];
+    // Try multiple field names for flexibility
+    let dateValue = item[dateField];
+    
+    // If the primary field is empty, try alternative field names
+    if (!dateValue) {
+      if (dateField === 'registeredDate') {
+        dateValue = item.date || item.registrationDate;
+      } else if (dateField === 'registrationDate') {
+        dateValue = item.registeredDate || item.date;
+      }
+    }
+    
     if (!dateValue) return false;
     
-    const itemDate = new Date(dateValue);
+    // Handle both Date objects and ISO strings
+    const itemDate = dateValue instanceof Date ? dateValue : new Date(dateValue);
     if (isNaN(itemDate.getTime())) return false;
     
     // Check fromDate constraint

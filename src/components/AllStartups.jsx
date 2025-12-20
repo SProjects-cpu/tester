@@ -242,7 +242,8 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
             className="w-full pl-10 pr-8 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-magic-500 focus:border-magic-500 outline-none appearance-none cursor-pointer transition-all text-sm sm:text-base"
           >
             <option value="createdAt">Created Date</option>
-            <option value="registrationDate">Registration Date</option>
+            <option value="registeredDate">Registered Date</option>
+            <option value="onboardedDate">Onboarded Date</option>
           </select>
         </div>
         <DateRangeFilter 
