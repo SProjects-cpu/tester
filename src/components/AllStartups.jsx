@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Search, Filter, Upload, Download, ChevronDown, FileJson, FileSpreadsheet } from 'lucide-react';
-import { storage, generateId } from '../utils/storage';
+import { startupApi } from '../utils/api';
 import { exportStartupsComprehensive } from '../utils/exportUtils';
 import ExportMenu from './ExportMenu';
 import StartupCard from './StartupCard';
@@ -23,6 +23,7 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
   const [filterSector, setFilterSector] = useState(initialSectorFilter || 'all');
   const [viewMode, setViewMode] = useState('grid');
   const [selectedStartup, setSelectedStartup] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [adminAuthModal, setAdminAuthModal] = useState({
     isOpen: false,
     title: '',
@@ -58,9 +59,17 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
     filterStartups();
   }, [startups, searchTerm, filterStage, filterSector]);
 
-  const loadStartups = () => {
-    const data = storage.get('startups', []);
-    setStartups(data);
+  const loadStartups = async () => {
+    try {
+      setLoading(true);
+      const data = await startupApi.getAll();
+      setStartups(data);
+    } catch (error) {
+      console.error('Error loading startups:', error);
+      alert('Failed to load startups: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const filterStartups = () => {
@@ -85,21 +94,20 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
     setFilteredStartups(filtered);
   };
 
-  const handleAddStartup = (startupData) => {
-    const newStartup = {
-      id: generateId(),
-      ...startupData,
-      stage: 'S0',
-      status: 'Active',
-      pitchHistory: [],
-      oneOnOneHistory: [],
-      createdAt: new Date().toISOString()
-    };
-
-    const updated = [...startups, newStartup];
-    storage.set('startups', updated);
-    setStartups(updated);
-    setShowForm(false);
+  const handleAddStartup = async (startupData) => {
+    try {
+      const newStartup = await startupApi.create({
+        ...startupData,
+        stage: 'S0',
+        status: 'Active'
+      });
+      setStartups([newStartup, ...startups]);
+      setShowForm(false);
+      alert('✅ Startup registered successfully!');
+    } catch (error) {
+      console.error('Error creating startup:', error);
+      alert('❌ Failed to create startup: ' + error.message);
+    }
   };
 
   const handleImportStartups = (importedStartups) => {
@@ -108,12 +116,16 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
       title: 'Import Startups',
       message: `You are about to import ${importedStartups.length} startup(s). Please authenticate to proceed with this operation.`,
       actionType: 'warning',
-      onConfirm: () => {
-        const updated = [...startups, ...importedStartups];
-        storage.set('startups', updated);
-        setStartups(updated);
-        setShowImport(false);
-        alert(`✅ Successfully imported ${importedStartups.length} startup(s)!`);
+      onConfirm: async () => {
+        try {
+          const results = await startupApi.bulkCreate(importedStartups);
+          await loadStartups(); // Reload from database
+          setShowImport(false);
+          alert(`✅ Successfully imported ${results.results.length} startup(s)!${results.errors.length > 0 ? `\n⚠️ ${results.errors.length} failed.` : ''}`);
+        } catch (error) {
+          console.error('Error importing startups:', error);
+          alert('❌ Failed to import startups: ' + error.message);
+        }
       }
     });
   };
@@ -124,11 +136,15 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
       title: 'Edit Startup',
       message: `You are about to edit "${updatedStartup.companyName}". Please authenticate to save changes.`,
       actionType: 'warning',
-      onConfirm: () => {
-        const updated = startups.map(s => s.id === updatedStartup.id ? updatedStartup : s);
-        storage.set('startups', updated);
-        setStartups(updated);
-        alert('✅ Startup updated successfully!');
+      onConfirm: async () => {
+        try {
+          const result = await startupApi.update(updatedStartup.id, updatedStartup);
+          setStartups(startups.map(s => s.id === updatedStartup.id ? result : s));
+          alert('✅ Startup updated successfully!');
+        } catch (error) {
+          console.error('Error updating startup:', error);
+          alert('❌ Failed to update startup: ' + error.message);
+        }
       }
     });
   };
@@ -140,11 +156,15 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
       title: 'Delete Startup',
       message: `You are about to permanently delete "${startup?.companyName}". This action cannot be undone. Please authenticate to proceed.`,
       actionType: 'danger',
-      onConfirm: () => {
-        const updated = startups.filter(s => s.id !== id);
-        storage.set('startups', updated);
-        setStartups(updated);
-        alert('✅ Startup deleted successfully!');
+      onConfirm: async () => {
+        try {
+          await startupApi.delete(id);
+          setStartups(startups.filter(s => s.id !== id));
+          alert('✅ Startup deleted successfully!');
+        } catch (error) {
+          console.error('Error deleting startup:', error);
+          alert('❌ Failed to delete startup: ' + error.message);
+        }
       }
     });
   };
@@ -274,7 +294,18 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
         </div>
       )}
 
-      {filteredStartups.length === 0 && (
+      {loading && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-center py-12 sm:py-16 bg-white dark:bg-gray-800 rounded-2xl"
+        >
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading startups...</p>
+        </motion.div>
+      )}
+
+      {!loading && filteredStartups.length === 0 && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

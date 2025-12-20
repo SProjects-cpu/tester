@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Download, Plus, TrendingUp, Award, GraduationCap, IndianRupee, BarChart3, X, Eye, ChevronDown, FileJson, FileSpreadsheet } from 'lucide-react';
-import { storage } from '../utils/storage';
+import { startupApi } from '../utils/api';
 import { exportStartupsComprehensive } from '../utils/exportUtils';
 import ExportMenu from './ExportMenu';
 import StartupGridCard from './StartupGridCard';
@@ -23,6 +23,7 @@ export default function Onboarded({ isGuest = false }) {
   const [showProgressModal, setShowProgressModal] = useState(null);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [revenueData, setRevenueData] = useState({ amount: '', source: '', date: '', description: '' });
+  const [loading, setLoading] = useState(true);
   const [adminAuthModal, setAdminAuthModal] = useState({
     isOpen: false,
     title: '',
@@ -39,9 +40,17 @@ export default function Onboarded({ isGuest = false }) {
     filterStartups();
   }, [startups, searchTerm]);
 
-  const loadStartups = () => {
-    const data = storage.get('startups', []).filter(s => s.status === 'Onboarded');
-    setStartups(data);
+  const loadStartups = async () => {
+    try {
+      setLoading(true);
+      const data = await startupApi.getAll({ status: 'Onboarded' });
+      // Filter for Onboarded status on client side as well
+      setStartups(data.filter(s => s.status === 'Onboarded'));
+    } catch (error) {
+      console.error('Error loading startups:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const filterStartups = () => {
@@ -69,11 +78,14 @@ export default function Onboarded({ isGuest = false }) {
     });
   };
 
-  const handleUpdateStartup = (updatedStartup) => {
-    const allStartups = storage.get('startups', []);
-    const updated = allStartups.map(s => s.id === updatedStartup.id ? updatedStartup : s);
-    storage.set('startups', updated);
-    loadStartups();
+  const handleUpdateStartup = async (updatedStartup) => {
+    try {
+      await startupApi.update(updatedStartup.id, updatedStartup);
+      await loadStartups();
+    } catch (error) {
+      console.error('Error updating startup:', error);
+      alert('Failed to update startup: ' + error.message);
+    }
   };
 
   const handleAddAchievement = (startup) => {

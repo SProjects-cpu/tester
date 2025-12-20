@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Rocket, Users, Star, XCircle, TrendingUp, GraduationCap } from 'lucide-react';
-import { storage } from '../utils/storage';
+import { startupApi } from '../utils/api';
 import InactiveStartupNotifications from './InactiveStartupNotifications';
 
 export default function Dashboard({ onNavigate, onNavigateWithSector }) {
@@ -10,32 +10,44 @@ export default function Dashboard({ onNavigate, onNavigateWithSector }) {
     oneOnOne: 0, onboarded: 0, graduated: 0, rejected: 0, total: 0
   });
   const [sectorStats, setSectorStats] = useState({});
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const startups = storage.get('startups', []);
-    
-    const newStats = {
-      s0: startups.filter(s => s.stage === 'S0').length,
-      s1: startups.filter(s => s.stage === 'S1').length,
-      s2: startups.filter(s => s.stage === 'S2').length,
-      s3: startups.filter(s => s.stage === 'S3').length,
-      oneOnOne: startups.filter(s => s.stage === 'One-on-One').length,
-      onboarded: startups.filter(s => s.status === 'Onboarded').length,
-      graduated: startups.filter(s => s.status === 'Graduated').length,
-      rejected: startups.filter(s => s.status === 'Rejected').length,
-      total: startups.length
+    const fetchStartups = async () => {
+      try {
+        setLoading(true);
+        const startups = await startupApi.getAll();
+        
+        const newStats = {
+          s0: startups.filter(s => s.stage === 'S0').length,
+          s1: startups.filter(s => s.stage === 'S1').length,
+          s2: startups.filter(s => s.stage === 'S2').length,
+          s3: startups.filter(s => s.stage === 'S3').length,
+          oneOnOne: startups.filter(s => s.stage === 'One-on-One').length,
+          onboarded: startups.filter(s => s.status === 'Onboarded').length,
+          graduated: startups.filter(s => s.status === 'Graduated').length,
+          rejected: startups.filter(s => s.status === 'Rejected').length,
+          total: startups.length
+        };
+        
+        // Calculate sector statistics
+        const sectors = {};
+        startups.forEach(startup => {
+          if (startup.sector) {
+            sectors[startup.sector] = (sectors[startup.sector] || 0) + 1;
+          }
+        });
+        
+        setStats(newStats);
+        setSectorStats(sectors);
+      } catch (error) {
+        console.error('Error fetching startups:', error);
+      } finally {
+        setLoading(false);
+      }
     };
     
-    // Calculate sector statistics
-    const sectors = {};
-    startups.forEach(startup => {
-      if (startup.sector) {
-        sectors[startup.sector] = (sectors[startup.sector] || 0) + 1;
-      }
-    });
-    
-    setStats(newStats);
-    setSectorStats(sectors);
+    fetchStartups();
   }, []);
 
   const cards = [

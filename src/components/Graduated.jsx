@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Download, GraduationCap, Lock, TrendingUp, Award, Eye, X, ChevronDown, ChevronUp, BarChart3, FileJson, FileSpreadsheet } from 'lucide-react';
-import { storage } from '../utils/storage';
+import { startupApi } from '../utils/api';
 import { exportStartupsComprehensive } from '../utils/exportUtils';
 import ExportMenu from './ExportMenu';
 import StartupGridCard from './StartupGridCard';
@@ -19,6 +19,7 @@ export default function Graduated({ isGuest = false }) {
   const [selectedStartup, setSelectedStartup] = useState(null);
   const [showProgressModal, setShowProgressModal] = useState(null);
   const [showAchievementModal, setShowAchievementModal] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [adminAuthModal, setAdminAuthModal] = useState({
     isOpen: false,
     title: '',
@@ -35,9 +36,16 @@ export default function Graduated({ isGuest = false }) {
     filterStartups();
   }, [startups, searchTerm]);
 
-  const loadStartups = () => {
-    const data = storage.get('startups', []).filter(s => s.status === 'Graduated');
-    setStartups(data);
+  const loadStartups = async () => {
+    try {
+      setLoading(true);
+      const data = await startupApi.getAll();
+      setStartups(data.filter(s => s.status === 'Graduated'));
+    } catch (error) {
+      console.error('Error loading startups:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const filterStartups = () => {
