@@ -40,6 +40,32 @@ model Startup {
   dpiitNo          String?           @map("dpiit_no")
   recognitionDate  DateTime?         @map("recognition_date")
   bhaskarId        String?           @map("bhaskar_id")
+  
+  // Registration Info fields
+  magicCode         String?          @map("magic_code")
+  city              String?
+  stageOfIdea       String?          @map("stage_of_idea")
+  solution          String?
+  hasPatent         String?          @map("has_patent")
+  patentNumber      String?          @map("patent_number")
+  isRegistered      String?          @map("is_registered")
+  registrationDate  DateTime?        @map("registration_date")
+  socialMedia       String?          @map("social_media")
+  founderAge        Int?             @map("founder_age")
+  founderGender     String?          @map("founder_gender")
+  college           String?
+  address           String?
+  referredFrom      String?          @map("referred_from")
+  sessionNumber     String?          @map("session_number")
+  registeredDate    DateTime?        @map("registered_date")
+  month             String?
+  timeSlot          String?          @map("time_slot")
+  clinicalMentoring Boolean?         @default(false) @map("clinical_mentoring")
+  followUpRemark    String?          @map("follow_up_remark")
+  domain            String?
+  logo              String?
+  officePhoto       String?          @map("office_photo")
+  
   achievements     Achievement[]
   agreements       Agreement[]
   oneOnOneMeetings OneOnOneMeeting[]
