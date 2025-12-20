@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Clock, Plus, Check, X, Grid, List } from 'lucide-react';
-import { storage } from '../utils/storage';
+import { startupApi, smcApi } from '../utils/api';
 import { exportSMCSchedulesToPDF } from '../utils/exportUtils';
-import { exportSMCSchedules } from '../utils/storage';
 import ExportMenu from './ExportMenu';
 import GuestRestrictedButton from './GuestRestrictedButton';
 import ConfirmationModal from './ConfirmationModal';
@@ -11,6 +10,7 @@ import ConfirmationModal from './ConfirmationModal';
 export default function SMCScheduling({ isGuest = false }) {
   const [startups, setStartups] = useState([]);
   const [schedules, setSchedules] = useState([]);
+  const [loading, setLoading] = useState(true);
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth();
   
@@ -21,7 +21,7 @@ export default function SMCScheduling({ isGuest = false }) {
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [showCompletionForm, setShowCompletionForm] = useState(null);
   const [showHistoryModal, setShowHistoryModal] = useState(null);
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+  const [viewMode, setViewMode] = useState('grid');
   const [completionData, setCompletionData] = useState({
     panelistName: '',
     time: '',
@@ -38,18 +38,15 @@ export default function SMCScheduling({ isGuest = false }) {
   const handleExport = (format) => {
     if (format === 'pdf') {
       exportSMCSchedulesToPDF();
-    } else if (format === 'json') {
-      exportSMCSchedules();
     } else {
       // CSV export
-      const headers = ['Date', 'Time Slot', 'Company', 'Magic Code', 'Status', 'Panelist', 'Feedback'];
+      const headers = ['Date', 'Time Slot', 'Company', 'Status', 'Panelist', 'Feedback'];
       const rows = schedules.map(schedule => {
         const startup = startups.find(s => s.id === schedule.startupId);
         return [
           schedule.date || '',
           schedule.timeSlot || '',
-          startup?.companyName || 'Unknown',
-          startup?.magicCode || '',
+          startup?.companyName || schedule.startup?.companyName || 'Unknown',
           schedule.status || '',
           schedule.completionData?.panelistName || '',
           schedule.completionData?.feedback || ''
@@ -71,12 +68,24 @@ export default function SMCScheduling({ isGuest = false }) {
     loadData();
   }, []);
 
-  const loadData = () => {
-    const startupsData = storage.get('startups', []).filter(
-      s => s.status === 'Active' && ['S0', 'S1', 'S2'].includes(s.stage)
-    );
-    setStartups(startupsData);
-    setSchedules(storage.get('smcSchedules', []));
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [startupsData, schedulesData] = await Promise.all([
+        startupApi.getAll(),
+        smcApi.getAll()
+      ]);
+      // Filter startups for SMC eligibility
+      const eligibleStartups = startupsData.filter(
+        s => s.status === 'Active' && ['S0', 'S1', 'S2'].includes(s.stage)
+      );
+      setStartups(eligibleStartups);
+      setSchedules(schedulesData);
+    } catch (error) {
+      console.error('Error loading data:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getSaturdays = (month, year) => {
@@ -107,7 +116,7 @@ export default function SMCScheduling({ isGuest = false }) {
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
 
-  const handleSchedule = () => {
+  const handleSchedule = async () => {
     if (!selectedDate || !selectedSlot || !selectedStartup) {
       alert('Please select date, time slot, and startup');
       return;
@@ -151,12 +160,16 @@ export default function SMCScheduling({ isGuest = false }) {
       createdAt: new Date().toISOString()
     };
 
-    const updated = [...schedules, newSchedule];
-    storage.set('smcSchedules', updated);
-    setSchedules(updated);
-    setSelectedStartup(null);
-    setSelectedSlot(null);
-    alert('✅ SMC scheduled successfully!');
+    try {
+      const created = await smcApi.create(newSchedule);
+      setSchedules([...schedules, created]);
+      setSelectedStartup(null);
+      setSelectedSlot(null);
+      alert('✅ SMC scheduled successfully!');
+    } catch (error) {
+      console.error('Error scheduling SMC:', error);
+      alert('❌ Failed to schedule SMC: ' + error.message);
+    }
   };
 
   const handleComplete = (schedule) => {
@@ -164,13 +177,16 @@ export default function SMCScheduling({ isGuest = false }) {
     setCompletionData({ panelistName: '', time: '', feedback: '' });
   };
 
-  const handleNotDone = (schedule) => {
+  const handleNotDone = async (schedule) => {
     if (confirm('Mark this meeting as "Not Done"? This will remove the scheduled meeting.')) {
-      const updatedSchedules = schedules.filter(s => s.id !== schedule.id);
-      storage.set('smcSchedules', updatedSchedules);
-      setSchedules(updatedSchedules);
-      loadData();
-      alert('Meeting marked as not done and removed from schedule.');
+      try {
+        await smcApi.delete(schedule.id);
+        setSchedules(schedules.filter(s => s.id !== schedule.id));
+        alert('Meeting marked as not done and removed from schedule.');
+      } catch (error) {
+        console.error('Error removing schedule:', error);
+        alert('❌ Failed to remove schedule: ' + error.message);
+      }
     }
   };
 
@@ -197,38 +213,26 @@ export default function SMCScheduling({ isGuest = false }) {
       title: 'Confirm Stage Change',
       message: `Are you sure you want to move "${startup.companyName}" from ${startup.stage} to ${newStage}? This action will update the startup's stage and add this pitch to their history.`,
       type: 'info',
-      onConfirm: () => {
-        // Add pitch history
-        const pitchHistory = startup.pitchHistory || [];
-        pitchHistory.push({
-          stage: newStage,
-          date: schedule.date,
-          time: completionData.time,
-          panelistName: completionData.panelistName,
-          feedback: completionData.feedback
-        });
+      onConfirm: async () => {
+        try {
+          // Update startup stage via API
+          await startupApi.update(startup.id, { stage: newStage });
 
-        // Update startup
-        const allStartups = storage.get('startups', []);
-        const updatedStartups = allStartups.map(s => 
-          s.id === startup.id 
-            ? { ...s, stage: newStage, pitchHistory }
-            : s
-        );
-        storage.set('startups', updatedStartups);
+          // Mark schedule as completed via API
+          await smcApi.update(schedule.id, {
+            ...schedule,
+            status: 'Completed',
+            completionData
+          });
 
-        // Mark schedule as completed
-        const updatedSchedules = schedules.map(s =>
-          s.id === schedule.id
-            ? { ...s, status: 'Completed', completionData }
-            : s
-        );
-        storage.set('smcSchedules', updatedSchedules);
-
-        setSchedules(updatedSchedules);
-        setShowCompletionForm(null);
-        loadData();
-        alert('SMC marked as completed and startup stage updated!');
+          // Reload data
+          await loadData();
+          setShowCompletionForm(null);
+          alert('SMC marked as completed and startup stage updated!');
+        } catch (error) {
+          console.error('Error completing SMC:', error);
+          alert('❌ Failed to complete SMC: ' + error.message);
+        }
       }
     });
   };

@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Clock, Plus, Check, X, Users, CheckCircle, XCircle, Grid, List } from 'lucide-react';
-import { storage } from '../utils/storage';
+import { startupApi, oneOnOneApi } from '../utils/api';
 import { exportOneOnOneSessionsToPDF } from '../utils/exportUtils';
-import { exportOneOnOneSessions } from '../utils/storage';
 import ExportMenu from './ExportMenu';
 import GuestRestrictedButton from './GuestRestrictedButton';
 import RejectionModal from './RejectionModal';
@@ -12,6 +11,7 @@ import OnboardingModal from './OnboardingModal';
 export default function OneOnOneScheduling({ isGuest = false }) {
   const [startups, setStartups] = useState([]);
   const [schedules, setSchedules] = useState([]);
+  const [loading, setLoading] = useState(true);
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth();
   
@@ -24,7 +24,7 @@ export default function OneOnOneScheduling({ isGuest = false }) {
   const [showRejectionModal, setShowRejectionModal] = useState(null);
   const [showHistoryModal, setShowHistoryModal] = useState(null);
   const [showOnboardingModal, setShowOnboardingModal] = useState(null);
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+  const [viewMode, setViewMode] = useState('grid');
   const [completionData, setCompletionData] = useState({
     mentorName: '',
     feedback: '',
@@ -34,18 +34,15 @@ export default function OneOnOneScheduling({ isGuest = false }) {
   const handleExport = (format) => {
     if (format === 'pdf') {
       exportOneOnOneSessionsToPDF();
-    } else if (format === 'json') {
-      exportOneOnOneSessions();
     } else {
       // CSV export
-      const headers = ['Date', 'Time', 'Company', 'Magic Code', 'Status', 'Mentor', 'Progress', 'Feedback'];
+      const headers = ['Date', 'Time', 'Company', 'Status', 'Mentor', 'Progress', 'Feedback'];
       const rows = schedules.map(schedule => {
         const startup = startups.find(s => s.id === schedule.startupId);
         return [
           schedule.date || '',
           schedule.time || '',
-          startup?.companyName || 'Unknown',
-          startup?.magicCode || '',
+          startup?.companyName || schedule.startup?.companyName || 'Unknown',
           schedule.status || '',
           schedule.completionData?.mentorName || '',
           schedule.completionData?.progress || '',
@@ -68,12 +65,24 @@ export default function OneOnOneScheduling({ isGuest = false }) {
     loadData();
   }, []);
 
-  const loadData = () => {
-    const startupsData = storage.get('startups', []).filter(
-      s => s.stage === 'One-on-One' && s.status === 'Active'
-    );
-    setStartups(startupsData);
-    setSchedules(storage.get('oneOnOneSchedules', []));
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [startupsData, schedulesData] = await Promise.all([
+        startupApi.getAll(),
+        oneOnOneApi.getAll()
+      ]);
+      // Filter startups for One-on-One eligibility
+      const eligibleStartups = startupsData.filter(
+        s => s.stage === 'One-on-One' && s.status === 'Active'
+      );
+      setStartups(eligibleStartups);
+      setSchedules(schedulesData);
+    } catch (error) {
+      console.error('Error loading data:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getWeekdays = (month, year) => {
@@ -105,28 +114,30 @@ export default function OneOnOneScheduling({ isGuest = false }) {
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
 
-  const handleSchedule = () => {
+  const handleSchedule = async () => {
     if (!selectedDate || !selectedTime || !selectedStartup) {
       alert('Please select date, time, and startup');
       return;
     }
 
     const newSchedule = {
-      id: Date.now().toString(),
       startupId: selectedStartup,
       date: selectedDate,
       time: selectedTime,
-      status: 'Scheduled',
-      createdAt: new Date().toISOString()
+      status: 'Scheduled'
     };
 
-    const updated = [...schedules, newSchedule];
-    storage.set('oneOnOneSchedules', updated);
-    setSchedules(updated);
-    setSelectedStartup(null);
-    setSelectedDate('');
-    setSelectedTime('');
-    alert('One-on-One meeting scheduled successfully!');
+    try {
+      const created = await oneOnOneApi.create(newSchedule);
+      setSchedules([...schedules, created]);
+      setSelectedStartup(null);
+      setSelectedDate('');
+      setSelectedTime('');
+      alert('✅ One-on-One meeting scheduled successfully!');
+    } catch (error) {
+      console.error('Error scheduling meeting:', error);
+      alert('❌ Failed to schedule meeting: ' + error.message);
+    }
   };
 
   const handleComplete = (schedule) => {
@@ -134,101 +145,85 @@ export default function OneOnOneScheduling({ isGuest = false }) {
     setCompletionData({ mentorName: '', feedback: '', progress: '' });
   };
 
-  const submitCompletion = () => {
+  const submitCompletion = async () => {
     if (!completionData.mentorName || !completionData.feedback) {
       alert('Please fill mentor name and feedback');
       return;
     }
 
     const schedule = showCompletionForm;
-    const startup = startups.find(s => s.id === schedule.startupId);
     
-    if (!startup) return;
+    try {
+      // Mark schedule as completed via API
+      await oneOnOneApi.update(schedule.id, {
+        ...schedule,
+        status: 'Completed',
+        completionData
+      });
 
-    // Add to one-on-one history
-    const oneOnOneHistory = startup.oneOnOneHistory || [];
-    oneOnOneHistory.push({
-      date: schedule.date,
-      time: schedule.time,
-      mentorName: completionData.mentorName,
-      feedback: completionData.feedback,
-      progress: completionData.progress,
-      completedAt: new Date().toISOString()
-    });
-
-    // Update startup
-    const allStartups = storage.get('startups', []);
-    const updatedStartups = allStartups.map(s => 
-      s.id === startup.id 
-        ? { ...s, oneOnOneHistory, lastMeetingDate: schedule.date }
-        : s
-    );
-    storage.set('startups', updatedStartups);
-
-    // Mark schedule as completed
-    const updatedSchedules = schedules.map(s =>
-      s.id === schedule.id
-        ? { ...s, status: 'Completed', completionData }
-        : s
-    );
-    storage.set('oneOnOneSchedules', updatedSchedules);
-
-    setSchedules(updatedSchedules);
-    setShowCompletionForm(null);
-    loadData();
-    alert('Meeting marked as completed!');
+      // Reload data
+      await loadData();
+      setShowCompletionForm(null);
+      alert('✅ Meeting marked as completed!');
+    } catch (error) {
+      console.error('Error completing meeting:', error);
+      alert('❌ Failed to complete meeting: ' + error.message);
+    }
   };
 
-  const handleCancelSchedule = (schedule) => {
+  const handleCancelSchedule = async (schedule) => {
     if (!confirm('Are you sure you want to cancel this scheduled meeting?')) {
       return;
     }
 
-    // Remove the schedule
-    const updatedSchedules = schedules.filter(s => s.id !== schedule.id);
-    storage.set('oneOnOneSchedules', updatedSchedules);
-    setSchedules(updatedSchedules);
-    alert('Meeting cancelled successfully!');
+    try {
+      await oneOnOneApi.delete(schedule.id);
+      setSchedules(schedules.filter(s => s.id !== schedule.id));
+      alert('✅ Meeting cancelled successfully!');
+    } catch (error) {
+      console.error('Error cancelling meeting:', error);
+      alert('❌ Failed to cancel meeting: ' + error.message);
+    }
   };
 
   const handleOnboard = (startup) => {
     setShowOnboardingModal(startup);
   };
 
-  const confirmOnboard = (onboardingData) => {
+  const confirmOnboard = async (onboardingData) => {
     const startup = showOnboardingModal;
-    const allStartups = storage.get('startups', []);
-    const updated = allStartups.map(s =>
-      s.id === startup.id ? { 
-        ...s, 
+    try {
+      await startupApi.update(startup.id, { 
         status: 'Onboarded', 
         onboardingDescription: onboardingData.description,
         agreementDate: onboardingData.agreementDate,
         engagementMedium: onboardingData.engagementMedium,
         onboardedDate: onboardingData.onboardedDate
-      } : s
-    );
-    storage.set('startups', updated);
-    setShowOnboardingModal(null);
-    loadData();
-    alert(`${startup.companyName} has been onboarded successfully!`);
+      });
+      setShowOnboardingModal(null);
+      await loadData();
+      alert(`✅ ${startup.companyName} has been onboarded successfully!`);
+    } catch (error) {
+      console.error('Error onboarding startup:', error);
+      alert('❌ Failed to onboard startup: ' + error.message);
+    }
   };
 
-  const handleReject = (startup, rejectionRemark) => {
-    const allStartups = storage.get('startups', []);
-    const updated = allStartups.map(s =>
-      s.id === startup.id ? { 
-        ...s, 
+  const handleReject = async (startup, rejectionRemark) => {
+    try {
+      await startupApi.update(startup.id, { 
         status: 'Rejected',
         rejectionRemark,
         rejectedDate: new Date().toISOString(),
         rejectedFromStage: 'One-on-One'
-      } : s
-    );
-    storage.set('startups', updated);
-    setShowRejectionModal(null);
-    loadData();
-    alert(`${startup.companyName} has been rejected.`);
+      });
+      setShowRejectionModal(null);
+      await loadData();
+      alert(`${startup.companyName} has been rejected.`);
+    } catch (error) {
+      console.error('Error rejecting startup:', error);
+      alert('❌ Failed to reject startup: ' + error.message);
+    }
   };
 
   const getSchedulesForStartup = (startupId) => {

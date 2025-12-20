@@ -176,4 +176,62 @@ export const authApi = {
   },
 };
 
-export default { startupApi, authApi };
+// SMC Meeting API methods
+export const smcApi = {
+  getAll: async (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    const endpoint = queryString ? `/smc?${queryString}` : '/smc';
+    return apiRequest(endpoint);
+  },
+
+  create: async (data) => {
+    return apiRequest('/smc', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  update: async (id, data) => {
+    return apiRequest(`/smc/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  delete: async (id) => {
+    return apiRequest(`/smc/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+// One-on-One Meeting API methods
+export const oneOnOneApi = {
+  getAll: async (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    const endpoint = queryString ? `/one-on-one?${queryString}` : '/one-on-one';
+    return apiRequest(endpoint);
+  },
+
+  create: async (data) => {
+    return apiRequest('/one-on-one', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  update: async (id, data) => {
+    return apiRequest(`/one-on-one/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  delete: async (id) => {
+    return apiRequest(`/one-on-one/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+export default { startupApi, authApi, smcApi, oneOnOneApi };

@@ -318,10 +318,9 @@ export default function Settings({ darkMode, toggleDarkMode, isGuest = false }) 
       actionType: 'danger',
       onConfirm: async () => {
         try {
-          const token = localStorage.getItem('authToken');
-          const API_URL = import.meta.env.VITE_API_URL || '/api';
+          const token = localStorage.getItem('token');
           
-          const response = await fetch(`${API_URL}/admin/clear-all-data`, {
+          const response = await fetch(`/api/admin/clear-all-data`, {
             method: 'DELETE',
             headers: {
               'Authorization': `Bearer ${token}`,
