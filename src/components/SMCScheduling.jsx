@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Clock, Plus, Check, X, Grid, List } from 'lucide-react';
 import { startupApi, smcApi } from '../utils/api';
-import { exportSMCSchedulesToPDF } from '../utils/exportUtils';
+import { exportSMCSchedulesToPDF, filterByDateRange, generateExportFileName } from '../utils/exportUtils';
 import ExportMenu from './ExportMenu';
 import GuestRestrictedButton from './GuestRestrictedButton';
 import ConfirmationModal from './ConfirmationModal';
@@ -35,13 +35,17 @@ export default function SMCScheduling({ isGuest = false }) {
     type: 'warning'
   });
 
-  const handleExport = (format) => {
+  const handleExport = (format, dateRange = { fromDate: null, toDate: null }) => {
+    // Filter schedules by date field
+    const filteredSchedules = filterByDateRange(schedules, 'date', dateRange.fromDate, dateRange.toDate);
+    const fileName = generateExportFileName('SMC-Schedules', dateRange.fromDate, dateRange.toDate);
+    
     if (format === 'pdf') {
-      exportSMCSchedulesToPDF();
+      exportSMCSchedulesToPDF(filteredSchedules, startups, dateRange.fromDate, dateRange.toDate);
     } else {
       // CSV export
       const headers = ['Date', 'Time Slot', 'Company', 'Status', 'Panelist', 'Feedback'];
-      const rows = schedules.map(schedule => {
+      const rows = filteredSchedules.map(schedule => {
         const startup = startups.find(s => s.id === schedule.startupId);
         return [
           schedule.date || '',
@@ -57,11 +61,11 @@ export default function SMCScheduling({ isGuest = false }) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `MAGIC-SMC-Schedules-${new Date().toISOString().split('T')[0]}.csv`;
+      a.download = `${fileName}.csv`;
       a.click();
       URL.revokeObjectURL(url);
     }
-    alert(`SMC schedules exported as ${format.toUpperCase()}!`);
+    alert(`${filteredSchedules.length} SMC schedule(s) exported as ${format.toUpperCase()}!`);
   };
 
   useEffect(() => {

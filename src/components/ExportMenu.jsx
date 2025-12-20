@@ -1,14 +1,17 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Download, ChevronDown, FileJson, FileSpreadsheet, FileText } from 'lucide-react';
+import DateRangeFilter from './DateRangeFilter';
 
 export default function ExportMenu({ 
   onExport, 
   title = 'Export',
   formats = ['pdf', 'json', 'csv', 'excel'],
+  showDateFilter = true,
   className = ''
 }) {
   const [showMenu, setShowMenu] = useState(false);
+  const [dateRange, setDateRange] = useState({ fromDate: null, toDate: null });
 
   const formatConfig = {
     pdf: {
@@ -41,8 +44,12 @@ export default function ExportMenu({
     }
   };
 
+  const handleDateRangeChange = (range) => {
+    setDateRange(range);
+  };
+
   const handleExport = (format) => {
-    onExport(format);
+    onExport(format, dateRange);
     setShowMenu(false);
   };
 
@@ -73,31 +80,41 @@ export default function ExportMenu({
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden"
+              className="absolute right-0 mt-2 w-72 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden"
             >
-              {formats.map((format) => {
-                const config = formatConfig[format];
-                const Icon = config.icon;
-                
-                return (
-                  <motion.button
-                    key={format}
-                    whileHover={{ backgroundColor: 'rgba(139, 92, 246, 0.05)' }}
-                    onClick={() => handleExport(format)}
-                    className={`w-full flex items-center space-x-3 px-4 py-3 text-left ${config.hoverBg} transition-colors`}
-                  >
-                    <Icon className={`w-5 h-5 ${config.color} flex-shrink-0`} />
-                    <div>
-                      <p className="font-semibold text-sm text-gray-900 dark:text-white">
-                        {config.label}
-                      </p>
-                      <p className="text-xs text-gray-600 dark:text-gray-400">
-                        {config.description}
-                      </p>
-                    </div>
-                  </motion.button>
-                );
-              })}
+              {/* Date Range Filter */}
+              {showDateFilter && (
+                <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                  <DateRangeFilter onDateRangeChange={handleDateRangeChange} />
+                </div>
+              )}
+              
+              {/* Export Format Options */}
+              <div className="py-1">
+                {formats.map((format) => {
+                  const config = formatConfig[format];
+                  const Icon = config.icon;
+                  
+                  return (
+                    <motion.button
+                      key={format}
+                      whileHover={{ backgroundColor: 'rgba(139, 92, 246, 0.05)' }}
+                      onClick={() => handleExport(format)}
+                      className={`w-full flex items-center space-x-3 px-4 py-3 text-left ${config.hoverBg} transition-colors`}
+                    >
+                      <Icon className={`w-5 h-5 ${config.color} flex-shrink-0`} />
+                      <div>
+                        <p className="font-semibold text-sm text-gray-900 dark:text-white">
+                          {config.label}
+                        </p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">
+                          {config.description}
+                        </p>
+                      </div>
+                    </motion.button>
+                  );
+                })}
+              </div>
             </motion.div>
           </>
         )}

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { AlertTriangle, Clock, Mail, Phone, Calendar, TrendingDown, RefreshCw, Download, FileJson, FileSpreadsheet, ChevronDown } from 'lucide-react';
 import { startupApi } from '../utils/api';
-import { exportStartupsComprehensive } from '../utils/exportUtils';
+import { exportStartupsComprehensive, filterByDateRange, generateExportFileName } from '../utils/exportUtils';
 import ExportMenu from './ExportMenu';
 
 export default function InactiveStartups() {
@@ -10,9 +10,16 @@ export default function InactiveStartups() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
 
-  const handleExport = (format) => {
-    exportStartupsComprehensive(filteredStartups, format, 'Inactive-Startups');
-    alert(`Inactive startups exported as ${format.toUpperCase()}!`);
+  const handleExport = (format, dateRange = { fromDate: null, toDate: null }) => {
+    // Filter by updatedAt field (fallback to createdAt)
+    let dataToExport = filterByDateRange(filteredStartups, 'updatedAt', dateRange.fromDate, dateRange.toDate);
+    // If no results with updatedAt, try createdAt
+    if (dataToExport.length === 0 && (dateRange.fromDate || dateRange.toDate)) {
+      dataToExport = filterByDateRange(filteredStartups, 'createdAt', dateRange.fromDate, dateRange.toDate);
+    }
+    const fileName = generateExportFileName('Inactive-Startups', dateRange.fromDate, dateRange.toDate);
+    exportStartupsComprehensive(dataToExport, format, fileName.replace('MAGIC-', ''));
+    alert(`${dataToExport.length} inactive startup(s) exported as ${format.toUpperCase()}!`);
   };
 
   useEffect(() => {

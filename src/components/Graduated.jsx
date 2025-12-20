@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Download, GraduationCap, Lock, TrendingUp, Award, Eye, X, ChevronDown, ChevronUp, BarChart3, FileJson, FileSpreadsheet } from 'lucide-react';
 import { startupApi } from '../utils/api';
-import { exportStartupsComprehensive } from '../utils/exportUtils';
+import { exportStartupsComprehensive, filterByDateRange, generateExportFileName } from '../utils/exportUtils';
 import ExportMenu from './ExportMenu';
 import StartupGridCard from './StartupGridCard';
 import ViewToggle from './ViewToggle';
@@ -60,15 +60,18 @@ export default function Graduated({ isGuest = false }) {
     setFilteredStartups(filtered);
   };
 
-  const handleExport = (format) => {
+  const handleExport = (format, dateRange = { fromDate: null, toDate: null }) => {
     setAdminAuthModal({
       isOpen: true,
       title: 'Export Graduated Startups',
       message: 'Please authenticate to export graduated startup data. This ensures data security and tracks export activities.',
       actionType: 'info',
       onConfirm: () => {
-        exportStartupsComprehensive(filteredStartups, format, 'Graduated-Startups');
-        alert(`Graduated startups exported as ${format.toUpperCase()}!`);
+        // Filter by graduatedDate field
+        const dataToExport = filterByDateRange(filteredStartups, 'graduatedDate', dateRange.fromDate, dateRange.toDate);
+        const fileName = generateExportFileName('Graduated-Startups', dateRange.fromDate, dateRange.toDate);
+        exportStartupsComprehensive(dataToExport, format, fileName.replace('MAGIC-', ''));
+        alert(`${dataToExport.length} graduated startup(s) exported as ${format.toUpperCase()}!`);
       }
     });
   };

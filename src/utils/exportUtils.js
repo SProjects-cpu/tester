@@ -2,6 +2,97 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { storage } from './storage';
 
+// ==================== DATE FILTERING UTILITIES ====================
+
+/**
+ * Filter data by date range
+ * @param {Array} data - Array of objects to filter
+ * @param {string} dateField - The field name containing the date to filter by
+ * @param {string|null} fromDate - Start date (ISO format) or null
+ * @param {string|null} toDate - End date (ISO format) or null
+ * @returns {Array} Filtered array
+ */
+export const filterByDateRange = (data, dateField, fromDate, toDate) => {
+  if (!data || !Array.isArray(data)) return [];
+  if (!fromDate && !toDate) return data;
+  
+  return data.filter(item => {
+    const dateValue = item[dateField];
+    if (!dateValue) return false;
+    
+    const itemDate = new Date(dateValue);
+    if (isNaN(itemDate.getTime())) return false;
+    
+    // Check fromDate constraint
+    if (fromDate) {
+      const from = new Date(fromDate);
+      from.setHours(0, 0, 0, 0);
+      if (itemDate < from) return false;
+    }
+    
+    // Check toDate constraint (include full day)
+    if (toDate) {
+      const to = new Date(toDate);
+      to.setHours(23, 59, 59, 999);
+      if (itemDate > to) return false;
+    }
+    
+    return true;
+  });
+};
+
+/**
+ * Generate export filename with date range
+ * @param {string} baseName - Base name for the file (e.g., "All-Startups")
+ * @param {string|null} fromDate - Start date (ISO format) or null
+ * @param {string|null} toDate - End date (ISO format) or null
+ * @returns {string} Generated filename without extension
+ */
+export const generateExportFileName = (baseName, fromDate, toDate) => {
+  const formatDateForFilename = (date) => {
+    const d = new Date(date);
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}-${month}-${year}`;
+  };
+  
+  let fileName = `MAGIC-${baseName}`;
+  
+  if (fromDate || toDate) {
+    fileName += '-';
+    if (fromDate) fileName += formatDateForFilename(fromDate);
+    if (fromDate && toDate) fileName += '-to-';
+    else if (toDate) fileName += 'to-';
+    if (toDate) fileName += formatDateForFilename(toDate);
+  }
+  
+  fileName += `-${new Date().toISOString().split('T')[0]}`;
+  return fileName;
+};
+
+/**
+ * Format date range for display in reports
+ * @param {string|null} fromDate - Start date (ISO format) or null
+ * @param {string|null} toDate - End date (ISO format) or null
+ * @returns {string} Formatted date range string
+ */
+export const formatDateRangeDisplay = (fromDate, toDate) => {
+  const formatDateDisplay = (date) => {
+    const d = new Date(date);
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}-${month}-${year}`;
+  };
+  
+  if (!fromDate && !toDate) return '';
+  if (fromDate && toDate) return `${formatDateDisplay(fromDate)} to ${formatDateDisplay(toDate)}`;
+  if (fromDate) return `From ${formatDateDisplay(fromDate)}`;
+  if (toDate) return `Until ${formatDateDisplay(toDate)}`;
+  return '';
+};
+
 // Helper function to format date
 const formatDate = (date) => {
   if (!date) return 'N/A';
@@ -24,7 +115,7 @@ const escapeCSV = (value) => {
 
 // ==================== PDF EXPORTS ====================
 
-export const exportStartupsToPDF = (startups, title = 'Startups Report') => {
+export const exportStartupsToPDF = (startups, title = 'Startups Report', fromDate = null, toDate = null) => {
   if (!startups || startups.length === 0) {
     alert('No startups to export');
     return;
@@ -54,6 +145,14 @@ export const exportStartupsToPDF = (startups, title = 'Startups Report') => {
     doc.text(`Generated: ${formatDate(new Date())}`, 14, 22);
     doc.text(`Total Startups: ${startups.length}`, 14, 27);
     
+    // Add date range if specified
+    const dateRangeText = formatDateRangeDisplay(fromDate, toDate);
+    let tableStartY = 32;
+    if (dateRangeText) {
+      doc.text(`Date Range: ${dateRangeText}`, 14, 32);
+      tableStartY = 37;
+    }
+    
     // Prepare table data - handle both field name variations
     const tableData = startups.map(s => {
       const totalRevenue = s.totalRevenue || s.revenueGenerated || (s.revenueHistory?.reduce((sum, r) => sum + (r.amount || 0), 0)) || 0;
@@ -72,7 +171,7 @@ export const exportStartupsToPDF = (startups, title = 'Startups Report') => {
     
     // Add table
     autoTable(doc, {
-      startY: 32,
+      startY: tableStartY,
       head: [['Magic Code', 'Company', 'Founder', 'City', 'Sector', 'Stage', 'Status', 'Achievements', 'Revenue']],
       body: tableData,
       theme: 'striped',
@@ -280,7 +379,7 @@ export const exportDetailedStartupPDF = (startup) => {
   }
 };
 
-export const exportSMCSchedulesToPDF = (schedules = null, startups = null) => {
+export const exportSMCSchedulesToPDF = (schedules = null, startups = null, fromDate = null, toDate = null) => {
   // Try to get data from parameters first, then fallback to localStorage
   const smcData = schedules || storage.get('smcSchedules', []);
   const startupsData = startups || storage.get('startups', []);
@@ -302,6 +401,14 @@ export const exportSMCSchedulesToPDF = (schedules = null, startups = null) => {
     doc.text(`Generated: ${formatDate(new Date())}`, 14, 22);
     doc.text(`Total Schedules: ${smcData.length}`, 14, 27);
     
+    // Add date range if specified
+    const dateRangeText = formatDateRangeDisplay(fromDate, toDate);
+    let tableStartY = 32;
+    if (dateRangeText) {
+      doc.text(`Date Range: ${dateRangeText}`, 14, 32);
+      tableStartY = 37;
+    }
+    
     const tableData = smcData.map(schedule => {
       const startup = startupsData.find(s => s.id === schedule.startupId);
       return [
@@ -316,7 +423,7 @@ export const exportSMCSchedulesToPDF = (schedules = null, startups = null) => {
     });
     
     autoTable(doc, {
-      startY: 32,
+      startY: tableStartY,
       head: [['Date', 'Time', 'Company', 'Magic Code', 'Status', 'Attendees', 'Agenda']],
       body: tableData,
       theme: 'striped',
@@ -324,7 +431,8 @@ export const exportSMCSchedulesToPDF = (schedules = null, startups = null) => {
       styles: { fontSize: 8, cellPadding: 2 }
     });
     
-    doc.save(`MAGIC-SMC-Schedules-${new Date().toISOString().split('T')[0]}.pdf`);
+    const fileName = generateExportFileName('SMC-Schedules', fromDate, toDate);
+    doc.save(`${fileName}.pdf`);
     return true;
   } catch (error) {
     console.error('Error exporting SMC PDF:', error);
@@ -333,7 +441,7 @@ export const exportSMCSchedulesToPDF = (schedules = null, startups = null) => {
   }
 };
 
-export const exportOneOnOneSessionsToPDF = (sessions = null, startups = null) => {
+export const exportOneOnOneSessionsToPDF = (sessions = null, startups = null, fromDate = null, toDate = null) => {
   // Try to get data from parameters first, then fallback to localStorage
   const sessionsData = sessions || storage.get('oneOnOneSchedules', []);
   const startupsData = startups || storage.get('startups', []);
@@ -355,6 +463,14 @@ export const exportOneOnOneSessionsToPDF = (sessions = null, startups = null) =>
     doc.text(`Generated: ${formatDate(new Date())}`, 14, 22);
     doc.text(`Total Sessions: ${sessionsData.length}`, 14, 27);
     
+    // Add date range if specified
+    const dateRangeText = formatDateRangeDisplay(fromDate, toDate);
+    let tableStartY = 32;
+    if (dateRangeText) {
+      doc.text(`Date Range: ${dateRangeText}`, 14, 32);
+      tableStartY = 37;
+    }
+    
     const tableData = sessionsData.map(session => {
       const startup = startupsData.find(s => s.id === session.startupId);
       return [
@@ -369,7 +485,7 @@ export const exportOneOnOneSessionsToPDF = (sessions = null, startups = null) =>
     });
     
     autoTable(doc, {
-      startY: 32,
+      startY: tableStartY,
       head: [['Date', 'Time', 'Company', 'Magic Code', 'Status', 'Mentor', 'Topic']],
       body: tableData,
       theme: 'striped',
@@ -377,7 +493,8 @@ export const exportOneOnOneSessionsToPDF = (sessions = null, startups = null) =>
       styles: { fontSize: 8, cellPadding: 2 }
     });
     
-    doc.save(`MAGIC-OneOnOne-Sessions-${new Date().toISOString().split('T')[0]}.pdf`);
+    const fileName = generateExportFileName('OneOnOne-Sessions', fromDate, toDate);
+    doc.save(`${fileName}.pdf`);
     return true;
   } catch (error) {
     console.error('Error exporting One-on-One PDF:', error);
@@ -577,21 +694,26 @@ export const exportToJSON = (data, filename) => {
 
 // ==================== COMPREHENSIVE EXPORT FUNCTION ====================
 
-export const exportStartupsComprehensive = (startups, format, title = 'Startups') => {
+export const exportStartupsComprehensive = (startups, format, title = 'Startups', fromDate = null, toDate = null) => {
   if (!startups || startups.length === 0) {
     alert('No startups to export');
     return;
   }
   
+  const dateRangeText = formatDateRangeDisplay(fromDate, toDate);
+  
   switch (format) {
     case 'pdf':
-      exportStartupsToPDF(startups, title);
+      exportStartupsToPDF(startups, title, fromDate, toDate);
       break;
     case 'json':
       exportToJSON({
         startups,
         exportDate: new Date().toISOString(),
         totalCount: startups.length,
+        dateRange: dateRangeText || 'All dates',
+        fromDate: fromDate || null,
+        toDate: toDate || null,
         version: '1.0.0'
       }, `MAGIC-${title}`);
       break;

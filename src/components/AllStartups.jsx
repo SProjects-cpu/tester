@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Search, Filter } from 'lucide-react';
 import { startupApi } from '../utils/api';
-import { exportStartupsComprehensive } from '../utils/exportUtils';
+import { exportStartupsComprehensive, filterByDateRange, generateExportFileName } from '../utils/exportUtils';
 import ExportMenu from './ExportMenu';
 import StartupCard from './StartupCard';
 import StartupGridCard from './StartupGridCard';
@@ -30,15 +30,18 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
     actionType: 'warning'
   });
 
-  const handleExport = (format) => {
+  const handleExport = (format, dateRange = { fromDate: null, toDate: null }) => {
     setAdminAuthModal({
       isOpen: true,
       title: 'Export Startups',
       message: 'Please authenticate to export startup data. This ensures data security and tracks export activities.',
       actionType: 'info',
       onConfirm: () => {
-        exportStartupsComprehensive(filteredStartups, format, 'All-Startups');
-        alert(`All startups exported as ${format.toUpperCase()}!`);
+        // Filter by createdAt date field
+        const dataToExport = filterByDateRange(filteredStartups, 'createdAt', dateRange.fromDate, dateRange.toDate);
+        const fileName = generateExportFileName('All-Startups', dateRange.fromDate, dateRange.toDate);
+        exportStartupsComprehensive(dataToExport, format, fileName.replace('MAGIC-', ''));
+        alert(`${dataToExport.length} startup(s) exported as ${format.toUpperCase()}!`);
       }
     });
   };

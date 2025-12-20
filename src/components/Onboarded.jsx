@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Download, Plus, TrendingUp, Award, GraduationCap, IndianRupee, BarChart3, X, Eye, ChevronDown, FileJson, FileSpreadsheet } from 'lucide-react';
 import { startupApi } from '../utils/api';
-import { exportStartupsComprehensive } from '../utils/exportUtils';
+import { exportStartupsComprehensive, filterByDateRange, generateExportFileName } from '../utils/exportUtils';
 import ExportMenu from './ExportMenu';
 import StartupGridCard from './StartupGridCard';
 import StartupDetailModal from './StartupDetailModal';
@@ -65,15 +65,18 @@ export default function Onboarded({ isGuest = false }) {
     setFilteredStartups(filtered);
   };
 
-  const handleExport = (format) => {
+  const handleExport = (format, dateRange = { fromDate: null, toDate: null }) => {
     setAdminAuthModal({
       isOpen: true,
       title: 'Export Onboarded Startups',
       message: 'Please authenticate to export onboarded startup data. This ensures data security and tracks export activities.',
       actionType: 'info',
       onConfirm: () => {
-        exportStartupsComprehensive(filteredStartups, format, 'Onboarded-Startups');
-        alert(`Onboarded startups exported as ${format.toUpperCase()}!`);
+        // Filter by onboardedDate field
+        const dataToExport = filterByDateRange(filteredStartups, 'onboardedDate', dateRange.fromDate, dateRange.toDate);
+        const fileName = generateExportFileName('Onboarded-Startups', dateRange.fromDate, dateRange.toDate);
+        exportStartupsComprehensive(dataToExport, format, fileName.replace('MAGIC-', ''));
+        alert(`${dataToExport.length} onboarded startup(s) exported as ${format.toUpperCase()}!`);
       }
     });
   };
