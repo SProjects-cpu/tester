@@ -21,6 +21,7 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
   const [filterStage, setFilterStage] = useState('all');
   const [filterSector, setFilterSector] = useState(initialSectorFilter || 'all');
   const [dateRange, setDateRange] = useState({ fromDate: null, toDate: null });
+  const [dateField, setDateField] = useState('createdAt'); // 'createdAt' or 'registrationDate'
   const [viewMode, setViewMode] = useState('grid');
   const [selectedStartup, setSelectedStartup] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -59,7 +60,7 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
 
   useEffect(() => {
     filterStartups();
-  }, [startups, searchTerm, filterStage, filterSector, dateRange]);
+  }, [startups, searchTerm, filterStage, filterSector, dateRange, dateField]);
 
   const loadStartups = async () => {
     try {
@@ -93,9 +94,9 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
       filtered = filtered.filter(s => s.sector === filterSector);
     }
 
-    // Apply date range filter on createdAt
+    // Apply date range filter based on selected date field
     if (dateRange.fromDate || dateRange.toDate) {
-      filtered = filterByDateRange(filtered, 'createdAt', dateRange.fromDate, dateRange.toDate);
+      filtered = filterByDateRange(filtered, dateField, dateRange.fromDate, dateRange.toDate);
     }
 
     setFilteredStartups(filtered);
@@ -231,6 +232,17 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
             {[...new Set(startups.map(s => s.sector).filter(Boolean))].sort().map(sector => (
               <option key={sector} value={sector}>{sector}</option>
             ))}
+          </select>
+        </div>
+        <div className="relative sm:w-48">
+          <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <select
+            value={dateField}
+            onChange={(e) => setDateField(e.target.value)}
+            className="w-full pl-10 pr-8 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-magic-500 focus:border-magic-500 outline-none appearance-none cursor-pointer transition-all text-sm sm:text-base"
+          >
+            <option value="createdAt">Created Date</option>
+            <option value="registrationDate">Registration Date</option>
           </select>
         </div>
         <DateRangeFilter 
