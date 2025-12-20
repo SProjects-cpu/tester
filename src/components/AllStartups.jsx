@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Search, Filter, Upload, Download, ChevronDown, FileJson, FileSpreadsheet } from 'lucide-react';
+import { Plus, Search, Filter } from 'lucide-react';
 import { startupApi } from '../utils/api';
 import { exportStartupsComprehensive } from '../utils/exportUtils';
 import ExportMenu from './ExportMenu';
@@ -8,7 +8,6 @@ import StartupCard from './StartupCard';
 import StartupGridCard from './StartupGridCard';
 import StartupDetailModal from './StartupDetailModal';
 import RegistrationForm from './RegistrationForm';
-import ImportStartups from './ImportStartups';
 import ViewToggle from './ViewToggle';
 import GuestRestrictedButton from './GuestRestrictedButton';
 import AdminAuthModal from './AdminAuthModal';
@@ -17,7 +16,6 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
   const [startups, setStartups] = useState([]);
   const [filteredStartups, setFilteredStartups] = useState([]);
   const [showForm, setShowForm] = useState(false);
-  const [showImport, setShowImport] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStage, setFilterStage] = useState('all');
   const [filterSector, setFilterSector] = useState(initialSectorFilter || 'all');
@@ -110,26 +108,6 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
     }
   };
 
-  const handleImportStartups = (importedStartups) => {
-    setAdminAuthModal({
-      isOpen: true,
-      title: 'Import Startups',
-      message: `You are about to import ${importedStartups.length} startup(s). Please authenticate to proceed with this operation.`,
-      actionType: 'warning',
-      onConfirm: async () => {
-        try {
-          const results = await startupApi.bulkCreate(importedStartups);
-          await loadStartups(); // Reload from database
-          setShowImport(false);
-          alert(`✅ Successfully imported ${results.results.length} startup(s)!${results.errors.length > 0 ? `\n⚠️ ${results.errors.length} failed.` : ''}`);
-        } catch (error) {
-          console.error('Error importing startups:', error);
-          alert('❌ Failed to import startups: ' + error.message);
-        }
-      }
-    });
-  };
-
   const handleUpdateStartup = (updatedStartup) => {
     setAdminAuthModal({
       isOpen: true,
@@ -195,15 +173,6 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
             title="Export"
             formats={['pdf', 'json', 'csv', 'excel']}
           />
-          <GuestRestrictedButton
-            isGuest={isGuest}
-            onClick={() => setShowImport(true)}
-            actionType="add"
-            className="flex items-center justify-center space-x-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-5 sm:px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all text-sm sm:text-base whitespace-nowrap"
-          >
-            <Upload className="w-5 h-5" />
-            <span>Import Startups</span>
-          </GuestRestrictedButton>
           <GuestRestrictedButton
             isGuest={isGuest}
             onClick={() => setShowForm(true)}
@@ -322,12 +291,6 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
           <RegistrationForm
             onClose={() => setShowForm(false)}
             onSubmit={handleAddStartup}
-          />
-        )}
-        {showImport && (
-          <ImportStartups
-            onClose={() => setShowImport(false)}
-            onImport={handleImportStartups}
           />
         )}
         {selectedStartup && (

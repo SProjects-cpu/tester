@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Moon, Sun, Download, Upload, Trash2, Bell, Check, X, FileJson, FileSpreadsheet, FileText, ChevronDown, Award, TrendingUp, BarChart3, Lock, Key } from 'lucide-react';
-import { api } from '../utils/api';
+import { api, startupApi } from '../utils/api';
 import { 
   storage, 
   exportData, 
@@ -15,8 +15,7 @@ import {
   exportSummaryReport,
   exportAchievementsReport,
   exportRevenueReport,
-  exportProgressReport,
-  importData 
+  exportProgressReport
 } from '../utils/storage';
 import { 
   exportSMCSchedulesToPDF, 
@@ -28,10 +27,12 @@ import {
 import GuestManagement from './GuestManagement';
 import AdminAuthModal from './AdminAuthModal';
 import AdminCredentialsModal from './AdminCredentialsModal';
+import ImportStartups from './ImportStartups';
 
 export default function Settings({ darkMode, toggleDarkMode, isGuest = false }) {
   const [accessRequests, setAccessRequests] = useState([]);
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [migrating, setMigrating] = useState(false);
   const [migrationResult, setMigrationResult] = useState(null);
   const [dbStats, setDbStats] = useState(null);
@@ -288,26 +289,24 @@ export default function Settings({ darkMode, toggleDarkMode, isGuest = false }) 
     setShowExportMenu(false);
   };
 
-  const handleImport = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setAuthModal({
-        isOpen: true,
-        title: 'Import Data',
-        message: 'You are about to import data which will modify your database. Please authenticate to proceed.',
-        actionType: 'warning',
-        onConfirm: () => {
-          importData(file, (success) => {
-            if (success) {
-              alert('Data imported successfully! Please refresh the page.');
-              window.location.reload();
-            } else {
-              alert('Failed to import data. Please check the file format.');
-            }
-          });
+  const handleImportStartups = (importedStartups) => {
+    setAuthModal({
+      isOpen: true,
+      title: 'Import Startups',
+      message: `You are about to import ${importedStartups.length} startup(s). Please authenticate to proceed with this operation.`,
+      actionType: 'warning',
+      onConfirm: async () => {
+        try {
+          const results = await startupApi.bulkCreate(importedStartups);
+          setShowImportModal(false);
+          alert(`✅ Successfully imported ${results.results.length} startup(s)!${results.errors.length > 0 ? `\n⚠️ ${results.errors.length} failed.` : ''}`);
+          window.location.reload();
+        } catch (error) {
+          console.error('Error importing startups:', error);
+          alert('❌ Failed to import startups: ' + error.message);
         }
-      });
-    }
+      }
+    });
   };
 
   const handleClearData = () => {
@@ -944,25 +943,18 @@ export default function Settings({ darkMode, toggleDarkMode, isGuest = false }) 
                     Import Data
                   </p>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Upload JSON file to restore data
+                    Import startups from Excel or CSV file
                   </p>
                 </div>
               </div>
-              <label className="cursor-pointer">
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl font-semibold shadow-md hover:shadow-lg transition-all"
-                >
-                  Import
-                </motion.div>
-                <input
-                  type="file"
-                  accept=".json"
-                  onChange={handleImport}
-                  className="hidden"
-                />
-              </label>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setShowImportModal(true)}
+                className="px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl font-semibold shadow-md hover:shadow-lg transition-all"
+              >
+                Import
+              </motion.button>
             </div>
 
             <div className="flex items-center justify-between p-4 bg-red-50 dark:bg-red-900/20 rounded-xl">
@@ -1075,6 +1067,16 @@ export default function Settings({ darkMode, toggleDarkMode, isGuest = false }) 
             isOpen={showCredentialsModal}
             onClose={() => setShowCredentialsModal(false)}
             currentUser={currentUser}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Import Startups Modal */}
+      <AnimatePresence>
+        {showImportModal && (
+          <ImportStartups
+            onClose={() => setShowImportModal(false)}
+            onImport={handleImportStartups}
           />
         )}
       </AnimatePresence>
