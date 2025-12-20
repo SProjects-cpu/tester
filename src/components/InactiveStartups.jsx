@@ -12,16 +12,11 @@ export default function InactiveStartups() {
   const [filter, setFilter] = useState('all');
   const [dateRange, setDateRange] = useState({ fromDate: null, toDate: null });
 
-  const handleExport = (format, dateRange = { fromDate: null, toDate: null }) => {
-    // Filter by updatedAt field (fallback to createdAt)
-    let dataToExport = filterByDateRange(filteredStartups, 'updatedAt', dateRange.fromDate, dateRange.toDate);
-    // If no results with updatedAt, try createdAt
-    if (dataToExport.length === 0 && (dateRange.fromDate || dateRange.toDate)) {
-      dataToExport = filterByDateRange(filteredStartups, 'createdAt', dateRange.fromDate, dateRange.toDate);
-    }
+  const handleExport = (format) => {
+    // Export the already filtered data (filtered by inline date filter)
     const fileName = generateExportFileName('Inactive-Startups', dateRange.fromDate, dateRange.toDate);
-    exportStartupsComprehensive(dataToExport, format, fileName.replace('MAGIC-', ''));
-    alert(`${dataToExport.length} inactive startup(s) exported as ${format.toUpperCase()}!`);
+    exportStartupsComprehensive(filteredStartups, format, fileName.replace('MAGIC-', ''));
+    alert(`${filteredStartups.length} inactive startup(s) exported as ${format.toUpperCase()}!`);
   };
 
   useEffect(() => {

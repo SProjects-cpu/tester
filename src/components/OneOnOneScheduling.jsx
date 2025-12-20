@@ -34,17 +34,16 @@ export default function OneOnOneScheduling({ isGuest = false }) {
     progress: ''
   });
 
-  const handleExport = (format, dateRange = { fromDate: null, toDate: null }) => {
-    // Filter sessions by date field
-    const filteredSessions = filterByDateRange(schedules, 'date', dateRange.fromDate, dateRange.toDate);
+  const handleExport = (format) => {
+    // Export the already filtered sessions (filtered by inline date filter)
     const fileName = generateExportFileName('OneOnOne-Sessions', dateRange.fromDate, dateRange.toDate);
     
     if (format === 'pdf') {
-      exportOneOnOneSessionsToPDF(filteredSessions, startups, dateRange.fromDate, dateRange.toDate);
+      exportOneOnOneSessionsToPDF(filteredSchedules, startups, dateRange.fromDate, dateRange.toDate);
     } else {
       // CSV export
       const headers = ['Date', 'Time', 'Company', 'Status', 'Mentor', 'Progress', 'Feedback'];
-      const rows = filteredSessions.map(schedule => {
+      const rows = filteredSchedules.map(schedule => {
         const startup = startups.find(s => s.id === schedule.startupId);
         return [
           schedule.date || '',
@@ -65,7 +64,7 @@ export default function OneOnOneScheduling({ isGuest = false }) {
       a.click();
       URL.revokeObjectURL(url);
     }
-    alert(`${filteredSessions.length} One-on-One session(s) exported as ${format.toUpperCase()}!`);
+    alert(`${filteredSchedules.length} One-on-One session(s) exported as ${format.toUpperCase()}!`);
   };
 
   useEffect(() => {

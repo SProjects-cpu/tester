@@ -32,18 +32,17 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
     actionType: 'warning'
   });
 
-  const handleExport = (format, dateRange = { fromDate: null, toDate: null }) => {
+  const handleExport = (format) => {
     setAdminAuthModal({
       isOpen: true,
       title: 'Export Startups',
       message: 'Please authenticate to export startup data. This ensures data security and tracks export activities.',
       actionType: 'info',
       onConfirm: () => {
-        // Filter by createdAt date field
-        const dataToExport = filterByDateRange(filteredStartups, 'createdAt', dateRange.fromDate, dateRange.toDate);
+        // Export the already filtered data (filtered by inline date filter)
         const fileName = generateExportFileName('All-Startups', dateRange.fromDate, dateRange.toDate);
-        exportStartupsComprehensive(dataToExport, format, fileName.replace('MAGIC-', ''));
-        alert(`${dataToExport.length} startup(s) exported as ${format.toUpperCase()}!`);
+        exportStartupsComprehensive(filteredStartups, format, fileName.replace('MAGIC-', ''));
+        alert(`${filteredStartups.length} startup(s) exported as ${format.toUpperCase()}!`);
       }
     });
   };

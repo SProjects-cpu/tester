@@ -26,22 +26,17 @@ export default function Rejected({ isGuest = false }) {
     actionType: 'warning'
   });
 
-  const handleExport = (format, dateRange = { fromDate: null, toDate: null }) => {
+  const handleExport = (format) => {
     setAdminAuthModal({
       isOpen: true,
       title: 'Export Rejected Startups',
       message: 'Please authenticate to export rejected startup data. This ensures data security and tracks export activities.',
       actionType: 'info',
       onConfirm: () => {
-        // Filter by rejectedDate field (fallback to updatedAt)
-        let dataToExport = filterByDateRange(filteredStartups, 'rejectedDate', dateRange.fromDate, dateRange.toDate);
-        // If no results with rejectedDate, try updatedAt
-        if (dataToExport.length === 0 && (dateRange.fromDate || dateRange.toDate)) {
-          dataToExport = filterByDateRange(filteredStartups, 'updatedAt', dateRange.fromDate, dateRange.toDate);
-        }
+        // Export the already filtered data (filtered by inline date filter)
         const fileName = generateExportFileName('Rejected-Startups', dateRange.fromDate, dateRange.toDate);
-        exportStartupsComprehensive(dataToExport, format, fileName.replace('MAGIC-', ''));
-        alert(`${dataToExport.length} rejected startup(s) exported as ${format.toUpperCase()}!`);
+        exportStartupsComprehensive(filteredStartups, format, fileName.replace('MAGIC-', ''));
+        alert(`${filteredStartups.length} rejected startup(s) exported as ${format.toUpperCase()}!`);
       }
     });
   };

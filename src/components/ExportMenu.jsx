@@ -1,17 +1,14 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Download, ChevronDown, FileJson, FileSpreadsheet, FileText } from 'lucide-react';
-import DateRangeFilter from './DateRangeFilter';
 
 export default function ExportMenu({ 
   onExport, 
   title = 'Export',
   formats = ['pdf', 'json', 'csv', 'excel'],
-  showDateFilter = true,
   className = ''
 }) {
   const [showMenu, setShowMenu] = useState(false);
-  const [dateRange, setDateRange] = useState({ fromDate: null, toDate: null });
 
   const formatConfig = {
     pdf: {
@@ -44,12 +41,8 @@ export default function ExportMenu({
     }
   };
 
-  const handleDateRangeChange = (range) => {
-    setDateRange(range);
-  };
-
   const handleExport = (format) => {
-    onExport(format, dateRange);
+    onExport(format);
     setShowMenu(false);
   };
 
@@ -82,13 +75,6 @@ export default function ExportMenu({
               exit={{ opacity: 0, y: -10 }}
               className="absolute right-0 mt-2 w-72 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden"
             >
-              {/* Date Range Filter */}
-              {showDateFilter && (
-                <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                  <DateRangeFilter onDateRangeChange={handleDateRangeChange} />
-                </div>
-              )}
-              
               {/* Export Format Options */}
               <div className="py-1">
                 {formats.map((format) => {

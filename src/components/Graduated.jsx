@@ -66,18 +66,17 @@ export default function Graduated({ isGuest = false }) {
     setFilteredStartups(filtered);
   };
 
-  const handleExport = (format, dateRange = { fromDate: null, toDate: null }) => {
+  const handleExport = (format) => {
     setAdminAuthModal({
       isOpen: true,
       title: 'Export Graduated Startups',
       message: 'Please authenticate to export graduated startup data. This ensures data security and tracks export activities.',
       actionType: 'info',
       onConfirm: () => {
-        // Filter by graduatedDate field
-        const dataToExport = filterByDateRange(filteredStartups, 'graduatedDate', dateRange.fromDate, dateRange.toDate);
+        // Export the already filtered data (filtered by inline date filter)
         const fileName = generateExportFileName('Graduated-Startups', dateRange.fromDate, dateRange.toDate);
-        exportStartupsComprehensive(dataToExport, format, fileName.replace('MAGIC-', ''));
-        alert(`${dataToExport.length} graduated startup(s) exported as ${format.toUpperCase()}!`);
+        exportStartupsComprehensive(filteredStartups, format, fileName.replace('MAGIC-', ''));
+        alert(`${filteredStartups.length} graduated startup(s) exported as ${format.toUpperCase()}!`);
       }
     });
   };

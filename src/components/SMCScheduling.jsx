@@ -38,9 +38,8 @@ export default function SMCScheduling({ isGuest = false }) {
     type: 'warning'
   });
 
-  const handleExport = (format, dateRange = { fromDate: null, toDate: null }) => {
-    // Filter schedules by date field
-    const filteredSchedules = filterByDateRange(schedules, 'date', dateRange.fromDate, dateRange.toDate);
+  const handleExport = (format) => {
+    // Export the already filtered schedules (filtered by inline date filter)
     const fileName = generateExportFileName('SMC-Schedules', dateRange.fromDate, dateRange.toDate);
     
     if (format === 'pdf') {

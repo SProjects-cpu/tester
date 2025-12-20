@@ -71,18 +71,17 @@ export default function Onboarded({ isGuest = false }) {
     setFilteredStartups(filtered);
   };
 
-  const handleExport = (format, dateRange = { fromDate: null, toDate: null }) => {
+  const handleExport = (format) => {
     setAdminAuthModal({
       isOpen: true,
       title: 'Export Onboarded Startups',
       message: 'Please authenticate to export onboarded startup data. This ensures data security and tracks export activities.',
       actionType: 'info',
       onConfirm: () => {
-        // Filter by onboardedDate field
-        const dataToExport = filterByDateRange(filteredStartups, 'onboardedDate', dateRange.fromDate, dateRange.toDate);
+        // Export the already filtered data (filtered by inline date filter)
         const fileName = generateExportFileName('Onboarded-Startups', dateRange.fromDate, dateRange.toDate);
-        exportStartupsComprehensive(dataToExport, format, fileName.replace('MAGIC-', ''));
-        alert(`${dataToExport.length} onboarded startup(s) exported as ${format.toUpperCase()}!`);
+        exportStartupsComprehensive(filteredStartups, format, fileName.replace('MAGIC-', ''));
+        alert(`${filteredStartups.length} onboarded startup(s) exported as ${format.toUpperCase()}!`);
       }
     });
   };
