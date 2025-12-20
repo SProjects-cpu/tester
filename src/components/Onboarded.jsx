@@ -4,6 +4,7 @@ import { Search, Download, Plus, TrendingUp, Award, GraduationCap, IndianRupee, 
 import { startupApi } from '../utils/api';
 import { exportStartupsComprehensive, filterByDateRange, generateExportFileName } from '../utils/exportUtils';
 import ExportMenu from './ExportMenu';
+import DateRangeFilter from './DateRangeFilter';
 import StartupGridCard from './StartupGridCard';
 import StartupDetailModal from './StartupDetailModal';
 import ViewToggle from './ViewToggle';
@@ -16,6 +17,7 @@ export default function Onboarded({ isGuest = false }) {
   const [startups, setStartups] = useState([]);
   const [filteredStartups, setFilteredStartups] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [dateRange, setDateRange] = useState({ fromDate: null, toDate: null });
   const [viewMode, setViewMode] = useState('list');
   const [selectedStartup, setSelectedStartup] = useState(null);
   const [showAchievementModal, setShowAchievementModal] = useState(null);
@@ -38,7 +40,7 @@ export default function Onboarded({ isGuest = false }) {
 
   useEffect(() => {
     filterStartups();
-  }, [startups, searchTerm]);
+  }, [startups, searchTerm, dateRange]);
 
   const loadStartups = async () => {
     try {
@@ -61,6 +63,10 @@ export default function Onboarded({ isGuest = false }) {
         s.founderName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         s.sector?.toLowerCase().includes(searchTerm.toLowerCase())
       );
+    }
+    // Apply date range filter on onboardedDate
+    if (dateRange.fromDate || dateRange.toDate) {
+      filtered = filterByDateRange(filtered, 'onboardedDate', dateRange.fromDate, dateRange.toDate);
     }
     setFilteredStartups(filtered);
   };
@@ -215,6 +221,10 @@ export default function Onboarded({ isGuest = false }) {
             className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all text-sm sm:text-base"
           />
         </div>
+        <DateRangeFilter 
+          variant="inline"
+          onDateRangeChange={setDateRange}
+        />
         <ViewToggle view={viewMode} onViewChange={setViewMode} />
       </div>
 

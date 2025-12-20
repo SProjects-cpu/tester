@@ -4,6 +4,7 @@ import { Plus, Search, Filter } from 'lucide-react';
 import { startupApi } from '../utils/api';
 import { exportStartupsComprehensive, filterByDateRange, generateExportFileName } from '../utils/exportUtils';
 import ExportMenu from './ExportMenu';
+import DateRangeFilter from './DateRangeFilter';
 import StartupCard from './StartupCard';
 import StartupGridCard from './StartupGridCard';
 import StartupDetailModal from './StartupDetailModal';
@@ -19,6 +20,7 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStage, setFilterStage] = useState('all');
   const [filterSector, setFilterSector] = useState(initialSectorFilter || 'all');
+  const [dateRange, setDateRange] = useState({ fromDate: null, toDate: null });
   const [viewMode, setViewMode] = useState('grid');
   const [selectedStartup, setSelectedStartup] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -58,7 +60,7 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
 
   useEffect(() => {
     filterStartups();
-  }, [startups, searchTerm, filterStage, filterSector]);
+  }, [startups, searchTerm, filterStage, filterSector, dateRange]);
 
   const loadStartups = async () => {
     try {
@@ -90,6 +92,11 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
 
     if (filterSector !== 'all') {
       filtered = filtered.filter(s => s.sector === filterSector);
+    }
+
+    // Apply date range filter on createdAt
+    if (dateRange.fromDate || dateRange.toDate) {
+      filtered = filterByDateRange(filtered, 'createdAt', dateRange.fromDate, dateRange.toDate);
     }
 
     setFilteredStartups(filtered);
@@ -227,6 +234,10 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
             ))}
           </select>
         </div>
+        <DateRangeFilter 
+          variant="inline"
+          onDateRangeChange={setDateRange}
+        />
         <ViewToggle view={viewMode} onViewChange={setViewMode} />
       </div>
 

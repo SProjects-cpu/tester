@@ -4,6 +4,7 @@ import { Search } from 'lucide-react';
 import { startupApi } from '../utils/api';
 import { exportStartupsComprehensive, filterByDateRange, generateExportFileName } from '../utils/exportUtils';
 import ExportMenu from './ExportMenu';
+import DateRangeFilter from './DateRangeFilter';
 import StartupGridCard from './StartupGridCard';
 import StartupDetailModal from './StartupDetailModal';
 import ViewToggle from './ViewToggle';
@@ -13,6 +14,7 @@ export default function Rejected({ isGuest = false }) {
   const [startups, setStartups] = useState([]);
   const [filteredStartups, setFilteredStartups] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [dateRange, setDateRange] = useState({ fromDate: null, toDate: null });
   const [viewMode, setViewMode] = useState('grid');
   const [selectedStartup, setSelectedStartup] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -50,7 +52,7 @@ export default function Rejected({ isGuest = false }) {
 
   useEffect(() => {
     filterStartups();
-  }, [startups, searchTerm]);
+  }, [startups, searchTerm, dateRange]);
 
   const loadStartups = async () => {
     try {
@@ -72,6 +74,14 @@ export default function Rejected({ isGuest = false }) {
         s.founderName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         s.sector?.toLowerCase().includes(searchTerm.toLowerCase())
       );
+    }
+    // Apply date range filter on rejectedDate (fallback to updatedAt)
+    if (dateRange.fromDate || dateRange.toDate) {
+      let dateFiltered = filterByDateRange(filtered, 'rejectedDate', dateRange.fromDate, dateRange.toDate);
+      if (dateFiltered.length === 0) {
+        dateFiltered = filterByDateRange(filtered, 'updatedAt', dateRange.fromDate, dateRange.toDate);
+      }
+      filtered = dateFiltered;
     }
     setFilteredStartups(filtered);
   };
@@ -121,6 +131,10 @@ export default function Rejected({ isGuest = false }) {
             className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all text-sm sm:text-base"
           />
         </div>
+        <DateRangeFilter 
+          variant="inline"
+          onDateRangeChange={setDateRange}
+        />
         <ViewToggle view={viewMode} onViewChange={setViewMode} />
       </div>
 

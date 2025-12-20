@@ -4,11 +4,13 @@ import { AlertTriangle, Clock, Mail, Phone, Calendar, TrendingDown, RefreshCw, D
 import { startupApi } from '../utils/api';
 import { exportStartupsComprehensive, filterByDateRange, generateExportFileName } from '../utils/exportUtils';
 import ExportMenu from './ExportMenu';
+import DateRangeFilter from './DateRangeFilter';
 
 export default function InactiveStartups() {
   const [inactiveStartups, setInactiveStartups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [dateRange, setDateRange] = useState({ fromDate: null, toDate: null });
 
   const handleExport = (format, dateRange = { fromDate: null, toDate: null }) => {
     // Filter by updatedAt field (fallback to createdAt)
@@ -69,12 +71,25 @@ export default function InactiveStartups() {
     return colors[stage] || 'bg-gray-100 text-gray-700';
   };
 
-  const filteredStartups = filter === 'all' 
-    ? inactiveStartups 
-    : inactiveStartups.filter(s => {
-        if (filter === 'oneOnOne') return s.stage === 'One-on-One';
-        return s.stage === filter.toUpperCase();
-      });
+  const filteredStartups = (() => {
+    let filtered = filter === 'all' 
+      ? inactiveStartups 
+      : inactiveStartups.filter(s => {
+          if (filter === 'oneOnOne') return s.stage === 'One-on-One';
+          return s.stage === filter.toUpperCase();
+        });
+    
+    // Apply date range filter on updatedAt (fallback to createdAt)
+    if (dateRange.fromDate || dateRange.toDate) {
+      let dateFiltered = filterByDateRange(filtered, 'updatedAt', dateRange.fromDate, dateRange.toDate);
+      if (dateFiltered.length === 0) {
+        dateFiltered = filterByDateRange(filtered, 'createdAt', dateRange.fromDate, dateRange.toDate);
+      }
+      filtered = dateFiltered;
+    }
+    
+    return filtered;
+  })();
 
   const stats = {
     total: inactiveStartups.length,
@@ -98,6 +113,10 @@ export default function InactiveStartups() {
             </p>
           </div>
           <div className="flex gap-3">
+            <DateRangeFilter 
+              variant="inline"
+              onDateRangeChange={setDateRange}
+            />
             <ExportMenu onExport={handleExport} title="Export" formats={['pdf', 'json', 'csv', 'excel']} />
             <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={checkInactiveStartups}
               className="flex items-center space-x-2 bg-gradient-to-r from-orange-500 to-red-500 text-white px-5 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all text-sm font-semibold">

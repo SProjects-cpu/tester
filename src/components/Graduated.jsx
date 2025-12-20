@@ -4,6 +4,7 @@ import { Search, Download, GraduationCap, Lock, TrendingUp, Award, Eye, X, Chevr
 import { startupApi } from '../utils/api';
 import { exportStartupsComprehensive, filterByDateRange, generateExportFileName } from '../utils/exportUtils';
 import ExportMenu from './ExportMenu';
+import DateRangeFilter from './DateRangeFilter';
 import StartupGridCard from './StartupGridCard';
 import ViewToggle from './ViewToggle';
 import StartupProgressModal from './StartupProgressModal';
@@ -15,6 +16,7 @@ export default function Graduated({ isGuest = false }) {
   const [startups, setStartups] = useState([]);
   const [filteredStartups, setFilteredStartups] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [dateRange, setDateRange] = useState({ fromDate: null, toDate: null });
   const [viewMode, setViewMode] = useState('list');
   const [selectedStartup, setSelectedStartup] = useState(null);
   const [showProgressModal, setShowProgressModal] = useState(null);
@@ -34,7 +36,7 @@ export default function Graduated({ isGuest = false }) {
 
   useEffect(() => {
     filterStartups();
-  }, [startups, searchTerm]);
+  }, [startups, searchTerm, dateRange]);
 
   const loadStartups = async () => {
     try {
@@ -56,6 +58,10 @@ export default function Graduated({ isGuest = false }) {
         s.founderName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         s.sector?.toLowerCase().includes(searchTerm.toLowerCase())
       );
+    }
+    // Apply date range filter on graduatedDate
+    if (dateRange.fromDate || dateRange.toDate) {
+      filtered = filterByDateRange(filtered, 'graduatedDate', dateRange.fromDate, dateRange.toDate);
     }
     setFilteredStartups(filtered);
   };
@@ -120,6 +126,10 @@ export default function Graduated({ isGuest = false }) {
             className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all text-sm sm:text-base"
           />
         </div>
+        <DateRangeFilter 
+          variant="inline"
+          onDateRangeChange={setDateRange}
+        />
         <ViewToggle view={viewMode} onViewChange={setViewMode} />
       </div>
 

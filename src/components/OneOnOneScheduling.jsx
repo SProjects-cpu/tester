@@ -4,6 +4,7 @@ import { Calendar, Clock, Plus, Check, X, Users, CheckCircle, XCircle, Grid, Lis
 import { startupApi, oneOnOneApi } from '../utils/api';
 import { exportOneOnOneSessionsToPDF, filterByDateRange, generateExportFileName } from '../utils/exportUtils';
 import ExportMenu from './ExportMenu';
+import DateRangeFilter from './DateRangeFilter';
 import GuestRestrictedButton from './GuestRestrictedButton';
 import RejectionModal from './RejectionModal';
 import OnboardingModal from './OnboardingModal';
@@ -11,6 +12,8 @@ import OnboardingModal from './OnboardingModal';
 export default function OneOnOneScheduling({ isGuest = false }) {
   const [startups, setStartups] = useState([]);
   const [schedules, setSchedules] = useState([]);
+  const [filteredSchedules, setFilteredSchedules] = useState([]);
+  const [dateRange, setDateRange] = useState({ fromDate: null, toDate: null });
   const [loading, setLoading] = useState(true);
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth();
@@ -68,6 +71,15 @@ export default function OneOnOneScheduling({ isGuest = false }) {
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    // Apply date range filter
+    if (dateRange.fromDate || dateRange.toDate) {
+      setFilteredSchedules(filterByDateRange(schedules, 'date', dateRange.fromDate, dateRange.toDate));
+    } else {
+      setFilteredSchedules(schedules);
+    }
+  }, [schedules, dateRange]);
 
   const loadData = async () => {
     try {
@@ -248,14 +260,20 @@ export default function OneOnOneScheduling({ isGuest = false }) {
             One-on-One Scheduling
           </h1>
           <p className="text-gray-900 dark:text-gray-100 mt-2 text-sm sm:text-base">
-            Schedule and manage one-on-one mentorship meetings ({schedules.length} sessions)
+            Schedule and manage one-on-one mentorship meetings ({filteredSchedules.length} sessions)
           </p>
         </div>
-        <ExportMenu 
-          onExport={handleExport}
-          title="Export"
-          formats={['pdf', 'json', 'csv']}
-        />
+        <div className="flex flex-wrap gap-3">
+          <DateRangeFilter 
+            variant="inline"
+            onDateRangeChange={setDateRange}
+          />
+          <ExportMenu 
+            onExport={handleExport}
+            title="Export"
+            formats={['pdf', 'json', 'csv']}
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
