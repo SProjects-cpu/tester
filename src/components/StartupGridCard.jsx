@@ -6,19 +6,19 @@ import { getField } from '../utils/startupFieldHelper';
 export default function StartupGridCard({ startup, onUpdate, onDelete, onClick, isGuest = false, isCompact = false }) {
   const getStageColor = (stage) => {
     const colors = {
-      'S0': 'from-gray-400 to-gray-600',
-      'S1': 'from-blue-400 to-blue-600',
-      'S2': 'from-purple-400 to-purple-600',
-      'S3': 'from-orange-400 to-orange-600',
-      'One-on-One': 'from-indigo-400 to-indigo-600'
+      'S0': 'from-gray-500 to-gray-700',
+      'S1': 'from-blue-500 to-blue-700',
+      'S2': 'from-purple-500 to-purple-700',
+      'S3': 'from-orange-500 to-orange-700',
+      'One-on-One': 'from-indigo-500 to-indigo-700'
     };
-    return colors[stage] || 'from-gray-400 to-gray-600';
+    return colors[stage] || 'from-gray-500 to-gray-700';
   };
 
   const getStatusColor = (status) => {
-    if (status === 'Onboarded') return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-    if (status === 'Rejected') return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
-    return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+    if (status === 'Onboarded') return 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200 border border-green-300 dark:border-green-600';
+    if (status === 'Rejected') return 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200 border border-red-300 dark:border-red-600';
+    return 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200 border border-blue-300 dark:border-blue-600';
   };
 
   const isLocked = startup.status === 'Onboarded' || startup.status === 'Rejected';
@@ -29,7 +29,7 @@ export default function StartupGridCard({ startup, onUpdate, onDelete, onClick, 
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
       whileHover={{ y: -5 }}
-      className={`bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden cursor-pointer transition-all ${
+      className={`bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden cursor-pointer transition-all border border-gray-200 dark:border-gray-600 hover:shadow-xl hover:border-gray-300 dark:hover:border-gray-500 ${
         isLocked ? 'opacity-75' : ''
       }`}
       onClick={onClick}
@@ -50,8 +50,8 @@ export default function StartupGridCard({ startup, onUpdate, onDelete, onClick, 
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <h3 className={`${isCompact ? 'text-sm sm:text-base' : 'text-lg sm:text-xl'} truncate mb-1 card-text text-black`}>{getField(startup, 'companyName')}</h3>
-              <p className={`${isCompact ? 'text-xs' : 'text-xs sm:text-sm'} text-white/80 truncate card-text text-black`}>{getField(startup, 'magicCode')}</p>
+              <h3 className={`${isCompact ? 'text-sm sm:text-base' : 'text-lg sm:text-xl'} font-bold truncate mb-1 text-white`}>{getField(startup, 'companyName')}</h3>
+              <p className={`${isCompact ? 'text-xs' : 'text-xs sm:text-sm'} text-white/90 truncate`}>{getField(startup, 'magicCode')}</p>
             </div>
           </div>
           {!isLocked && (
@@ -71,10 +71,10 @@ export default function StartupGridCard({ startup, onUpdate, onDelete, onClick, 
           )}
         </div>
         <div className="flex flex-wrap gap-2">
-          <span className={`${isCompact ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-1 text-xs'} rounded-full ${getStatusColor(startup.status)} card-text`}>
+          <span className={`${isCompact ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-1 text-xs'} rounded-full font-medium ${getStatusColor(startup.status)}`}>
             {startup.status}
           </span>
-          <span className={`${isCompact ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-1 text-xs'} bg-white/20 rounded-full card-text text-black`}>
+          <span className={`${isCompact ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-1 text-xs'} bg-white/20 rounded-full font-medium text-white`}>
             {startup.stage}
           </span>
         </div>
@@ -82,22 +82,22 @@ export default function StartupGridCard({ startup, onUpdate, onDelete, onClick, 
 
       {/* Content */}
       <div className={`${isCompact ? 'p-2 sm:p-3 space-y-2' : 'p-4 sm:p-5 space-y-3'}`}>
-        <div className={`flex items-center space-x-2 ${isCompact ? 'text-xs' : 'text-sm'} text-gray-600 dark:text-gray-400`}>
-          <User className={`${isCompact ? 'w-3 h-3' : 'w-4 h-4'} flex-shrink-0`} />
-          <span className="truncate card-text text-black">{getField(startup, 'founderName')}</span>
+        <div className={`flex items-center space-x-2 ${isCompact ? 'text-xs' : 'text-sm'} text-gray-700 dark:text-gray-200`}>
+          <User className={`${isCompact ? 'w-3 h-3' : 'w-4 h-4'} flex-shrink-0 text-gray-500 dark:text-gray-400`} />
+          <span className="truncate font-medium">{getField(startup, 'founderName')}</span>
         </div>
-        <div className={`flex items-center space-x-2 ${isCompact ? 'text-xs' : 'text-sm'} text-gray-600 dark:text-gray-400`}>
-          <MapPin className={`${isCompact ? 'w-3 h-3' : 'w-4 h-4'} flex-shrink-0`} />
-          <span className="truncate card-text text-black">{getField(startup, 'city')}</span>
+        <div className={`flex items-center space-x-2 ${isCompact ? 'text-xs' : 'text-sm'} text-gray-700 dark:text-gray-200`}>
+          <MapPin className={`${isCompact ? 'w-3 h-3' : 'w-4 h-4'} flex-shrink-0 text-gray-500 dark:text-gray-400`} />
+          <span className="truncate">{getField(startup, 'city')}</span>
         </div>
-        <div className={`flex items-center space-x-2 ${isCompact ? 'text-xs' : 'text-sm'} text-gray-600 dark:text-gray-400`}>
-          <Briefcase className={`${isCompact ? 'w-3 h-3' : 'w-4 h-4'} flex-shrink-0`} />
-          <span className="truncate card-text text-black">{getField(startup, 'sector')}</span>
+        <div className={`flex items-center space-x-2 ${isCompact ? 'text-xs' : 'text-sm'} text-gray-700 dark:text-gray-200`}>
+          <Briefcase className={`${isCompact ? 'w-3 h-3' : 'w-4 h-4'} flex-shrink-0 text-gray-500 dark:text-gray-400`} />
+          <span className="truncate">{getField(startup, 'sector')}</span>
         </div>
         {getField(startup, 'registeredDate') && !isCompact && (
-          <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
-            <Calendar className="w-4 h-4 flex-shrink-0" />
-            <span className="truncate card-text text-black">{new Date(getField(startup, 'registeredDate')).toLocaleDateString()}</span>
+          <div className="flex items-center space-x-2 text-sm text-gray-700 dark:text-gray-200">
+            <Calendar className="w-4 h-4 flex-shrink-0 text-gray-500 dark:text-gray-400" />
+            <span className="truncate">{new Date(getField(startup, 'registeredDate')).toLocaleDateString()}</span>
           </div>
         )}
       </div>
@@ -108,7 +108,7 @@ export default function StartupGridCard({ startup, onUpdate, onDelete, onClick, 
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={onClick}
-          className={`w-full ${isCompact ? 'py-1 text-xs' : 'py-2 text-sm'} magic-text-gradient border-2 border-magic-500 rounded-lg hover:bg-magic-50 dark:hover:bg-magic-900/20 transition-all`}
+          className={`w-full ${isCompact ? 'py-1 text-xs' : 'py-2 text-sm'} font-semibold text-purple-600 dark:text-purple-400 border-2 border-purple-500 dark:border-purple-400 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-all`}
         >
           View Details
         </motion.button>

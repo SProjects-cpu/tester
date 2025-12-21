@@ -196,7 +196,7 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold magic-text-gradient">
             All Startups
           </h1>
-          <p className="text-gray-900 dark:text-gray-100 mt-2 text-sm sm:text-base">
+          <p className="text-gray-700 dark:text-gray-200 mt-2 text-sm sm:text-base font-medium">
             {filteredStartups.length} startup{filteredStartups.length !== 1 ? 's' : ''} found
           </p>
         </div>
@@ -220,21 +220,21 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
 
       <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-6">
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400 w-5 h-5" />
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search by name, founder, or magic code..."
-            className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-magic-500 focus:border-magic-500 outline-none transition-all text-sm sm:text-base"
+            className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all text-sm sm:text-base"
           />
         </div>
         <div className="relative sm:w-48">
-          <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400 w-5 h-5" />
           <select
             value={filterStage}
             onChange={(e) => setFilterStage(e.target.value)}
-            className="w-full pl-10 pr-8 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-magic-500 focus:border-magic-500 outline-none appearance-none cursor-pointer transition-all text-sm sm:text-base"
+            className="w-full pl-10 pr-8 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none appearance-none cursor-pointer transition-all text-sm sm:text-base"
           >
             <option value="all">All Stages</option>
             <option value="S0">S0 - Registered</option>
@@ -245,11 +245,11 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
           </select>
         </div>
         <div className="relative sm:w-48">
-          <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400 w-5 h-5" />
           <select
             value={filterSector}
             onChange={(e) => setFilterSector(e.target.value)}
-            className="w-full pl-10 pr-8 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-magic-500 focus:border-magic-500 outline-none appearance-none cursor-pointer transition-all text-sm sm:text-base"
+            className="w-full pl-10 pr-8 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none appearance-none cursor-pointer transition-all text-sm sm:text-base"
           >
             <option value="all">All Sectors</option>
             {[...new Set(startups.map(s => s.sector).filter(Boolean))].sort().map(sector => (
@@ -258,11 +258,11 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
           </select>
         </div>
         <div className="relative sm:w-48">
-          <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400 w-5 h-5" />
           <select
             value={dateField}
             onChange={(e) => setDateField(e.target.value)}
-            className="w-full pl-10 pr-8 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-magic-500 focus:border-magic-500 outline-none appearance-none cursor-pointer transition-all text-sm sm:text-base"
+            className="w-full pl-10 pr-8 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none appearance-none cursor-pointer transition-all text-sm sm:text-base"
           >
             <option value="createdAt">Created Date</option>
             <option value="registeredDate">Registered Date</option>
@@ -316,10 +316,10 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="text-center py-12 sm:py-16 bg-white dark:bg-gray-800 rounded-2xl"
+          className="text-center py-12 sm:py-16 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-600"
         >
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading startups...</p>
+          <p className="text-gray-700 dark:text-gray-300 font-medium">Loading startups...</p>
         </motion.div>
       )}
 
@@ -327,9 +327,9 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="text-center py-12 sm:py-16 bg-white dark:bg-gray-800 rounded-2xl"
+          className="text-center py-12 sm:py-16 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-600"
         >
-          <p className="text-gray-900 dark:text-gray-100 text-base sm:text-lg">
+          <p className="text-gray-700 dark:text-gray-200 text-base sm:text-lg font-medium">
             No startups found. Register your first startup!
           </p>
         </motion.div>

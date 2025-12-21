@@ -183,19 +183,19 @@ export default function DocumentList({ startupId, isGuest = false, allowUpload =
     return (
       <div className="flex items-center justify-center py-8">
         <Loader2 className="w-6 h-6 animate-spin text-purple-500" />
-        <span className="ml-2 text-gray-500 dark:text-gray-400">Loading documents...</span>
+        <span className="ml-2 text-gray-700 dark:text-gray-300 font-medium">Loading documents...</span>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center space-x-2 text-red-500 py-4">
+      <div className="flex items-center justify-center space-x-2 text-red-600 dark:text-red-400 py-4">
         <AlertCircle className="w-5 h-5" />
-        <span>{error}</span>
+        <span className="font-medium">{error}</span>
         <button 
           onClick={loadDocuments}
-          className="ml-2 text-sm text-purple-600 hover:text-purple-700 underline"
+          className="ml-2 text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 underline font-medium"
         >
           Retry
         </button>
@@ -239,11 +239,11 @@ export default function DocumentList({ startupId, isGuest = false, allowUpload =
       )}
 
       {documents.length === 0 ? (
-        <div className="text-center py-8 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-          <FolderOpen className="w-12 h-12 mx-auto text-gray-400 mb-2" />
-          <p className="text-gray-500 dark:text-gray-400">No documents uploaded</p>
+        <div className="text-center py-8 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-600">
+          <FolderOpen className="w-12 h-12 mx-auto text-gray-500 dark:text-gray-400 mb-2" />
+          <p className="text-gray-700 dark:text-gray-300 font-medium">No documents uploaded</p>
           {allowUpload && !isGuest && (
-            <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               Click "Add Document" to upload files
             </p>
           )}
@@ -260,17 +260,17 @@ export default function DocumentList({ startupId, isGuest = false, allowUpload =
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-600 transition-colors"
+              className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-600 hover:border-purple-400 dark:hover:border-purple-500 transition-all shadow-sm hover:shadow-md"
             >
               <div className="flex items-center space-x-3 min-w-0 flex-1">
                 <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex-shrink-0">
                   <FileIcon className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate" title={doc.filename}>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white truncate" title={doc.filename}>
                     {doc.filename}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <p className="text-xs text-gray-600 dark:text-gray-300">
                     {formatFileSize(doc.fileSize)} • {formatDate(doc.uploadedAt)}
                   </p>
                 </div>

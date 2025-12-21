@@ -60,8 +60,8 @@ export default function Sidebar({ currentPage, onNavigate, onLogout, darkMode, t
               onClick={() => handleNavigate(item.id)}
               className={`w-full flex items-center space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all text-sm sm:text-base ${
                 isActive 
-                  ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg' 
-                  : 'hover:bg-blue-200/50 dark:hover:bg-blue-800/30 text-gray-900 dark:text-gray-100'
+                  ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg font-semibold' 
+                  : 'hover:bg-blue-100 dark:hover:bg-blue-800/40 text-gray-800 dark:text-gray-100 font-medium'
               }`}
             >
               <Icon className="w-5 h-5 flex-shrink-0" />
@@ -76,7 +76,7 @@ export default function Sidebar({ currentPage, onNavigate, onLogout, darkMode, t
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={toggleDarkMode}
-          className="w-full flex items-center space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl hover:bg-blue-200/50 dark:hover:bg-blue-800/30 transition-all text-gray-900 dark:text-gray-100 text-sm sm:text-base"
+          className="w-full flex items-center space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-800/40 transition-all text-gray-800 dark:text-gray-100 text-sm sm:text-base font-medium"
         >
           {darkMode ? <Sun className="w-5 h-5 flex-shrink-0" /> : <Moon className="w-5 h-5 flex-shrink-0" />}
           <span className="truncate">{darkMode ? 'Light Mode' : 'Dark Mode'}</span>
@@ -86,7 +86,7 @@ export default function Sidebar({ currentPage, onNavigate, onLogout, darkMode, t
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={onLogout}
-          className="w-full flex items-center space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition-all text-gray-900 dark:text-gray-100 text-sm sm:text-base"
+          className="w-full flex items-center space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/40 transition-all text-gray-800 dark:text-gray-100 text-sm sm:text-base font-medium"
         >
           <LogOut className="w-5 h-5 flex-shrink-0" />
           <span className="truncate">Logout</span>

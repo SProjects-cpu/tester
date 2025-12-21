@@ -100,7 +100,7 @@ export default function GuestManagement() {
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-xl font-bold text-gray-800 dark:text-white">Guest Accounts</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+          <p className="text-sm text-gray-700 dark:text-gray-300 mt-1 font-medium">
             Manage view-only guest access ({guests.length} guests)
           </p>
         </div>
@@ -118,14 +118,14 @@ export default function GuestManagement() {
       {/* Guest List */}
       <div className="space-y-3">
         {loading ? (
-          <div className="text-center py-8 bg-gray-50 dark:bg-gray-800 rounded-xl">
+          <div className="text-center py-8 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-600">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-2"></div>
-            <p className="text-gray-500 dark:text-gray-400">Loading guests...</p>
+            <p className="text-gray-700 dark:text-gray-300 font-medium">Loading guests...</p>
           </div>
         ) : guests.length === 0 ? (
-          <div className="text-center py-8 bg-gray-50 dark:bg-gray-800 rounded-xl">
-            <UserPlus className="w-12 h-12 mx-auto text-gray-400 mb-2" />
-            <p className="text-gray-500 dark:text-gray-400">No guest accounts yet</p>
+          <div className="text-center py-8 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-600">
+            <UserPlus className="w-12 h-12 mx-auto text-gray-500 dark:text-gray-400 mb-2" />
+            <p className="text-gray-700 dark:text-gray-300 font-medium">No guest accounts yet</p>
           </div>
         ) : (
           guests.map(guest => (
@@ -143,31 +143,31 @@ export default function GuestManagement() {
                 <div className="flex-1">
                   <div className="flex items-center space-x-2">
                     <h4 className="font-semibold text-gray-900 dark:text-white">{guest.name}</h4>
-                    <span className={`px-2 py-0.5 text-xs rounded-full ${
+                    <span className={`px-2 py-0.5 text-xs rounded-full font-medium border ${
                       guest.isActive 
-                        ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
-                        : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300 border-green-300 dark:border-green-600' 
+                        : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300 border-red-300 dark:border-red-600'
                     }`}>
                       {guest.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2 text-sm text-gray-600 dark:text-gray-400">
-                    <span>Email: <span className="font-medium">{guest.email}</span></span>
-                    {guest.phone && <span>Phone: <span className="font-medium">{guest.phone}</span></span>}
-                    {guest.organization && <span>Org: <span className="font-medium">{guest.organization}</span></span>}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2 text-sm text-gray-700 dark:text-gray-300">
+                    <span>Email: <span className="font-semibold">{guest.email}</span></span>
+                    {guest.phone && <span>Phone: <span className="font-semibold">{guest.phone}</span></span>}
+                    {guest.organization && <span>Org: <span className="font-semibold">{guest.organization}</span></span>}
                     {guest.expiresAt && (
                       <span className="flex items-center space-x-1">
                         <Calendar className="w-3 h-3" />
-                        <span>Expires: <span className="font-medium">{guest.expiresAt}</span></span>
+                        <span>Expires: <span className="font-semibold">{guest.expiresAt}</span></span>
                       </span>
                     )}
                   </div>
                   {guest.purpose && (
-                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                       Purpose: {guest.purpose}
                     </p>
                   )}
-                  <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                     Created: {guest.createdAt}
                   </p>
                 </div>
@@ -238,7 +238,7 @@ export default function GuestManagement() {
                     type="text"
                     value={newGuest.name}
                     onChange={(e) => setNewGuest({ ...newGuest, name: e.target.value })}
-                    className="w-full px-4 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-magic-500 outline-none"
+                    className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
                     placeholder="e.g., John Doe"
                     required
                   />
@@ -252,7 +252,7 @@ export default function GuestManagement() {
                     type="email"
                     value={newGuest.email}
                     onChange={(e) => setNewGuest({ ...newGuest, email: e.target.value })}
-                    className="w-full px-4 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-magic-500 outline-none"
+                    className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
                     placeholder="guest@example.com"
                     required
                   />
@@ -266,7 +266,7 @@ export default function GuestManagement() {
                     type="text"
                     value={newGuest.password}
                     onChange={(e) => setNewGuest({ ...newGuest, password: e.target.value })}
-                    className="w-full px-4 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-magic-500 outline-none"
+                    className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
                     placeholder="Enter password"
                     required
                   />
@@ -280,7 +280,7 @@ export default function GuestManagement() {
                     type="tel"
                     value={newGuest.phone}
                     onChange={(e) => setNewGuest({ ...newGuest, phone: e.target.value })}
-                    className="w-full px-4 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-magic-500 outline-none"
+                    className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
                     placeholder="+91 XXXXXXXXXX"
                   />
                 </div>
@@ -293,7 +293,7 @@ export default function GuestManagement() {
                     type="text"
                     value={newGuest.organization}
                     onChange={(e) => setNewGuest({ ...newGuest, organization: e.target.value })}
-                    className="w-full px-4 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-magic-500 outline-none"
+                    className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
                     placeholder="Company/Organization name"
                   />
                 </div>
@@ -306,7 +306,7 @@ export default function GuestManagement() {
                     type="text"
                     value={newGuest.purpose}
                     onChange={(e) => setNewGuest({ ...newGuest, purpose: e.target.value })}
-                    className="w-full px-4 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-magic-500 outline-none"
+                    className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
                     placeholder="e.g., Investor review, Partner demo"
                   />
                 </div>
@@ -319,7 +319,7 @@ export default function GuestManagement() {
                     type="date"
                     value={newGuest.expiresAt}
                     onChange={(e) => setNewGuest({ ...newGuest, expiresAt: e.target.value })}
-                    className="w-full px-4 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-magic-500 outline-none"
+                    className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
                   />
                 </div>
 
@@ -415,7 +415,7 @@ function EditGuestModal({ guest, onClose, onSave }) {
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-4 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-magic-500 outline-none"
+              className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
               required
             />
           </div>
@@ -428,7 +428,7 @@ function EditGuestModal({ guest, onClose, onSave }) {
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-4 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-magic-500 outline-none"
+              className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
               required
             />
           </div>
@@ -441,7 +441,7 @@ function EditGuestModal({ guest, onClose, onSave }) {
               type="text"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              className="w-full px-4 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-magic-500 outline-none"
+              className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
               placeholder="Enter new password"
             />
           </div>
@@ -454,7 +454,7 @@ function EditGuestModal({ guest, onClose, onSave }) {
               type="tel"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="w-full px-4 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-magic-500 outline-none"
+              className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
             />
           </div>
 
@@ -466,7 +466,7 @@ function EditGuestModal({ guest, onClose, onSave }) {
               type="text"
               value={formData.organization}
               onChange={(e) => setFormData({ ...formData, organization: e.target.value })}
-              className="w-full px-4 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-magic-500 outline-none"
+              className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
             />
           </div>
 
@@ -478,7 +478,7 @@ function EditGuestModal({ guest, onClose, onSave }) {
               type="text"
               value={formData.purpose}
               onChange={(e) => setFormData({ ...formData, purpose: e.target.value })}
-              className="w-full px-4 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-magic-500 outline-none"
+              className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
             />
           </div>
 
@@ -490,7 +490,7 @@ function EditGuestModal({ guest, onClose, onSave }) {
               type="date"
               value={formData.expiresAt}
               onChange={(e) => setFormData({ ...formData, expiresAt: e.target.value })}
-              className="w-full px-4 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-magic-500 outline-none"
+              className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
             />
           </div>
 

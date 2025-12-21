@@ -164,19 +164,19 @@ export default function Dashboard({ onNavigate, onNavigateWithSector }) {
               onClick={() => onNavigate(card.page)}
               className="cursor-pointer"
             >
-              <div className={`bg-green-50 dark:bg-gray-800 rounded-2xl p-5 sm:p-6 shadow-lg hover:shadow-2xl transition-all border-b-4 ${card.borderColor}`}>
+              <div className={`bg-white dark:bg-gray-800 rounded-2xl p-5 sm:p-6 shadow-lg hover:shadow-2xl transition-all border border-gray-200 dark:border-gray-600 border-b-4 ${card.borderColor}`}>
                 <div className="flex items-center justify-between mb-3 sm:mb-4">
                   <Icon className={`w-7 h-7 sm:w-8 sm:h-8 ${card.iconColor}`} />
                   <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ delay: index * 0.1 + 0.3, type: 'spring' }}
-                    className={`text-3xl sm:text-4xl ${card.iconColor}`}
+                    className={`text-3xl sm:text-4xl font-bold ${card.iconColor}`}
                   >
                     {card.value}
                   </motion.div>
                 </div>
-                <h3 className="text-base sm:text-lg text-gray-900 dark:text-gray-100">{card.label}</h3>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-100">{card.label}</h3>
               </div>
             </motion.div>
           );
@@ -237,13 +237,13 @@ export default function Dashboard({ onNavigate, onNavigateWithSector }) {
           {/* Total Startups Registered */}
           <motion.div
             whileHover={{ scale: 1.02 }}
-            className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl"
+            className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl border border-gray-200 dark:border-gray-600"
           >
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Total Registered</h3>
-              <Rocket className="w-6 h-6 text-blue-500" />
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-white">Total Registered</h3>
+              <Rocket className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             </div>
-            <div className="text-4xl font-bold text-blue-600 mb-4">{stats.total}</div>
+            <div className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-4">{stats.total}</div>
             <div className="relative h-32">
               <div className="absolute bottom-0 left-0 right-0 flex items-end justify-between space-x-1">
                 {[stats.s0, stats.s1, stats.s2, stats.s3, stats.oneOnOne].map((value, idx) => {
@@ -255,7 +255,7 @@ export default function Dashboard({ onNavigate, onNavigateWithSector }) {
                       initial={{ height: 0 }}
                       animate={{ height: `${height}%` }}
                       transition={{ delay: 1.2 + idx * 0.1, duration: 0.5 }}
-                      className="flex-1 bg-gradient-to-t from-blue-500 to-blue-300 rounded-t-lg relative group"
+                      className="flex-1 bg-gradient-to-t from-blue-600 to-blue-400 rounded-t-lg relative group"
                     >
                       <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
                         {['S0', 'S1', 'S2', 'S3', '1-on-1'][idx]}: {value}
@@ -265,7 +265,7 @@ export default function Dashboard({ onNavigate, onNavigateWithSector }) {
                 })}
               </div>
             </div>
-            <div className="flex justify-between text-xs text-gray-500 mt-2">
+            <div className="flex justify-between text-xs font-medium text-gray-600 dark:text-gray-300 mt-2">
               <span>S0</span>
               <span>S1</span>
               <span>S2</span>
@@ -277,13 +277,13 @@ export default function Dashboard({ onNavigate, onNavigateWithSector }) {
           {/* Total Onboarded */}
           <motion.div
             whileHover={{ scale: 1.02 }}
-            className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl"
+            className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl border border-gray-200 dark:border-gray-600"
           >
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Total Onboarded</h3>
-              <Star className="w-6 h-6 text-green-500" />
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-white">Total Onboarded</h3>
+              <Star className="w-6 h-6 text-green-600 dark:text-green-400" />
             </div>
-            <div className="text-4xl font-bold text-green-600 mb-4">{stats.onboarded}</div>
+            <div className="text-4xl font-bold text-green-600 dark:text-green-400 mb-4">{stats.onboarded}</div>
             <div className="relative h-32 flex items-center justify-center">
               <svg className="w-32 h-32 transform -rotate-90">
                 <circle
@@ -313,14 +313,14 @@ export default function Dashboard({ onNavigate, onNavigateWithSector }) {
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                  <div className="text-2xl font-bold text-gray-800 dark:text-white">
                     {stats.total > 0 ? Math.round((stats.onboarded / stats.total) * 100) : 0}%
                   </div>
-                  <div className="text-xs text-gray-500">Success Rate</div>
+                  <div className="text-xs font-medium text-gray-600 dark:text-gray-300">Success Rate</div>
                 </div>
               </div>
             </div>
-            <div className="text-center text-sm text-gray-600 dark:text-gray-400 mt-4">
+            <div className="text-center text-sm font-medium text-gray-700 dark:text-gray-300 mt-4">
               {stats.onboarded} out of {stats.total} startups
             </div>
           </motion.div>
@@ -328,13 +328,13 @@ export default function Dashboard({ onNavigate, onNavigateWithSector }) {
           {/* Total Mentored */}
           <motion.div
             whileHover={{ scale: 1.02 }}
-            className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl"
+            className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl border border-gray-200 dark:border-gray-600"
           >
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Total Mentored</h3>
-              <Users className="w-6 h-6 text-purple-500" />
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-white">Total Mentored</h3>
+              <Users className="w-6 h-6 text-purple-600 dark:text-purple-400" />
             </div>
-            <div className="text-4xl font-bold text-purple-600 mb-4">{stats.oneOnOne}</div>
+            <div className="text-4xl font-bold text-purple-600 dark:text-purple-400 mb-4">{stats.oneOnOne}</div>
             <div className="space-y-3">
               {[
                 { label: 'One-on-One', value: stats.oneOnOne, color: 'bg-purple-500', max: stats.total },
@@ -343,8 +343,8 @@ export default function Dashboard({ onNavigate, onNavigateWithSector }) {
               ].map((item, idx) => (
                 <div key={idx}>
                   <div className="flex justify-between text-sm mb-1">
-                    <span className="text-gray-600 dark:text-gray-400">{item.label}</span>
-                    <span className="font-semibold text-gray-900 dark:text-white">{item.value}</span>
+                    <span className="font-medium text-gray-700 dark:text-gray-300">{item.label}</span>
+                    <span className="font-bold text-gray-800 dark:text-white">{item.value}</span>
                   </div>
                   <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                     <motion.div
