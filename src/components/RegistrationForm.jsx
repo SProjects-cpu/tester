@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, ChevronDown, ChevronUp, Upload } from 'lucide-react';
+import { X, ChevronDown, ChevronUp, Upload, FileText, Trash2 } from 'lucide-react';
 
 // Move components outside to prevent re-creation on each render
 const Section = ({ title, section, expandedSections, toggleSection, children }) => (
@@ -102,6 +102,54 @@ const FileUpload = ({ label, name, required = false, onChange, accept = "*" }) =
   </div>
 );
 
+const MultiFileUpload = ({ label, files, onFilesChange, onRemoveFile }) => (
+  <div>
+    <label className="block text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100 mb-1.5 sm:mb-2">
+      {label} <span className="text-gray-400 font-normal">(Optional - PDF, PPTX, DOC, XLS, CSV, Images)</span>
+    </label>
+    <div className="space-y-3">
+      <div className="relative">
+        <input
+          type="file"
+          onChange={onFilesChange}
+          accept=".pdf,.ppt,.pptx,.doc,.docx,.xls,.xlsx,.csv,.txt,.png,.jpg,.jpeg,.gif,.webp"
+          multiple
+          className="hidden"
+          id="document-upload"
+        />
+        <label
+          htmlFor="document-upload"
+          className="flex items-center justify-center space-x-2 w-full px-3 sm:px-4 py-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:border-magic-500 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer transition-all text-sm sm:text-base"
+        >
+          <Upload className="w-5 h-5" />
+          <span>Click to upload documents (multiple files allowed)</span>
+        </label>
+      </div>
+      
+      {files.length > 0 && (
+        <div className="space-y-2">
+          {files.map((file, index) => (
+            <div key={index} className="flex items-center justify-between p-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
+              <div className="flex items-center space-x-2 flex-1 min-w-0">
+                <FileText className="w-4 h-4 text-magic-500 flex-shrink-0" />
+                <span className="text-sm text-gray-700 dark:text-gray-300 truncate">{file.name}</span>
+                <span className="text-xs text-gray-500 flex-shrink-0">({(file.size / 1024).toFixed(1)} KB)</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => onRemoveFile(index)}
+                className="p-1 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-colors flex-shrink-0"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  </div>
+);
+
 export default function RegistrationForm({ onClose, onSubmit, initialData = null }) {
   // Auto-generate MAGIC code if not editing
   const getNextMagicCode = () => {
@@ -162,8 +210,10 @@ export default function RegistrationForm({ onClose, onSubmit, initialData = null
   const [expandedSections, setExpandedSections] = useState({
     startup: true,
     founder: true,
-    registration: true
+    registration: true,
+    documents: true
   });
+  const [uploadedFiles, setUploadedFiles] = useState([]);
 
   const sectorOptions = [
     'Agritech Innovation',
@@ -215,6 +265,17 @@ export default function RegistrationForm({ onClose, onSubmit, initialData = null
     }
   };
 
+  const handleDocumentFilesChange = (e) => {
+    const files = Array.from(e.target.files);
+    setUploadedFiles(prev => [...prev, ...files]);
+    // Reset input so same file can be selected again
+    e.target.value = '';
+  };
+
+  const handleRemoveFile = (index) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
   const validateForm = () => {
     const newErrors = {};
     
@@ -228,7 +289,8 @@ export default function RegistrationForm({ onClose, onSubmit, initialData = null
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validateForm()) {
-      onSubmit(formData);
+      // Include uploaded files in the submission
+      onSubmit({ ...formData, documents: uploadedFiles });
     } else {
       // Scroll to first error
       const firstErrorField = Object.keys(errors)[0];
@@ -581,6 +643,19 @@ export default function RegistrationForm({ onClose, onSubmit, initialData = null
               rows={3}
               placeholder="Any additional notes or remarks"
             />
+          </Section>
+
+          {/* SECTION 4 - Document Upload */}
+          <Section title="SECTION 4 — Document Upload" section="documents" expandedSections={expandedSections} toggleSection={toggleSection}>
+            <MultiFileUpload
+              label="Upload Documents"
+              files={uploadedFiles}
+              onFilesChange={handleDocumentFilesChange}
+              onRemoveFile={handleRemoveFile}
+            />
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              Supported formats: PDF, PowerPoint, Word, Excel, CSV, Images (PNG, JPG, GIF). Max 10MB per file.
+            </p>
           </Section>
 
           <div className="flex flex-col sm:flex-row justify-end gap-3 sm:space-x-4 pt-4 border-t border-gray-200 dark:border-gray-700">
