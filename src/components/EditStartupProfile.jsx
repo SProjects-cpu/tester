@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, Upload, Image as ImageIcon, Building2, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import DocumentList from './DocumentList';
 
 // Move components outside to prevent re-creation on each render
 const Section = ({ title, section, expandedSections, toggleSection, children }) => (
@@ -120,6 +121,7 @@ export default function EditStartupProfile({ startup, onClose, onUpdate }) {
 
   const [expandedSections, setExpandedSections] = useState({
     images: true,
+    documents: true,
     startup: false,
     founder: false,
     registration: false
@@ -286,6 +288,11 @@ export default function EditStartupProfile({ startup, onClose, onUpdate }) {
                 )}
               </div>
             </div>
+          </Section>
+
+          {/* Documents Section */}
+          <Section title="📄 Documents" section="documents" expandedSections={expandedSections} toggleSection={toggleSection}>
+            <DocumentList startupId={startup.id} isGuest={false} allowUpload={true} />
           </Section>
 
           {/* Startup Information */}

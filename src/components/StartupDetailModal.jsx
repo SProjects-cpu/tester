@@ -415,7 +415,7 @@ export default function StartupDetailModal({ startup, onClose, onUpdate, isGuest
           {/* Documents Section - Admin Only */}
           {!isGuest && (
             <Section title="Documents" section="documents">
-              <DocumentList startupId={startup.id} isGuest={isGuest} />
+              <DocumentList startupId={startup.id} isGuest={isGuest} allowUpload={true} />
             </Section>
           )}
 
