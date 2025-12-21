@@ -136,7 +136,7 @@ export default function Dashboard({ onNavigate, onNavigateWithSector }) {
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold magic-text-gradient">
             Dashboard
           </h1>
-          <p className="text-purple-600 dark:text-purple-400 mt-2 text-sm sm:text-base font-semibold">
+          <p className="text-white mt-2 text-sm sm:text-base font-semibold">
             Welcome to MAGIC Startup Incubation Management System
           </p>
         </div>
