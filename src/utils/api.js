@@ -234,4 +234,35 @@ export const oneOnOneApi = {
   },
 };
 
-export default { startupApi, authApi, smcApi, oneOnOneApi };
+// Guest API methods
+export const guestApi = {
+  getAll: async () => {
+    return apiRequest('/guests');
+  },
+
+  getById: async (id) => {
+    return apiRequest(`/guests/${id}`);
+  },
+
+  create: async (data) => {
+    return apiRequest('/guests', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  update: async (id, data) => {
+    return apiRequest(`/guests/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  delete: async (id) => {
+    return apiRequest(`/guests/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+export default { startupApi, authApi, smcApi, oneOnOneApi, guestApi };

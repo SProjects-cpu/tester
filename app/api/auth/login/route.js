@@ -18,10 +18,49 @@ export async function POST(request) {
       );
     }
 
-    // Find user by email (username is actually email in the database)
-    const user = await prisma.user.findUnique({
-      where: { email: username.toLowerCase() }
+    const emailLower = username.toLowerCase();
+
+    // First try to find admin user
+    let user = await prisma.user.findUnique({
+      where: { email: emailLower }
     });
+    
+    let isGuest = false;
+
+    // If not found in users, check guests table
+    if (!user) {
+      const guest = await prisma.guest.findUnique({
+        where: { email: emailLower }
+      });
+
+      if (guest) {
+        // Check if guest is active
+        if (!guest.isActive) {
+          return NextResponse.json(
+            { message: 'Guest account is deactivated' },
+            { status: 401 }
+          );
+        }
+
+        // Check if guest account has expired
+        if (guest.expiresAt && new Date(guest.expiresAt) < new Date()) {
+          return NextResponse.json(
+            { message: 'Guest account has expired' },
+            { status: 401 }
+          );
+        }
+
+        // Convert guest to user-like object for password check
+        user = {
+          id: guest.id,
+          email: guest.email,
+          password: guest.password,
+          name: guest.name,
+          role: 'guest'
+        };
+        isGuest = true;
+      }
+    }
     
     if (!user) {
       return NextResponse.json(
@@ -39,14 +78,14 @@ export async function POST(request) {
       );
     }
 
-    const token = signToken({ id: user.id, role: user.role });
+    const token = signToken({ id: user.id, role: isGuest ? 'guest' : user.role });
 
     return NextResponse.json({
       token,
       user: {
         id: user.id,
         username: user.email,
-        role: user.role,
+        role: isGuest ? 'guest' : user.role,
         email: user.email,
         name: user.name
       },
