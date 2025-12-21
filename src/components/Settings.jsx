@@ -33,9 +33,6 @@ export default function Settings({ darkMode, toggleDarkMode, isGuest = false }) 
   const [accessRequests, setAccessRequests] = useState([]);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
-  const [migrating, setMigrating] = useState(false);
-  const [migrationResult, setMigrationResult] = useState(null);
-  const [dbStats, setDbStats] = useState(null);
   const [authModal, setAuthModal] = useState({
     isOpen: false,
     title: '',
@@ -50,7 +47,6 @@ export default function Settings({ darkMode, toggleDarkMode, isGuest = false }) 
     if (!isGuest) {
       const requests = storage.get('accessRequests', []);
       setAccessRequests(requests.filter(r => r.status === 'pending'));
-      fetchDatabaseStats();
       fetchCurrentUser();
     }
   }, [isGuest]);
@@ -70,107 +66,6 @@ export default function Settings({ darkMode, toggleDarkMode, isGuest = false }) 
     } catch (error) {
       console.error('Error fetching current user:', error);
       // Token might be expired, api client will handle it
-    }
-  };
-
-  const fetchDatabaseStats = async () => {
-    try {
-      const token = localStorage.getItem('authToken');
-      
-      // Check if token exists and is valid format
-      if (!token || token.split('.').length !== 3) {
-        console.warn('Invalid or missing token, skipping stats fetch');
-        return;
-      }
-      
-      const response = await fetch(`/api/migration/status`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setDbStats(data.database);
-      }
-    } catch (error) {
-      console.error('Error fetching database stats:', error);
-      // Token might be expired, api client will handle it
-    }
-  };
-
-  const handleAutoMigration = async () => {
-    setAuthModal({
-      isOpen: true,
-      title: 'Migrate to Database',
-      message: 'This will migrate all your localStorage data to PostgreSQL database. Please authenticate to proceed.',
-      actionType: 'info',
-      onConfirm: async () => {
-        setMigrating(true);
-        setMigrationResult(null);
-        await performMigration();
-      }
-    });
-  };
-
-  const performMigration = async () => {
-
-    try {
-      // Gather all localStorage data
-      const localData = {
-        startups: storage.get('startups', []),
-        smcSchedules: storage.get('smcSchedules', []),
-        oneOnOneSchedules: storage.get('oneOnOneSchedules', []),
-        exportDate: new Date().toISOString(),
-        version: '1.0.0'
-      };
-
-      // Send to backend for migration
-      const token = localStorage.getItem('authToken');
-      const response = await fetch(`/api/migration/migrate-localstorage`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(localData)
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        setMigrationResult({
-          success: true,
-          message: 'Migration completed successfully!',
-          stats: result.stats
-        });
-        // Refresh database stats
-        fetchDatabaseStats();
-        alert(`✅ Migration Successful!\n\n` +
-          `✓ Startups created: ${result.stats.startupsCreated}\n` +
-          `✓ Startups updated: ${result.stats.startupsUpdated}\n` +
-          `✓ Achievements: ${result.stats.achievementsMigrated}\n` +
-          `✓ Progress records: ${result.stats.progressRecordsMigrated}\n` +
-          `✓ SMC meetings: ${result.stats.smcMeetingsMigrated}\n` +
-          `✓ One-on-One meetings: ${result.stats.oneOnOneMeetingsMigrated}\n\n` +
-          `Open Prisma Studio to view your data!`
-        );
-      } else {
-        setMigrationResult({
-          success: false,
-          message: result.message || 'Migration failed'
-        });
-        alert('❌ Migration failed: ' + result.message);
-      }
-    } catch (error) {
-      console.error('Migration error:', error);
-      setMigrationResult({
-        success: false,
-        message: error.message
-      });
-      alert('❌ Migration error: ' + error.message);
-    } finally {
-      setMigrating(false);
     }
   };
 
@@ -475,150 +370,6 @@ export default function Settings({ darkMode, toggleDarkMode, isGuest = false }) 
             </motion.button>
           </div>
         </motion.div>
-
-        {/* Database Management - Admin Only */}
-        {!isGuest && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 }}
-            className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-2xl p-6 shadow-lg border-2 border-purple-200 dark:border-purple-700"
-          >
-            <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4 flex items-center space-x-2">
-              <BarChart3 className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-              <span>Database Management</span>
-            </h2>
-            <div className="space-y-4">
-              <div className="p-4 bg-white dark:bg-gray-800 rounded-xl">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                      <BarChart3 className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-900 dark:text-white">
-                        Prisma Studio
-                      </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        View and manage PostgreSQL database
-                      </p>
-                    </div>
-                  </div>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => window.open('http://localhost:5555', '_blank')}
-                    className="px-6 py-3 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-xl font-semibold shadow-md hover:shadow-lg transition-all"
-                  >
-                    Open Studio
-                  </motion.button>
-                </div>
-                <div className="mt-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                  <p className="text-xs text-gray-600 dark:text-gray-400">
-                    💡 <strong>Tip:</strong> Make sure Prisma Studio is running. Open terminal and run: <code className="bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded">npm run prisma:studio</code>
-                  </p>
-                </div>
-              </div>
-
-              <div className="p-4 bg-white dark:bg-gray-800 rounded-xl">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                      <Upload className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-900 dark:text-white">
-                        Auto-Migrate to Database
-                      </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        One-click migration from localStorage to PostgreSQL
-                      </p>
-                    </div>
-                  </div>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={handleAutoMigration}
-                    disabled={migrating}
-                    className={`px-6 py-3 rounded-xl font-semibold shadow-md hover:shadow-lg transition-all ${
-                      migrating
-                        ? 'bg-gray-400 cursor-not-allowed'
-                        : 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white'
-                    }`}
-                  >
-                    {migrating ? 'Migrating...' : 'Migrate Now'}
-                  </motion.button>
-                </div>
-                
-                {dbStats && (
-                  <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                    <p className="text-xs font-semibold text-green-800 dark:text-green-300 mb-2">
-                      📊 Current Database Stats:
-                    </p>
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs">
-                      <div className="text-center">
-                        <p className="font-bold text-green-700 dark:text-green-400">{dbStats.startups}</p>
-                        <p className="text-gray-600 dark:text-gray-400">Startups</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="font-bold text-green-700 dark:text-green-400">{dbStats.achievements}</p>
-                        <p className="text-gray-600 dark:text-gray-400">Achievements</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="font-bold text-green-700 dark:text-green-400">{dbStats.progressRecords}</p>
-                        <p className="text-gray-600 dark:text-gray-400">Progress</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="font-bold text-green-700 dark:text-green-400">{dbStats.smcMeetings}</p>
-                        <p className="text-gray-600 dark:text-gray-400">SMC</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="font-bold text-green-700 dark:text-green-400">{dbStats.oneOnOneMeetings}</p>
-                        <p className="text-gray-600 dark:text-gray-400">1-on-1</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {migrationResult && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={`mt-3 p-3 rounded-lg ${
-                      migrationResult.success
-                        ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700'
-                        : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700'
-                    }`}
-                  >
-                    <p className={`text-sm font-semibold ${
-                      migrationResult.success
-                        ? 'text-green-800 dark:text-green-300'
-                        : 'text-red-800 dark:text-red-300'
-                    }`}>
-                      {migrationResult.success ? '✅' : '❌'} {migrationResult.message}
-                    </p>
-                    {migrationResult.stats && (
-                      <div className="mt-2 text-xs text-gray-700 dark:text-gray-300 space-y-1">
-                        <p>• Startups created: {migrationResult.stats.startupsCreated}</p>
-                        <p>• Startups updated: {migrationResult.stats.startupsUpdated}</p>
-                        <p>• Achievements: {migrationResult.stats.achievementsMigrated}</p>
-                        <p>• Progress records: {migrationResult.stats.progressRecordsMigrated}</p>
-                        <p>• SMC meetings: {migrationResult.stats.smcMeetingsMigrated}</p>
-                        <p>• One-on-One meetings: {migrationResult.stats.oneOnOneMeetingsMigrated}</p>
-                      </div>
-                    )}
-                  </motion.div>
-                )}
-
-                <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                  <p className="text-xs text-gray-600 dark:text-gray-400">
-                    💡 <strong>How it works:</strong> Click "Migrate Now" to automatically transfer all your localStorage data (startups, achievements, meetings) to PostgreSQL. The migration is smart - it won't create duplicates!
-                  </p>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
 
         {/* Data Management */}
         <motion.div
