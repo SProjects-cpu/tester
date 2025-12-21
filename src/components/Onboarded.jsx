@@ -198,7 +198,7 @@ export default function Onboarded({ isGuest = false }) {
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
             Onboarded Startups
           </h1>
-          <p className="text-gray-900 dark:text-gray-100 mt-2 text-sm sm:text-base">
+          <p className="text-white mt-2 text-sm sm:text-base">
             {filteredStartups.length} startup{filteredStartups.length !== 1 ? 's' : ''} successfully onboarded
           </p>
         </div>

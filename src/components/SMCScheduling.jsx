@@ -285,7 +285,7 @@ export default function SMCScheduling({ isGuest = false }) {
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold magic-text-gradient">
             SMC Scheduling
           </h1>
-          <p className="text-gray-900 dark:text-gray-100 mt-2 text-sm sm:text-base">
+          <p className="text-white mt-2 text-sm sm:text-base">
             Saturday Mentorship Clinic - Schedule and manage pitch sessions ({filteredSchedules.length} schedules)
           </p>
         </div>

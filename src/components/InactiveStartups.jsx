@@ -103,7 +103,7 @@ export default function InactiveStartups() {
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
               Inactive Startups
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm sm:text-base">
+            <p className="text-white mt-2 text-sm sm:text-base">
               Startups with no activity for more than 30 days
             </p>
           </div>

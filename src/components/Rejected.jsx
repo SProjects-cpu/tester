@@ -104,7 +104,7 @@ export default function Rejected({ isGuest = false }) {
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">
             Rejected Startups
           </h1>
-          <p className="text-gray-900 dark:text-gray-100 mt-2 text-sm sm:text-base">
+          <p className="text-white mt-2 text-sm sm:text-base">
             {filteredStartups.length} startup{filteredStartups.length !== 1 ? 's' : ''} rejected
           </p>
         </div>

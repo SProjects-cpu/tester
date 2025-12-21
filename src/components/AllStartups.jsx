@@ -196,7 +196,7 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold magic-text-gradient">
             All Startups
           </h1>
-          <p className="text-gray-700 dark:text-gray-200 mt-2 text-sm sm:text-base font-medium">
+          <p className="text-white mt-2 text-sm sm:text-base font-medium">
             {filteredStartups.length} startup{filteredStartups.length !== 1 ? 's' : ''} found
           </p>
         </div>
