@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Search, Filter } from 'lucide-react';
-import { startupApi, documentApi } from '../utils/api';
+import { startupApi } from '../utils/api';
 import { exportStartupsComprehensive, filterByDateRange, generateExportFileName } from '../utils/exportUtils';
 import ExportMenu from './ExportMenu';
 import DateRangeFilter from './DateRangeFilter';
@@ -104,37 +104,14 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
 
   const handleAddStartup = async (startupData) => {
     try {
-      // Extract documents from form data
-      const { documents, ...restData } = startupData;
-      
       const newStartup = await startupApi.create({
-        ...restData,
+        ...startupData,
         stage: 'S0',
         status: 'Active'
       });
-      
-      // Upload documents if any
-      if (documents && documents.length > 0) {
-        let uploadedCount = 0;
-        for (const file of documents) {
-          try {
-            await documentApi.upload(file, newStartup.id);
-            uploadedCount++;
-          } catch (uploadError) {
-            console.error('Error uploading document:', uploadError);
-          }
-        }
-        if (uploadedCount > 0) {
-          alert(`✅ Startup registered successfully with ${uploadedCount} document(s) uploaded!`);
-        } else {
-          alert('✅ Startup registered successfully! (Some documents failed to upload)');
-        }
-      } else {
-        alert('✅ Startup registered successfully!');
-      }
-      
       setStartups([newStartup, ...startups]);
       setShowForm(false);
+      alert('✅ Startup registered successfully!');
     } catch (error) {
       console.error('Error creating startup:', error);
       alert('❌ Failed to create startup: ' + error.message);

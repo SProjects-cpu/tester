@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronDown, ChevronUp, CheckCircle, XCircle, Users, Edit, GraduationCap, Lock, Download, FileText, Trash2, Upload } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { X, ChevronDown, ChevronUp, CheckCircle, XCircle, Users, Edit, GraduationCap, Lock, Download } from 'lucide-react';
+import { useState } from 'react';
 import EditStartupProfile from './EditStartupProfile';
 import GuestRestrictedButton from './GuestRestrictedButton';
 import RejectionModal from './RejectionModal';
@@ -8,14 +8,12 @@ import OnboardingModal from './OnboardingModal';
 import GenerateReportButton from './GenerateReportButton';
 import ConfirmationModal from './ConfirmationModal';
 import { getField } from '../utils/startupFieldHelper';
-import { documentApi } from '../utils/api';
 
 export default function StartupDetailModal({ startup, onClose, onUpdate, isGuest = false }) {
   const [expanded, setExpanded] = useState({
     startup: true,
     founder: true,
     registration: true,
-    documents: true,
     pitchHistory: true,
     oneOnOne: true,
     onboarding: true,
@@ -25,9 +23,6 @@ export default function StartupDetailModal({ startup, onClose, onUpdate, isGuest
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showRejectionModal, setShowRejectionModal] = useState(false);
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
-  const [documents, setDocuments] = useState([]);
-  const [loadingDocs, setLoadingDocs] = useState(false);
-  const [uploadingDoc, setUploadingDoc] = useState(false);
   const [confirmationModal, setConfirmationModal] = useState({
     isOpen: false,
     title: '',
@@ -35,78 +30,6 @@ export default function StartupDetailModal({ startup, onClose, onUpdate, isGuest
     onConfirm: null,
     type: 'warning'
   });
-
-  // Load documents when modal opens
-  useEffect(() => {
-    if (startup?.id) {
-      loadDocuments();
-    }
-  }, [startup?.id]);
-
-  const loadDocuments = async () => {
-    try {
-      setLoadingDocs(true);
-      const docs = await documentApi.getAll(startup.id);
-      setDocuments(docs);
-    } catch (error) {
-      console.error('Error loading documents:', error);
-    } finally {
-      setLoadingDocs(false);
-    }
-  };
-
-  const handleDocumentUpload = async (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length === 0) return;
-
-    setUploadingDoc(true);
-    let uploadedCount = 0;
-
-    for (const file of files) {
-      try {
-        await documentApi.upload(file, startup.id);
-        uploadedCount++;
-      } catch (error) {
-        console.error('Error uploading document:', error);
-      }
-    }
-
-    if (uploadedCount > 0) {
-      await loadDocuments();
-      alert(`✅ ${uploadedCount} document(s) uploaded successfully!`);
-    }
-    
-    setUploadingDoc(false);
-    e.target.value = '';
-  };
-
-  const handleDeleteDocument = async (docId, fileName) => {
-    if (!confirm(`Are you sure you want to delete "${fileName}"?`)) return;
-
-    try {
-      await documentApi.delete(docId);
-      setDocuments(documents.filter(d => d.id !== docId));
-      alert('✅ Document deleted successfully!');
-    } catch (error) {
-      console.error('Error deleting document:', error);
-      alert('❌ Failed to delete document: ' + error.message);
-    }
-  };
-
-  const formatFileSize = (bytes) => {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
-  };
-
-  const getFileIcon = (fileType) => {
-    if (fileType?.includes('pdf')) return '📄';
-    if (fileType?.includes('word') || fileType?.includes('document')) return '📝';
-    if (fileType?.includes('sheet') || fileType?.includes('excel') || fileType?.includes('csv')) return '📊';
-    if (fileType?.includes('presentation') || fileType?.includes('powerpoint')) return '📽️';
-    if (fileType?.includes('image')) return '🖼️';
-    return '📎';
-  };
 
   if (!startup) return null;
 
@@ -485,91 +408,6 @@ export default function StartupDetailModal({ startup, onClose, onUpdate, isGuest
               <Field label="Clinical Mentoring" value={startup.clinicalMentoring ? 'Yes' : 'No'} />
             </div>
             <Field label="Follow-Up Remark" value={startup.followUpRemark} />
-          </Section>
-
-          {/* Documents Section */}
-          <Section title={`Documents (${documents.length})`} section="documents">
-            <div className="space-y-4">
-              {/* Upload Button */}
-              {!isGuest && !isLocked && (
-                <div className="relative">
-                  <input
-                    type="file"
-                    onChange={handleDocumentUpload}
-                    accept=".pdf,.ppt,.pptx,.doc,.docx,.xls,.xlsx,.csv,.txt,.png,.jpg,.jpeg,.gif,.webp"
-                    multiple
-                    className="hidden"
-                    id="doc-upload-modal"
-                    disabled={uploadingDoc}
-                  />
-                  <label
-                    htmlFor="doc-upload-modal"
-                    className={`flex items-center justify-center space-x-2 w-full px-4 py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:border-magic-500 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer transition-all ${uploadingDoc ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  >
-                    {uploadingDoc ? (
-                      <>
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-magic-500"></div>
-                        <span>Uploading...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="w-5 h-5" />
-                        <span>Upload Documents (PDF, PPTX, DOC, XLS, CSV, Images)</span>
-                      </>
-                    )}
-                  </label>
-                </div>
-              )}
-
-              {/* Documents List */}
-              {loadingDocs ? (
-                <div className="text-center py-4">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-magic-500 mx-auto mb-2"></div>
-                  <p className="text-sm text-gray-500">Loading documents...</p>
-                </div>
-              ) : documents.length === 0 ? (
-                <div className="text-center py-6 bg-gray-50 dark:bg-gray-700 rounded-xl">
-                  <FileText className="w-10 h-10 mx-auto text-gray-400 mb-2" />
-                  <p className="text-gray-500 dark:text-gray-400">No documents uploaded yet</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {documents.map((doc) => (
-                    <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 hover:border-magic-500 transition-colors">
-                      <div className="flex items-center space-x-3 flex-1 min-w-0">
-                        <span className="text-2xl">{getFileIcon(doc.fileType)}</span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{doc.fileName}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            {formatFileSize(doc.fileSize)} • {new Date(doc.uploadedAt).toLocaleDateString()}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2 ml-2">
-                        <a
-                          href={doc.fileUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
-                          title="Download"
-                        >
-                          <Download className="w-4 h-4" />
-                        </a>
-                        {!isGuest && !isLocked && (
-                          <button
-                            onClick={() => handleDeleteDocument(doc.id, doc.fileName)}
-                            className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                            title="Delete"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
           </Section>
 
           {startup.pitchHistory && startup.pitchHistory.length > 0 && (

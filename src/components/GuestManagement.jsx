@@ -274,7 +274,7 @@ export default function GuestManagement() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Phone <span className="text-gray-400 font-normal">(Optional)</span>
+                    Phone
                   </label>
                   <input
                     type="tel"
@@ -287,7 +287,7 @@ export default function GuestManagement() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Organization <span className="text-gray-400 font-normal">(Optional)</span>
+                    Organization
                   </label>
                   <input
                     type="text"
@@ -300,7 +300,7 @@ export default function GuestManagement() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Purpose of Access <span className="text-gray-400 font-normal">(Optional)</span>
+                    Purpose of Access
                   </label>
                   <input
                     type="text"
@@ -313,7 +313,7 @@ export default function GuestManagement() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Access Expiry Date <span className="text-gray-400 font-normal">(Optional)</span>
+                    Access Expiry Date
                   </label>
                   <input
                     type="date"
@@ -448,7 +448,7 @@ function EditGuestModal({ guest, onClose, onSave }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Phone <span className="text-gray-400 font-normal">(Optional)</span>
+              Phone
             </label>
             <input
               type="tel"
@@ -460,7 +460,7 @@ function EditGuestModal({ guest, onClose, onSave }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Organization <span className="text-gray-400 font-normal">(Optional)</span>
+              Organization
             </label>
             <input
               type="text"
@@ -472,7 +472,7 @@ function EditGuestModal({ guest, onClose, onSave }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Purpose <span className="text-gray-400 font-normal">(Optional)</span>
+              Purpose
             </label>
             <input
               type="text"
@@ -484,7 +484,7 @@ function EditGuestModal({ guest, onClose, onSave }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Access Expiry Date <span className="text-gray-400 font-normal">(Optional)</span>
+              Access Expiry Date
             </label>
             <input
               type="date"
