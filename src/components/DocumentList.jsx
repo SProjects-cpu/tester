@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Download, Trash2, FileText, Image, Table, File, Loader2, AlertCircle, FolderOpen, Upload, Plus } from 'lucide-react';
+import { Download, Trash2, FileText, Image, Table, File, Loader2, AlertCircle, FolderOpen, Plus } from 'lucide-react';
 import { documentApi } from '../utils/api';
 
 // Allowed file extensions

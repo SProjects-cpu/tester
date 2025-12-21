@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, Upload, Image as ImageIcon, Building2, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, Upload, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import DocumentList from './DocumentList';
 
 // Move components outside to prevent re-creation on each render
