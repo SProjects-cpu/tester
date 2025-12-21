@@ -37,7 +37,7 @@ export default function Sidebar({ currentPage, onNavigate, onLogout, darkMode, t
           <img 
             src="/magic_icon.png" 
             alt="MAGIC" 
-            className="w-32 h-32 sm:w-40 sm:h-40 object-contain drop-shadow-2xl"
+            className="w-32 h-32 sm:w-40 sm:h-40 object-contain"
           />
           {isGuest && (
             <span className="inline-block px-3 py-1 bg-yellow-400/20 border border-yellow-500/50 rounded-lg text-xs text-yellow-700 dark:text-yellow-300">
