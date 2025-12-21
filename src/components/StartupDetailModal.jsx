@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronDown, ChevronUp, CheckCircle, XCircle, Users, Edit, GraduationCap, Lock, Download } from 'lucide-react';
+import { X, ChevronDown, ChevronUp, CheckCircle, XCircle, Users, Edit, GraduationCap, Lock, Download, FileText } from 'lucide-react';
 import { useState } from 'react';
 import EditStartupProfile from './EditStartupProfile';
 import GuestRestrictedButton from './GuestRestrictedButton';
@@ -7,6 +7,7 @@ import RejectionModal from './RejectionModal';
 import OnboardingModal from './OnboardingModal';
 import GenerateReportButton from './GenerateReportButton';
 import ConfirmationModal from './ConfirmationModal';
+import DocumentList from './DocumentList';
 import { getField } from '../utils/startupFieldHelper';
 
 export default function StartupDetailModal({ startup, onClose, onUpdate, isGuest = false }) {
@@ -14,6 +15,7 @@ export default function StartupDetailModal({ startup, onClose, onUpdate, isGuest
     startup: true,
     founder: true,
     registration: true,
+    documents: true,
     pitchHistory: true,
     oneOnOne: true,
     onboarding: true,
@@ -409,6 +411,13 @@ export default function StartupDetailModal({ startup, onClose, onUpdate, isGuest
             </div>
             <Field label="Follow-Up Remark" value={startup.followUpRemark} />
           </Section>
+
+          {/* Documents Section - Admin Only */}
+          {!isGuest && (
+            <Section title="Documents" section="documents">
+              <DocumentList startupId={startup.id} isGuest={isGuest} />
+            </Section>
+          )}
 
           {startup.pitchHistory && startup.pitchHistory.length > 0 && (
             <Section title="Pitch History" section="pitchHistory">

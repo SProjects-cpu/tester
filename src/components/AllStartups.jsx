@@ -102,16 +102,39 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
     setFilteredStartups(filtered);
   };
 
-  const handleAddStartup = async (startupData) => {
+  const handleAddStartup = async (startupData, documents = []) => {
     try {
       const newStartup = await startupApi.create({
         ...startupData,
         stage: 'S0',
         status: 'Active'
       });
+      
+      // Upload documents if any
+      if (documents.length > 0) {
+        const token = localStorage.getItem('token');
+        for (const file of documents) {
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('startupId', newStartup.id);
+          
+          try {
+            await fetch('/api/documents', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`
+              },
+              body: formData
+            });
+          } catch (docError) {
+            console.error('Error uploading document:', docError);
+          }
+        }
+      }
+      
       setStartups([newStartup, ...startups]);
       setShowForm(false);
-      alert('✅ Startup registered successfully!');
+      alert('✅ Startup registered successfully!' + (documents.length > 0 ? ` ${documents.length} document(s) uploaded.` : ''));
     } catch (error) {
       console.error('Error creating startup:', error);
       alert('❌ Failed to create startup: ' + error.message);

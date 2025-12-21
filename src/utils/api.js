@@ -265,4 +265,47 @@ export const guestApi = {
   },
 };
 
-export default { startupApi, authApi, smcApi, oneOnOneApi, guestApi };
+// Document API methods
+export const documentApi = {
+  // Get all documents for a startup
+  getByStartupId: async (startupId) => {
+    return apiRequest(`/documents?startupId=${startupId}`);
+  },
+
+  // Get download URL for a document
+  getDownloadUrl: async (id) => {
+    return apiRequest(`/documents/download/${id}`);
+  },
+
+  // Upload a document (uses FormData, not JSON)
+  upload: async (file, startupId) => {
+    const token = getToken();
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('startupId', startupId);
+
+    const response = await fetch(`${API_URL}/documents`, {
+      method: 'POST',
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Upload failed' }));
+      throw new Error(error.message || 'Upload failed');
+    }
+
+    return response.json();
+  },
+
+  // Delete a document
+  delete: async (id) => {
+    return apiRequest(`/documents/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+export default { startupApi, authApi, smcApi, oneOnOneApi, guestApi, documentApi };

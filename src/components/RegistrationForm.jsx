@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, ChevronDown, ChevronUp, Upload } from 'lucide-react';
+import DocumentUpload from './DocumentUpload';
 
 // Move components outside to prevent re-creation on each render
 const Section = ({ title, section, expandedSections, toggleSection, children }) => (
@@ -159,6 +160,7 @@ export default function RegistrationForm({ onClose, onSubmit, initialData = null
   });
 
   const [errors, setErrors] = useState({});
+  const [documents, setDocuments] = useState([]);
   const [expandedSections, setExpandedSections] = useState({
     startup: true,
     founder: true,
@@ -228,7 +230,8 @@ export default function RegistrationForm({ onClose, onSubmit, initialData = null
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validateForm()) {
-      onSubmit(formData);
+      // Pass documents along with form data
+      onSubmit(formData, documents);
     } else {
       // Scroll to first error
       const firstErrorField = Object.keys(errors)[0];
@@ -458,6 +461,15 @@ export default function RegistrationForm({ onClose, onSubmit, initialData = null
                 value={formData.socialMediaPlatform} 
                 onChange={handleChange} 
                 options={socialMediaPlatforms}
+              />
+            </div>
+
+            {/* Document Upload Section */}
+            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <DocumentUpload 
+                files={documents}
+                onChange={setDocuments}
+                maxFiles={5}
               />
             </div>
           </Section>
