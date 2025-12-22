@@ -308,4 +308,61 @@ export const documentApi = {
   },
 };
 
-export default { startupApi, authApi, smcApi, oneOnOneApi, guestApi, documentApi };
+// Achievement API methods
+export const achievementApi = {
+  // Get all achievements for a startup
+  getByStartupId: async (startupId) => {
+    return apiRequest(`/achievements/${startupId}`);
+  },
+
+  // Create achievement
+  create: async (startupId, data) => {
+    return apiRequest(`/achievements/${startupId}`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // Update achievement
+  update: async (startupId, achievementId, data) => {
+    return apiRequest(`/achievements/${startupId}/${achievementId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // Delete achievement
+  delete: async (startupId, achievementId) => {
+    return apiRequest(`/achievements/${startupId}/${achievementId}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+// Progress API methods
+export const progressApi = {
+  // Create progress entry
+  create: async (startupId, data) => {
+    return apiRequest(`/progress/${startupId}`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // Update progress entry
+  update: async (startupId, progressId, data) => {
+    return apiRequest(`/progress/${startupId}/${progressId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // Delete progress entry
+  delete: async (startupId, progressId) => {
+    return apiRequest(`/progress/${startupId}/${progressId}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+export default { startupApi, authApi, smcApi, oneOnOneApi, guestApi, documentApi, achievementApi, progressApi };

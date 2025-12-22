@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Download, Plus, TrendingUp, Award, GraduationCap, IndianRupee, BarChart3, X, Eye, ChevronDown, FileJson, FileSpreadsheet } from 'lucide-react';
+import { Search, TrendingUp, Award, GraduationCap, IndianRupee, BarChart3, X } from 'lucide-react';
 import { startupApi } from '../utils/api';
 import { exportStartupsComprehensive, filterByDateRange, generateExportFileName } from '../utils/exportUtils';
 import ExportMenu from './ExportMenu';
@@ -21,11 +21,7 @@ export default function Onboarded({ isGuest = false }) {
   const [viewMode, setViewMode] = useState('list');
   const [selectedStartup, setSelectedStartup] = useState(null);
   const [showAchievementModal, setShowAchievementModal] = useState(null);
-  const [showRevenueForm, setShowRevenueForm] = useState(null);
   const [showProgressModal, setShowProgressModal] = useState(null);
-  const [showExportMenu, setShowExportMenu] = useState(false);
-  const [revenueData, setRevenueData] = useState({ amount: '', source: '', date: '', description: '' });
-  const [loading, setLoading] = useState(true);
   const [adminAuthModal, setAdminAuthModal] = useState({
     isOpen: false,
     title: '',
@@ -96,80 +92,24 @@ export default function Onboarded({ isGuest = false }) {
     }
   };
 
-  const handleAddAchievement = (startup) => {
-    setShowAchievementForm(startup);
-    setAchievementData({ title: '', description: '', date: new Date().toISOString().split('T')[0], mediaUrl: '' });
-  };
-
-  const submitAchievement = () => {
-    if (!achievementData.title || !achievementData.description) {
-      alert('Please fill title and description');
-      return;
-    }
-    const startup = showAchievementForm;
-    const achievements = startup.achievements || [];
-    achievements.push({
-      ...achievementData,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString()
-    });
-    
-    const allStartups = storage.get('startups', []);
-    const updated = allStartups.map(s => 
-      s.id === startup.id ? { ...s, achievements } : s
-    );
-    storage.set('startups', updated);
-    setShowAchievementForm(null);
-    loadStartups();
-    alert('Achievement added successfully!');
-  };
-
-  const handleAddRevenue = (startup) => {
-    setShowRevenueForm(startup);
-    setRevenueData({ amount: '', source: '', date: new Date().toISOString().split('T')[0], description: '' });
-  };
-
-  const submitRevenue = () => {
-    if (!revenueData.amount || !revenueData.source) {
-      alert('Please fill amount and source');
-      return;
-    }
-    const startup = showRevenueForm;
-    const revenueHistory = startup.revenueHistory || [];
-    revenueHistory.push({
-      ...revenueData,
-      amount: parseFloat(revenueData.amount),
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString()
-    });
-    
-    // Calculate total revenue
-    const totalRevenue = revenueHistory.reduce((sum, r) => sum + r.amount, 0);
-    
-    const allStartups = storage.get('startups', []);
-    const updated = allStartups.map(s => 
-      s.id === startup.id ? { ...s, revenueHistory, totalRevenue } : s
-    );
-    storage.set('startups', updated);
-    setShowRevenueForm(null);
-    loadStartups();
-    alert('Revenue added successfully!');
-  };
-
   const handleGraduate = (startup) => {
     setAdminAuthModal({
       isOpen: true,
       title: 'Graduate Startup',
       message: `You are about to graduate "${startup.companyName}". This will lock the startup and mark it as completed. This action cannot be easily undone. Please authenticate to proceed.`,
       actionType: 'info',
-      onConfirm: () => {
-        const allStartups = storage.get('startups', []);
-        const updated = allStartups.map(s =>
-          s.id === startup.id ? { ...s, status: 'Graduated', graduatedDate: new Date().toISOString() } : s
-        );
-        storage.set('startups', updated);
-        loadStartups();
-        alert(`✅ ${startup.companyName} has been graduated!`);
+      onConfirm: async () => {
+        try {
+          await startupApi.update(startup.id, { 
+            status: 'Graduated', 
+            graduatedDate: new Date().toISOString() 
+          });
+          await loadStartups();
+          alert(`✅ ${startup.companyName} has been graduated!`);
+        } catch (error) {
+          console.error('Error graduating startup:', error);
+          alert('Failed to graduate startup: ' + error.message);
+        }
       }
     });
   };
@@ -587,96 +527,6 @@ export default function Onboarded({ isGuest = false }) {
           />
         )}
 
-        {/* Add Revenue Modal */}
-        {showRevenueForm && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-            onClick={() => setShowRevenueForm(null)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-6"
-            >
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
-                <TrendingUp className="w-6 h-6 text-green-500" />
-                <span>Add Revenue</span>
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                For: <strong>{showRevenueForm.companyName}</strong>
-              </p>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Amount (₹) <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    value={revenueData.amount}
-                    onChange={(e) => setRevenueData({ ...revenueData, amount: e.target.value })}
-                    className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    placeholder="e.g., 500000"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Source <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={revenueData.source}
-                    onChange={(e) => setRevenueData({ ...revenueData, source: e.target.value })}
-                    className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    placeholder="e.g., Product Sales, Funding, Contract"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Date
-                  </label>
-                  <input
-                    type="date"
-                    value={revenueData.date}
-                    onChange={(e) => setRevenueData({ ...revenueData, date: e.target.value })}
-                    className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Description (Optional)
-                  </label>
-                  <textarea
-                    value={revenueData.description}
-                    onChange={(e) => setRevenueData({ ...revenueData, description: e.target.value })}
-                    rows={2}
-                    className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    placeholder="Additional details..."
-                  />
-                </div>
-                <div className="flex space-x-3 pt-4">
-                  <button
-                    onClick={() => setShowRevenueForm(null)}
-                    className="flex-1 px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={submitRevenue}
-                    className="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg font-semibold"
-                  >
-                    Add Revenue
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
         <AdminAuthModal
           isOpen={adminAuthModal.isOpen}
           onClose={() => setAdminAuthModal({ ...adminAuthModal, isOpen: false })}
@@ -714,7 +564,7 @@ function AchievementModalWrapper({ startup, onClose, onUpdate, isGuest }) {
             <div className="flex items-center space-x-3">
               <Award className="w-10 h-10" />
               <div>
-                <h2 className="text-2xl sm:text-3xl font-bold">Add Achievement</h2>
+                <h2 className="text-2xl sm:text-3xl font-bold">Manage Achievements</h2>
                 <p className="text-white/90">{startup.companyName}</p>
               </div>
             </div>
@@ -733,7 +583,6 @@ function AchievementModalWrapper({ startup, onClose, onUpdate, isGuest }) {
             startup={startup} 
             onUpdate={(updatedStartup) => {
               onUpdate(updatedStartup);
-              onClose();
             }}
             isGuest={isGuest}
           />

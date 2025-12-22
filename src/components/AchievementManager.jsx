@@ -1,55 +1,34 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, X, Upload, FileText, Image as ImageIcon, Award, Calendar, ExternalLink } from 'lucide-react';
+import { Plus, X, Upload, FileText, Image as ImageIcon, Award, Calendar, ExternalLink, Edit2, Trash2 } from 'lucide-react';
+import { achievementApi } from '../utils/api';
 
 export default function AchievementManager({ startup, onUpdate, isGuest = false }) {
   const [achievements, setAchievements] = useState(startup.achievements || []);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editingAchievement, setEditingAchievement] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [newAchievement, setNewAchievement] = useState({
     title: '',
     description: '',
     date: '',
     type: 'Patent',
     attachments: [],
-    // Patent specific fields
     patentNumber: '',
     patentStatus: '',
     filingDate: '',
-    // Award specific fields
     awardName: '',
     awardingOrganization: '',
     awardCategory: '',
-    // Success Goal specific fields
     goalType: '',
     targetValue: '',
     achievedValue: '',
-    // Upgrade specific fields
     upgradeType: '',
     previousVersion: '',
     newVersion: ''
   });
 
-  const handleAddAchievement = () => {
-    if (!newAchievement.title || !newAchievement.description) {
-      alert('Please fill in title and description');
-      return;
-    }
-
-    const achievement = {
-      id: Date.now().toString(),
-      ...newAchievement,
-      createdAt: new Date().toISOString()
-    };
-
-    const updatedAchievements = [...achievements, achievement];
-    setAchievements(updatedAchievements);
-    
-    const updatedStartup = {
-      ...startup,
-      achievements: updatedAchievements
-    };
-    onUpdate(updatedStartup);
-
+  const resetForm = () => {
     setNewAchievement({
       title: '',
       description: '',
@@ -69,10 +48,136 @@ export default function AchievementManager({ startup, onUpdate, isGuest = false 
       previousVersion: '',
       newVersion: ''
     });
-    setShowAddForm(false);
+    setEditingAchievement(null);
   };
 
+  const handleAddAchievement = async () => {
+    if (!newAchievement.title || !newAchievement.description) {
+      alert('Please fill in title and description');
+      return;
+    }
 
+    setLoading(true);
+    try {
+      // Create achievement via API
+      const achievementData = {
+        title: newAchievement.title,
+        description: newAchievement.description,
+        type: newAchievement.type,
+        date: newAchievement.date || new Date().toISOString(),
+        mediaUrl: newAchievement.attachments.length > 0 ? newAchievement.attachments[0].data : null
+      };
+
+      const createdAchievement = await achievementApi.create(startup.id, achievementData);
+      
+      const updatedAchievements = [...achievements, createdAchievement];
+      setAchievements(updatedAchievements);
+      
+      // Update parent component
+      onUpdate({
+        ...startup,
+        achievements: updatedAchievements
+      });
+
+      resetForm();
+      setShowAddForm(false);
+      alert('Achievement added successfully!');
+    } catch (error) {
+      console.error('Error creating achievement:', error);
+      alert('Failed to add achievement: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditAchievement = async () => {
+    if (!newAchievement.title || !newAchievement.description) {
+      alert('Please fill in title and description');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const achievementData = {
+        title: newAchievement.title,
+        description: newAchievement.description,
+        type: newAchievement.type,
+        date: newAchievement.date || new Date().toISOString(),
+        mediaUrl: newAchievement.attachments.length > 0 ? newAchievement.attachments[0].data : editingAchievement.mediaUrl
+      };
+
+      const updatedAchievement = await achievementApi.update(startup.id, editingAchievement.id, achievementData);
+      
+      const updatedAchievements = achievements.map(a => 
+        a.id === editingAchievement.id ? updatedAchievement : a
+      );
+      setAchievements(updatedAchievements);
+      
+      onUpdate({
+        ...startup,
+        achievements: updatedAchievements
+      });
+
+      resetForm();
+      setShowAddForm(false);
+      alert('Achievement updated successfully!');
+    } catch (error) {
+      console.error('Error updating achievement:', error);
+      alert('Failed to update achievement: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteAchievement = async (achievementId) => {
+    if (!confirm('Are you sure you want to delete this achievement?')) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await achievementApi.delete(startup.id, achievementId);
+      
+      const updatedAchievements = achievements.filter(a => a.id !== achievementId);
+      setAchievements(updatedAchievements);
+      
+      onUpdate({
+        ...startup,
+        achievements: updatedAchievements
+      });
+
+      alert('Achievement deleted successfully!');
+    } catch (error) {
+      console.error('Error deleting achievement:', error);
+      alert('Failed to delete achievement: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const startEdit = (achievement) => {
+    setEditingAchievement(achievement);
+    setNewAchievement({
+      title: achievement.title || '',
+      description: achievement.description || '',
+      date: achievement.date ? achievement.date.split('T')[0] : '',
+      type: achievement.type || 'Patent',
+      attachments: achievement.mediaUrl ? [{ data: achievement.mediaUrl, name: 'Existing file' }] : [],
+      patentNumber: achievement.patentNumber || '',
+      patentStatus: achievement.patentStatus || '',
+      filingDate: achievement.filingDate || '',
+      awardName: achievement.awardName || '',
+      awardingOrganization: achievement.awardingOrganization || '',
+      awardCategory: achievement.awardCategory || '',
+      goalType: achievement.goalType || '',
+      targetValue: achievement.targetValue || '',
+      achievedValue: achievement.achievedValue || '',
+      upgradeType: achievement.upgradeType || '',
+      previousVersion: achievement.previousVersion || '',
+      newVersion: achievement.newVersion || ''
+    });
+    setShowAddForm(true);
+  };
 
   const handleFileUpload = (e) => {
     const files = Array.from(e.target.files);
@@ -107,11 +212,12 @@ export default function AchievementManager({ startup, onUpdate, isGuest = false 
   };
 
   const getFileIcon = (type) => {
-    if (type.startsWith('image/')) return <ImageIcon className="w-4 h-4" />;
+    if (type && type.startsWith('image/')) return <ImageIcon className="w-4 h-4" />;
     return <FileText className="w-4 h-4" />;
   };
 
   const formatFileSize = (bytes) => {
+    if (!bytes) return '';
     if (bytes < 1024) return bytes + ' B';
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
@@ -139,7 +245,10 @@ export default function AchievementManager({ startup, onUpdate, isGuest = false 
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => setShowAddForm(!showAddForm)}
+            onClick={() => {
+              resetForm();
+              setShowAddForm(!showAddForm);
+            }}
             className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg text-sm font-medium"
           >
             {showAddForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
@@ -156,6 +265,10 @@ export default function AchievementManager({ startup, onUpdate, isGuest = false 
             exit={{ opacity: 0, height: 0 }}
             className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 space-y-4"
           >
+            <h4 className="font-semibold text-gray-900 dark:text-white">
+              {editingAchievement ? 'Edit Achievement' : 'Add New Achievement'}
+            </h4>
+            
             {/* Achievement Type Selection */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -195,209 +308,13 @@ export default function AchievementManager({ startup, onUpdate, isGuest = false 
                   type="text"
                   value={newAchievement.title}
                   onChange={(e) => setNewAchievement({ ...newAchievement, title: e.target.value })}
-                  placeholder={
-                    newAchievement.type === 'Patent' ? 'e.g., AI Algorithm Patent' :
-                    newAchievement.type === 'Award' ? 'e.g., Best Startup Award 2024' :
-                    newAchievement.type === 'Success Goal' ? 'e.g., Reached 10K Users' :
-                    newAchievement.type === 'Upgrade' ? 'e.g., Platform Version 2.0' :
-                    'e.g., New Partnership Announcement'
-                  }
+                  placeholder="Enter achievement title"
                   className="w-full px-3 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
               </div>
             </div>
 
-            {/* Type-Specific Fields */}
-            {newAchievement.type === 'Patent' && (
-              <div className="space-y-4 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border-2 border-purple-200 dark:border-purple-700">
-                <h4 className="font-semibold text-purple-900 dark:text-purple-300">Patent Details</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Patent Number
-                    </label>
-                    <input
-                      type="text"
-                      value={newAchievement.patentNumber}
-                      onChange={(e) => setNewAchievement({ ...newAchievement, patentNumber: e.target.value })}
-                      placeholder="e.g., US123456789"
-                      className="w-full px-3 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Patent Status
-                    </label>
-                    <select
-                      value={newAchievement.patentStatus}
-                      onChange={(e) => setNewAchievement({ ...newAchievement, patentStatus: e.target.value })}
-                      className="w-full px-3 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    >
-                      <option value="">Select Status</option>
-                      <option value="Filed">Filed</option>
-                      <option value="Pending">Pending</option>
-                      <option value="Approved">Approved</option>
-                      <option value="Granted">Granted</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Filing Date
-                    </label>
-                    <input
-                      type="date"
-                      value={newAchievement.filingDate}
-                      onChange={(e) => setNewAchievement({ ...newAchievement, filingDate: e.target.value })}
-                      className="w-full px-3 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {newAchievement.type === 'Award' && (
-              <div className="space-y-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border-2 border-yellow-200 dark:border-yellow-700">
-                <h4 className="font-semibold text-yellow-900 dark:text-yellow-300">Award Details</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Award Name
-                    </label>
-                    <input
-                      type="text"
-                      value={newAchievement.awardName}
-                      onChange={(e) => setNewAchievement({ ...newAchievement, awardName: e.target.value })}
-                      placeholder="e.g., Best Innovation Award"
-                      className="w-full px-3 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Awarding Organization
-                    </label>
-                    <input
-                      type="text"
-                      value={newAchievement.awardingOrganization}
-                      onChange={(e) => setNewAchievement({ ...newAchievement, awardingOrganization: e.target.value })}
-                      placeholder="e.g., Tech Summit 2024"
-                      className="w-full px-3 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Award Category
-                    </label>
-                    <input
-                      type="text"
-                      value={newAchievement.awardCategory}
-                      onChange={(e) => setNewAchievement({ ...newAchievement, awardCategory: e.target.value })}
-                      placeholder="e.g., Technology, Innovation"
-                      className="w-full px-3 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {newAchievement.type === 'Success Goal' && (
-              <div className="space-y-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border-2 border-green-200 dark:border-green-700">
-                <h4 className="font-semibold text-green-900 dark:text-green-300">Success Goal Details</h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Goal Type
-                    </label>
-                    <select
-                      value={newAchievement.goalType}
-                      onChange={(e) => setNewAchievement({ ...newAchievement, goalType: e.target.value })}
-                      className="w-full px-3 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    >
-                      <option value="">Select Type</option>
-                      <option value="Users">Users</option>
-                      <option value="Revenue">Revenue</option>
-                      <option value="Downloads">Downloads</option>
-                      <option value="Customers">Customers</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Target Value
-                    </label>
-                    <input
-                      type="text"
-                      value={newAchievement.targetValue}
-                      onChange={(e) => setNewAchievement({ ...newAchievement, targetValue: e.target.value })}
-                      placeholder="e.g., 10,000"
-                      className="w-full px-3 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Achieved Value
-                    </label>
-                    <input
-                      type="text"
-                      value={newAchievement.achievedValue}
-                      onChange={(e) => setNewAchievement({ ...newAchievement, achievedValue: e.target.value })}
-                      placeholder="e.g., 12,500"
-                      className="w-full px-3 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {newAchievement.type === 'Upgrade' && (
-              <div className="space-y-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-2 border-blue-200 dark:border-blue-700">
-                <h4 className="font-semibold text-blue-900 dark:text-blue-300">Upgrade Details</h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Upgrade Type
-                    </label>
-                    <select
-                      value={newAchievement.upgradeType}
-                      onChange={(e) => setNewAchievement({ ...newAchievement, upgradeType: e.target.value })}
-                      className="w-full px-3 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    >
-                      <option value="">Select Type</option>
-                      <option value="Product">Product</option>
-                      <option value="Platform">Platform</option>
-                      <option value="Technology">Technology</option>
-                      <option value="Infrastructure">Infrastructure</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Previous Version
-                    </label>
-                    <input
-                      type="text"
-                      value={newAchievement.previousVersion}
-                      onChange={(e) => setNewAchievement({ ...newAchievement, previousVersion: e.target.value })}
-                      placeholder="e.g., v1.0"
-                      className="w-full px-3 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      New Version
-                    </label>
-                    <input
-                      type="text"
-                      value={newAchievement.newVersion}
-                      onChange={(e) => setNewAchievement({ ...newAchievement, newVersion: e.target.value })}
-                      placeholder="e.g., v2.0"
-                      className="w-full px-3 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Description - Common for all types */}
+            {/* Description */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Description *
@@ -405,18 +322,13 @@ export default function AchievementManager({ startup, onUpdate, isGuest = false 
               <textarea
                 value={newAchievement.description}
                 onChange={(e) => setNewAchievement({ ...newAchievement, description: e.target.value })}
-                placeholder={
-                  newAchievement.type === 'Patent' ? 'Describe the patent details, innovation, and impact...' :
-                  newAchievement.type === 'Award' ? 'Describe the award, competition, and significance...' :
-                  newAchievement.type === 'Success Goal' ? 'Describe how you achieved this goal and its impact...' :
-                  newAchievement.type === 'Upgrade' ? 'Describe the upgrade features and improvements...' :
-                  'Describe the update or announcement...'
-                }
+                placeholder="Describe the achievement..."
                 rows={4}
                 className="w-full px-3 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
               />
             </div>
 
+            {/* File Upload */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Attachments (Images, PDFs, Documents)
@@ -446,9 +358,11 @@ export default function AchievementManager({ startup, onUpdate, isGuest = false 
                         <span className="text-sm text-gray-700 dark:text-gray-300 truncate">
                           {file.name}
                         </span>
-                        <span className="text-xs text-gray-500">
-                          ({formatFileSize(file.size)})
-                        </span>
+                        {file.size && (
+                          <span className="text-xs text-gray-500">
+                            ({formatFileSize(file.size)})
+                          </span>
+                        )}
                       </div>
                       <button
                         type="button"
@@ -466,10 +380,11 @@ export default function AchievementManager({ startup, onUpdate, isGuest = false 
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={handleAddAchievement}
-              className="w-full py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg font-medium"
+              onClick={editingAchievement ? handleEditAchievement : handleAddAchievement}
+              disabled={loading}
+              className="w-full py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg font-medium disabled:opacity-50"
             >
-              Add Achievement
+              {loading ? 'Saving...' : (editingAchievement ? 'Update Achievement' : 'Add Achievement')}
             </motion.button>
           </motion.div>
         )}
@@ -506,62 +421,45 @@ export default function AchievementManager({ startup, onUpdate, isGuest = false 
                   <h4 className="font-semibold text-gray-900 dark:text-white">
                     {achievement.title}
                   </h4>
-                  
-                  {/* Type-specific details */}
-                  {achievement.type === 'Patent' && (achievement.patentNumber || achievement.patentStatus) && (
-                    <div className="mt-2 text-xs text-gray-600 dark:text-gray-400 space-y-1">
-                      {achievement.patentNumber && <p><strong>Patent #:</strong> {achievement.patentNumber}</p>}
-                      {achievement.patentStatus && <p><strong>Status:</strong> {achievement.patentStatus}</p>}
-                      {achievement.filingDate && <p><strong>Filed:</strong> {new Date(achievement.filingDate).toLocaleDateString()}</p>}
-                    </div>
-                  )}
-                  
-                  {achievement.type === 'Award' && (achievement.awardName || achievement.awardingOrganization) && (
-                    <div className="mt-2 text-xs text-gray-600 dark:text-gray-400 space-y-1">
-                      {achievement.awardName && <p><strong>Award:</strong> {achievement.awardName}</p>}
-                      {achievement.awardingOrganization && <p><strong>Organization:</strong> {achievement.awardingOrganization}</p>}
-                      {achievement.awardCategory && <p><strong>Category:</strong> {achievement.awardCategory}</p>}
-                    </div>
-                  )}
-                  
-                  {achievement.type === 'Success Goal' && (achievement.goalType || achievement.achievedValue) && (
-                    <div className="mt-2 text-xs text-gray-600 dark:text-gray-400 space-y-1">
-                      {achievement.goalType && <p><strong>Goal Type:</strong> {achievement.goalType}</p>}
-                      {achievement.targetValue && achievement.achievedValue && (
-                        <p><strong>Progress:</strong> {achievement.achievedValue} / {achievement.targetValue}</p>
-                      )}
-                    </div>
-                  )}
-                  
-                  {achievement.type === 'Upgrade' && (achievement.upgradeType || achievement.newVersion) && (
-                    <div className="mt-2 text-xs text-gray-600 dark:text-gray-400 space-y-1">
-                      {achievement.upgradeType && <p><strong>Type:</strong> {achievement.upgradeType}</p>}
-                      {achievement.previousVersion && achievement.newVersion && (
-                        <p><strong>Version:</strong> {achievement.previousVersion} → {achievement.newVersion}</p>
-                      )}
-                    </div>
-                  )}
-                  
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
                     {achievement.description}
                   </p>
                 </div>
+                
+                {/* Edit/Delete buttons for admin */}
+                {!isGuest && (
+                  <div className="flex items-center gap-2 ml-4">
+                    <button
+                      onClick={() => startEdit(achievement)}
+                      className="p-2 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                      title="Edit"
+                    >
+                      <Edit2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteAchievement(achievement.id)}
+                      disabled={loading}
+                      className="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" />
+                    </button>
+                  </div>
+                )}
               </div>
 
-              {achievement.attachments && achievement.attachments.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {achievement.attachments.map((file, index) => (
-                    <a
-                      key={index}
-                      href={file.data}
-                      download={file.name}
-                      className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 rounded-lg text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                    >
-                      {getFileIcon(file.type)}
-                      <span className="text-gray-700 dark:text-gray-300">{file.name}</span>
-                      <ExternalLink className="w-3 h-3 text-gray-500" />
-                    </a>
-                  ))}
+              {achievement.mediaUrl && (
+                <div className="mt-3">
+                  <a
+                    href={achievement.mediaUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 rounded-lg text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors w-fit"
+                  >
+                    <FileText className="w-4 h-4" />
+                    <span className="text-gray-700 dark:text-gray-300">View Attachment</span>
+                    <ExternalLink className="w-3 h-3 text-gray-500" />
+                  </a>
                 </div>
               )}
             </motion.div>
