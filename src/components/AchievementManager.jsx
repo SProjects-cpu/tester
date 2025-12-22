@@ -1,7 +1,60 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, X, Upload, FileText, Image as ImageIcon, Award, Calendar, ExternalLink, Edit2, Trash2 } from 'lucide-react';
+import { Plus, X, Upload, FileText, Image as ImageIcon, Award, Calendar, ExternalLink, Edit2, Trash2, Download, Eye } from 'lucide-react';
 import { achievementApi } from '../utils/api';
+
+// Helper function to handle viewing/downloading base64 data URLs
+const handleViewAttachment = (mediaUrl, title) => {
+  if (!mediaUrl) return;
+  
+  // Check if it's a base64 data URL
+  if (mediaUrl.startsWith('data:')) {
+    // Extract mime type and data
+    const matches = mediaUrl.match(/^data:([^;]+);base64,(.+)$/);
+    if (matches) {
+      const mimeType = matches[1];
+      const base64Data = matches[2];
+      
+      // Convert base64 to blob
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: mimeType });
+      
+      // Create object URL and open/download
+      const blobUrl = URL.createObjectURL(blob);
+      
+      if (mimeType.startsWith('image/') || mimeType === 'application/pdf') {
+        // Open in new tab for images and PDFs
+        window.open(blobUrl, '_blank');
+      } else {
+        // Download for other file types
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = title || 'attachment';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+      
+      // Clean up the blob URL after a delay
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+    }
+  } else {
+    // Regular URL - open directly
+    window.open(mediaUrl, '_blank');
+  }
+};
+
+// Check if mediaUrl is an image
+const isImageUrl = (url) => {
+  if (!url) return false;
+  if (url.startsWith('data:image/')) return true;
+  return /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(url);
+};
 
 export default function AchievementManager({ startup, onUpdate, isGuest = false }) {
   const [achievements, setAchievements] = useState(startup.achievements || []);
@@ -450,16 +503,32 @@ export default function AchievementManager({ startup, onUpdate, isGuest = false 
 
               {achievement.mediaUrl && (
                 <div className="mt-3">
-                  <a
-                    href={achievement.mediaUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 rounded-lg text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors w-fit"
-                  >
-                    <FileText className="w-4 h-4" />
-                    <span className="text-gray-700 dark:text-gray-300">View Attachment</span>
-                    <ExternalLink className="w-3 h-3 text-gray-500" />
-                  </a>
+                  {isImageUrl(achievement.mediaUrl) ? (
+                    <div className="space-y-2">
+                      <img 
+                        src={achievement.mediaUrl} 
+                        alt={achievement.title}
+                        className="max-w-full h-auto max-h-48 rounded-lg object-contain cursor-pointer hover:opacity-90 transition-opacity"
+                        onClick={() => handleViewAttachment(achievement.mediaUrl, achievement.title)}
+                      />
+                      <button
+                        onClick={() => handleViewAttachment(achievement.mediaUrl, achievement.title)}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 rounded-lg text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors w-fit"
+                      >
+                        <Eye className="w-4 h-4" />
+                        <span className="text-gray-700 dark:text-gray-300">View Full Size</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => handleViewAttachment(achievement.mediaUrl, achievement.title)}
+                      className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 rounded-lg text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors w-fit"
+                    >
+                      <FileText className="w-4 h-4" />
+                      <span className="text-gray-700 dark:text-gray-300">View Attachment</span>
+                      <Download className="w-3 h-3 text-gray-500" />
+                    </button>
+                  )}
                 </div>
               )}
             </motion.div>

@@ -12,6 +12,48 @@ import GuestRestrictedButton from './GuestRestrictedButton';
 import AchievementManager from './AchievementManager';
 import AdminAuthModal from './AdminAuthModal';
 
+// Helper function to handle viewing/downloading base64 data URLs
+const handleViewAttachment = (mediaUrl, title) => {
+  if (!mediaUrl) return;
+  
+  if (mediaUrl.startsWith('data:')) {
+    const matches = mediaUrl.match(/^data:([^;]+);base64,(.+)$/);
+    if (matches) {
+      const mimeType = matches[1];
+      const base64Data = matches[2];
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: mimeType });
+      const blobUrl = URL.createObjectURL(blob);
+      
+      if (mimeType.startsWith('image/') || mimeType === 'application/pdf') {
+        window.open(blobUrl, '_blank');
+      } else {
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = title || 'attachment';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+    }
+  } else {
+    window.open(mediaUrl, '_blank');
+  }
+};
+
+// Check if mediaUrl is an image
+const isImageUrl = (url) => {
+  if (!url) return false;
+  if (url.startsWith('data:image/')) return true;
+  return /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(url);
+};
+
 export default function Graduated({ isGuest = false }) {
   const [startups, setStartups] = useState([]);
   const [filteredStartups, setFilteredStartups] = useState([]);

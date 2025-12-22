@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, TrendingUp, Award, GraduationCap, IndianRupee, BarChart3, X } from 'lucide-react';
+import { Search, TrendingUp, Award, GraduationCap, IndianRupee, BarChart3, X, Eye } from 'lucide-react';
 import { startupApi } from '../utils/api';
 import { exportStartupsComprehensive, filterByDateRange, generateExportFileName } from '../utils/exportUtils';
 import ExportMenu from './ExportMenu';
@@ -12,6 +12,49 @@ import GuestRestrictedButton from './GuestRestrictedButton';
 import StartupProgressModal from './StartupProgressModal';
 import AchievementManager from './AchievementManager';
 import AdminAuthModal from './AdminAuthModal';
+
+// Helper function to handle viewing/downloading base64 data URLs
+const handleViewAttachment = (mediaUrl, title) => {
+  if (!mediaUrl) return;
+  
+  // Check if it's a base64 data URL
+  if (mediaUrl.startsWith('data:')) {
+    const matches = mediaUrl.match(/^data:([^;]+);base64,(.+)$/);
+    if (matches) {
+      const mimeType = matches[1];
+      const base64Data = matches[2];
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: mimeType });
+      const blobUrl = URL.createObjectURL(blob);
+      
+      if (mimeType.startsWith('image/') || mimeType === 'application/pdf') {
+        window.open(blobUrl, '_blank');
+      } else {
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = title || 'attachment';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+    }
+  } else {
+    window.open(mediaUrl, '_blank');
+  }
+};
+
+// Check if mediaUrl is an image
+const isImageUrl = (url) => {
+  if (!url) return false;
+  if (url.startsWith('data:image/')) return true;
+  return /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(url);
+};
 
 export default function Onboarded({ isGuest = false }) {
   const [startups, setStartups] = useState([]);
@@ -397,25 +440,22 @@ export default function Onboarded({ isGuest = false }) {
                           </div>
                           {ach.mediaUrl && (
                             <div className="mt-2">
-                              {ach.mediaUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                              {isImageUrl(ach.mediaUrl) ? (
                                 <img 
                                   src={ach.mediaUrl} 
                                   alt={ach.title}
-                                  className="w-full h-32 object-cover rounded-lg"
+                                  className="w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-90"
+                                  onClick={() => handleViewAttachment(ach.mediaUrl, ach.title)}
                                   onError={(e) => e.target.style.display = 'none'}
                                 />
                               ) : (
-                                <a 
-                                  href={ach.mediaUrl} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
+                                <button 
+                                  onClick={() => handleViewAttachment(ach.mediaUrl, ach.title)}
                                   className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center space-x-1"
                                 >
-                                  <span>View Media</span>
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                  </svg>
-                                </a>
+                                  <Eye className="w-3 h-3" />
+                                  <span>View Attachment</span>
+                                </button>
                               )}
                             </div>
                           )}
