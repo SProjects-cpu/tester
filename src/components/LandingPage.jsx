@@ -90,18 +90,16 @@ const LandingPage = ({ onNavigateToLogin }) => {
 
   return (
     <MagicBackground>
-      {/* Smokey Cursor Effect - High Quality Desktop Experience */}
+      {/* Smokey Cursor Effect - Light Rainbow Smoke */}
       <SmokeyCursor
-        simulationResolution={256}
-        dyeResolution={2048}
-        densityDissipation={2}
-        velocityDissipation={3}
-        curl={5}
-        splatRadius={0.25}
-        splatForce={8000}
+        simulationResolution={128}
+        dyeResolution={1024}
+        densityDissipation={0.98}
+        velocityDissipation={0.99}
+        splatRadius={0.5}
+        splatForce={5000}
         enableShading={true}
         colorUpdateSpeed={10}
-        backgroundColor={{ r: 0, g: 0, b: 0 }}
       />
       
       <div className="min-h-screen relative z-10">

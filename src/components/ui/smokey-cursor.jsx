@@ -2,12 +2,12 @@ import { useRef, useEffect } from 'react';
 
 const SmokeyCursor = ({
   simulationResolution = 128,
-  dyeResolution = 1024,
-  densityDissipation = 2,
-  velocityDissipation = 3,
+  dyeResolution = 512,
+  densityDissipation = 3,
+  velocityDissipation = 2,
   curl = 5,
   splatRadius = 0.25,
-  splatForce = 8000,
+  splatForce = 6000,
   enableShading = true,
   colorUpdateSpeed = 10,
   backgroundColor = { r: 0, g: 0, b: 0 }
@@ -43,7 +43,7 @@ const SmokeyCursor = ({
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
-    // Enhanced Shaders for better visual effect
+    // Shaders
     const vertexShader = `
       attribute vec2 aPosition;
       varying vec2 vUv;
@@ -53,33 +53,15 @@ const SmokeyCursor = ({
       }
     `;
 
-    // Enhanced display shader with shading effect
-    const displayFragmentShader = enableShading ? `
+    const displayFragmentShader = `
       precision mediump float;
       varying vec2 vUv;
       uniform sampler2D uTexture;
       void main() {
         vec4 color = texture2D(uTexture, vUv);
         float alpha = max(color.r, max(color.g, color.b));
-        
-        // Enhanced shading with glow effect
-        vec3 shadedColor = color.rgb * 1.2;
-        shadedColor = pow(shadedColor, vec3(0.9)); // Gamma correction for vibrancy
-        
-        // Soft glow
-        float glow = alpha * 0.3;
-        shadedColor += vec3(glow * 0.5, glow * 0.3, glow * 0.8);
-        
-        gl_FragColor = vec4(shadedColor * 0.85, alpha * 0.5);
-      }
-    ` : `
-      precision mediump float;
-      varying vec2 vUv;
-      uniform sampler2D uTexture;
-      void main() {
-        vec4 color = texture2D(uTexture, vUv);
-        float alpha = max(color.r, max(color.g, color.b));
-        gl_FragColor = vec4(color.rgb * 0.8, alpha * 0.45);
+        // Subtle, low contrast for non-blinding effect
+        gl_FragColor = vec4(color.rgb * 0.7, alpha * 0.35);
       }
     `;
 
@@ -111,22 +93,6 @@ const SmokeyCursor = ({
       void main() {
         vec2 coord = vUv - dt * texture2D(uVelocity, vUv).xy * texelSize;
         gl_FragColor = dissipation * texture2D(uSource, coord);
-      }
-    `;
-
-    // Curl shader for vorticity
-    const curlFragmentShader = `
-      precision mediump float;
-      varying vec2 vUv;
-      uniform sampler2D uVelocity;
-      uniform vec2 texelSize;
-      void main() {
-        float L = texture2D(uVelocity, vUv - vec2(texelSize.x, 0.0)).y;
-        float R = texture2D(uVelocity, vUv + vec2(texelSize.x, 0.0)).y;
-        float T = texture2D(uVelocity, vUv + vec2(0.0, texelSize.y)).x;
-        float B = texture2D(uVelocity, vUv - vec2(0.0, texelSize.y)).x;
-        float vorticity = R - L - T + B;
-        gl_FragColor = vec4(0.5 * vorticity, 0.0, 0.0, 1.0);
       }
     `;
 
@@ -206,7 +172,6 @@ const SmokeyCursor = ({
     const displayProgram = createProgram(vertexShader, displayFragmentShader);
     const splatProgram = createProgram(vertexShader, splatFragmentShader);
     const advectionProgram = createProgram(vertexShader, advectionFragmentShader);
-    const curlProgram = createProgram(vertexShader, curlFragmentShader);
 
     if (!displayProgram || !splatProgram || !advectionProgram) {
       console.error('Failed to create programs');
@@ -226,7 +191,7 @@ const SmokeyCursor = ({
     gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(aPosition);
 
-    // Initialize FBOs with configurable resolution
+    // Initialize FBOs
     const velocity = createDoubleFBO(simulationResolution, simulationResolution);
     const density = createDoubleFBO(dyeResolution, dyeResolution);
 
@@ -235,25 +200,21 @@ const SmokeyCursor = ({
       return;
     }
 
-    // Mouse tracking with velocity smoothing
-    const pointer = { x: 0.5, y: 0.5, dx: 0, dy: 0, moved: false, prevX: 0.5, prevY: 0.5 };
+    // Mouse tracking
+    const pointer = { x: 0.5, y: 0.5, dx: 0, dy: 0, moved: false };
 
     const updatePointer = (e) => {
       const rect = canvas.getBoundingClientRect();
       const x = e.clientX / rect.width;
       const y = 1.0 - e.clientY / rect.height;
-      
-      // Smooth velocity calculation
-      pointer.dx = (x - pointer.prevX) * 15;
-      pointer.dy = (y - pointer.prevY) * 15;
-      pointer.prevX = pointer.x;
-      pointer.prevY = pointer.y;
+      pointer.dx = (x - pointer.x) * 10;
+      pointer.dy = (y - pointer.y) * 10;
       pointer.x = x;
       pointer.y = y;
-      pointer.moved = Math.abs(pointer.dx) > 0.0005 || Math.abs(pointer.dy) > 0.0005;
+      pointer.moved = Math.abs(pointer.dx) > 0.001 || Math.abs(pointer.dy) > 0.001;
     };
 
-    // Enhanced HSV to RGB with more vibrant colors
+    // HSV to RGB conversion for vibrant colors
     const HSVtoRGB = (h, s, v) => {
       let r, g, b;
       const i = Math.floor(h * 6);
@@ -282,20 +243,13 @@ const SmokeyCursor = ({
       }
     }, { passive: true });
 
-    // Enhanced splat function with curl effect
+    // Splat function
     const splat = (x, y, dx, dy, color) => {
       gl.useProgram(splatProgram);
       gl.uniform1i(gl.getUniformLocation(splatProgram, 'uTarget'), 0);
       gl.uniform1f(gl.getUniformLocation(splatProgram, 'aspectRatio'), canvas.width / canvas.height);
       gl.uniform2f(gl.getUniformLocation(splatProgram, 'point'), x, y);
-      
-      // Apply curl to velocity
-      const curlEffect = curl * 0.1;
-      gl.uniform3f(gl.getUniformLocation(splatProgram, 'color'), 
-        dx * 0.4 + dy * curlEffect, 
-        dy * 0.4 - dx * curlEffect, 
-        0
-      );
+      gl.uniform3f(gl.getUniformLocation(splatProgram, 'color'), dx * 0.3, dy * 0.3, 0);
       gl.uniform1f(gl.getUniformLocation(splatProgram, 'radius'), splatRadius / 100);
       
       gl.activeTexture(gl.TEXTURE0);
@@ -305,12 +259,8 @@ const SmokeyCursor = ({
       gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
       velocity.swap();
 
-      // Apply color with enhanced vibrancy
-      gl.uniform3f(gl.getUniformLocation(splatProgram, 'color'), 
-        color.r * 1.3, 
-        color.g * 1.3, 
-        color.b * 1.3
-      );
+      // Use subtle rainbow color to avoid blinding effect
+      gl.uniform3f(gl.getUniformLocation(splatProgram, 'color'), color.r * 1.0, color.g * 1.0, color.b * 1.0);
       gl.bindTexture(gl.TEXTURE_2D, density.read.texture);
       gl.bindFramebuffer(gl.FRAMEBUFFER, density.write.fbo);
       gl.viewport(0, 0, density.write.width, density.write.height);
@@ -318,26 +268,23 @@ const SmokeyCursor = ({
       density.swap();
     };
 
-    // Animation loop with enhanced effects
+    // Animation loop
     let lastTime = Date.now();
     let colorOffset = 0;
-    
     const update = () => {
       const dt = Math.min((Date.now() - lastTime) / 1000, 0.016);
       lastTime = Date.now();
 
       if (pointer.moved) {
-        // Smooth rainbow color transition
-        colorOffset += dt * (colorUpdateSpeed * 0.08);
+        // Generate smooth rainbow colors that transition continuously
+        colorOffset += dt * 0.5; // Smooth color transition speed
         const hue = (colorOffset % 1.0);
-        
-        // Higher saturation and value for more vibrant colors
-        const color = HSVtoRGB(hue, 0.75, 0.85);
+        const color = HSVtoRGB(hue, 0.6, 0.7); // Lower saturation and brightness for subtle effect
         splat(pointer.x, pointer.y, pointer.dx * splatForce, pointer.dy * splatForce, color);
         pointer.moved = false;
       }
 
-      // Advection with configurable dissipation
+      // Advection
       gl.useProgram(advectionProgram);
       gl.uniform2f(gl.getUniformLocation(advectionProgram, 'texelSize'), 1 / dyeResolution, 1 / dyeResolution);
       gl.uniform1f(gl.getUniformLocation(advectionProgram, 'dt'), dt);
@@ -354,15 +301,6 @@ const SmokeyCursor = ({
       gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
       density.swap();
 
-      // Velocity advection
-      gl.uniform1f(gl.getUniformLocation(advectionProgram, 'dissipation'), 1.0 - velocityDissipation / 100);
-      gl.activeTexture(gl.TEXTURE1);
-      gl.bindTexture(gl.TEXTURE_2D, velocity.read.texture);
-      gl.bindFramebuffer(gl.FRAMEBUFFER, velocity.write.fbo);
-      gl.viewport(0, 0, velocity.write.width, velocity.write.height);
-      gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
-      velocity.swap();
-
       // Display
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
       gl.viewport(0, 0, canvas.width, canvas.height);
@@ -370,7 +308,7 @@ const SmokeyCursor = ({
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
       
-      gl.clearColor(backgroundColor.r, backgroundColor.g, backgroundColor.b, 0);
+      gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
       
       gl.useProgram(displayProgram);
