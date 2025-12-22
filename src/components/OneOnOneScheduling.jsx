@@ -388,7 +388,7 @@ export default function OneOnOneScheduling({ isGuest = false }) {
         {/* Startups in One-on-One */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100">
+            <h2 className="text-lg sm:text-xl font-semibold text-white">
               Startups in One-on-One ({startups.length})
             </h2>
             {/* View Toggle */}
