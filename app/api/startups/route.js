@@ -18,7 +18,8 @@ const transformStartup = (startup) => ({
   stage: startup.stage,
   status: startup.stage === 'Graduated' ? 'Graduated' : 
           startup.stage === 'Rejected' ? 'Rejected' : 
-          startup.stage === 'Inactive' ? 'Inactive' : 'Active',
+          startup.stage === 'Inactive' ? 'Inactive' :
+          startup.stage === 'Onboarded' ? 'Onboarded' : 'Active',
   description: startup.description,
   problemSolving: startup.description,
   website: startup.website,
@@ -125,6 +126,11 @@ export async function GET(request) {
       if (status === 'Graduated') where.stage = 'Graduated';
       else if (status === 'Rejected') where.stage = 'Rejected';
       else if (status === 'Inactive') where.stage = 'Inactive';
+      else if (status === 'Onboarded') where.stage = 'Onboarded';
+      else if (status === 'Active') {
+        // Active means any stage that's not Graduated, Rejected, Inactive, or Onboarded
+        where.stage = { notIn: ['Graduated', 'Rejected', 'Inactive', 'Onboarded'] };
+      }
     }
     if (search) {
       where.OR = [

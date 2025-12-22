@@ -18,7 +18,8 @@ const transformStartup = (startup) => ({
   stage: startup.stage,
   status: startup.stage === 'Graduated' ? 'Graduated' : 
           startup.stage === 'Rejected' ? 'Rejected' : 
-          startup.stage === 'Inactive' ? 'Inactive' : 'Active',
+          startup.stage === 'Inactive' ? 'Inactive' :
+          startup.stage === 'Onboarded' ? 'Onboarded' : 'Active',
   description: startup.description,
   problemSolving: startup.description,
   website: startup.website,
@@ -77,7 +78,27 @@ const transformToDb = (body) => {
   if (body.founderMobile !== undefined || body.phone !== undefined || body.mobile !== undefined) 
     data.phone = body.founderMobile || body.phone || body.mobile;
   if (body.sector !== undefined) data.sector = body.sector;
+  
+  // Handle stage field
   if (body.stage !== undefined) data.stage = body.stage;
+  
+  // Handle status field - map status to stage for database
+  // Status values: 'Active', 'Onboarded', 'Graduated', 'Rejected', 'Inactive'
+  if (body.status !== undefined) {
+    if (body.status === 'Onboarded') {
+      data.stage = 'Onboarded';
+      data.onboardedDate = new Date();
+    } else if (body.status === 'Graduated') {
+      data.stage = 'Graduated';
+      data.graduatedDate = new Date();
+    } else if (body.status === 'Rejected') {
+      data.stage = 'Rejected';
+    } else if (body.status === 'Inactive') {
+      data.stage = 'Inactive';
+    }
+    // 'Active' status doesn't change stage - it's derived from stage
+  }
+  
   if (body.description !== undefined || body.problemSolving !== undefined) 
     data.description = body.description || body.problemSolving;
   if (body.website !== undefined) data.website = body.website;
@@ -93,6 +114,8 @@ const transformToDb = (body) => {
   if (body.bhaskarId !== undefined) data.bhaskarId = body.bhaskarId;
   if (body.graduatedDate !== undefined) 
     data.graduatedDate = body.graduatedDate ? new Date(body.graduatedDate) : null;
+  if (body.onboardedDate !== undefined) 
+    data.onboardedDate = body.onboardedDate ? new Date(body.onboardedDate) : null;
   
   // Registration Info fields
   if (body.magicCode !== undefined) data.magicCode = body.magicCode;
