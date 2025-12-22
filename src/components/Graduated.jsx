@@ -81,11 +81,14 @@ export default function Graduated({ isGuest = false }) {
     });
   };
 
-  const handleUpdateStartup = (updatedStartup) => {
-    const allStartups = storage.get('startups', []);
-    const updated = allStartups.map(s => s.id === updatedStartup.id ? updatedStartup : s);
-    storage.set('startups', updated);
-    loadStartups();
+  const handleUpdateStartup = async (updatedStartup) => {
+    try {
+      await startupApi.update(updatedStartup.id, updatedStartup);
+      await loadStartups();
+    } catch (error) {
+      console.error('Error updating startup:', error);
+      alert('Failed to update startup: ' + error.message);
+    }
   };
 
   const getGridColumns = () => {

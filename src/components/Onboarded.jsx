@@ -22,6 +22,7 @@ export default function Onboarded({ isGuest = false }) {
   const [selectedStartup, setSelectedStartup] = useState(null);
   const [showAchievementModal, setShowAchievementModal] = useState(null);
   const [showProgressModal, setShowProgressModal] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [adminAuthModal, setAdminAuthModal] = useState({
     isOpen: false,
     title: '',
