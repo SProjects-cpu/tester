@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, Clock, Plus, Check, X, Grid, List, History } from 'lucide-react';
+import { Calendar, Clock, Plus, Check, X, Grid, List, History, Trash2 } from 'lucide-react';
 import { startupApi, smcApi } from '../utils/api';
 import { exportSMCSchedulesToPDF, filterByDateRange, generateExportFileName } from '../utils/exportUtils';
 import ExportMenu from './ExportMenu';
@@ -205,6 +205,22 @@ export default function SMCScheduling({ isGuest = false }) {
       } catch (error) {
         console.error('Error removing schedule:', error);
         alert('❌ Failed to remove schedule: ' + error.message);
+      }
+    }
+  };
+
+  const handleDeleteSchedule = async (schedule) => {
+    const startup = startups.find(s => s.id === schedule.startupId) || allStartups.find(s => s.id === schedule.startupId);
+    const companyName = startup?.companyName || 'Unknown Startup';
+    
+    if (confirm(`Delete this scheduled meeting for "${companyName}"? This action cannot be undone.`)) {
+      try {
+        await smcApi.delete(schedule.id);
+        setSchedules(schedules.filter(s => s.id !== schedule.id));
+        alert('✅ Meeting deleted successfully.');
+      } catch (error) {
+        console.error('Error deleting schedule:', error);
+        alert('❌ Failed to delete schedule: ' + error.message);
       }
     }
   };
@@ -501,7 +517,10 @@ export default function SMCScheduling({ isGuest = false }) {
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-4">
                         {daySchedules.map(schedule => {
                           const startup = startups.find(s => s.id === schedule.startupId);
+                          const allStartup = allStartups.find(s => s.id === schedule.startupId);
+                          const displayStartup = startup || allStartup;
                           const isCompleted = schedule.status === 'Completed';
+                          const isUnknown = !displayStartup;
 
                           return (
                             <motion.div
@@ -509,9 +528,11 @@ export default function SMCScheduling({ isGuest = false }) {
                               initial={{ opacity: 0, scale: 0.9 }}
                               animate={{ opacity: 1, scale: 1 }}
                               className={`p-4 rounded-xl border-2 ${
-                                isCompleted
-                                  ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-                                  : 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                                isUnknown
+                                  ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20'
+                                  : isCompleted
+                                    ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                                    : 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
                               } shadow-sm hover:shadow-md transition-all`}
                             >
                               <div className="flex items-center justify-between mb-3">
@@ -521,46 +542,77 @@ export default function SMCScheduling({ isGuest = false }) {
                                     {schedule.timeSlot}
                                   </span>
                                 </div>
-                                {isCompleted && (
-                                  <span className="text-xs font-semibold text-green-600 dark:text-green-400">
-                                    ✓ Done
-                                  </span>
-                                )}
+                                <div className="flex items-center space-x-2">
+                                  {isCompleted && (
+                                    <span className="text-xs font-semibold text-green-600 dark:text-green-400">
+                                      ✓ Done
+                                    </span>
+                                  )}
+                                  {isUnknown && (
+                                    <span className="text-xs font-semibold text-orange-600 dark:text-orange-400">
+                                      ⚠ Unknown
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                               
                               <p className="text-sm font-semibold text-gray-900 dark:text-white mb-3 line-clamp-2">
-                                {startup?.companyName || 'Unknown'}
+                                {displayStartup?.companyName || 'Unknown Startup'}
                               </p>
 
                               {isCompleted ? (
-                                <motion.button
-                                  whileHover={{ scale: 1.02 }}
-                                  whileTap={{ scale: 0.98 }}
-                                  onClick={() => handleViewHistory(schedule)}
-                                  className="w-full flex items-center justify-center space-x-1 bg-blue-500 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-blue-600 transition-colors"
-                                >
-                                  <span>View Details</span>
-                                </motion.button>
+                                <div className="flex gap-2">
+                                  <motion.button
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={() => handleViewHistory(schedule)}
+                                    className="flex-1 flex items-center justify-center space-x-1 bg-blue-500 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-blue-600 transition-colors"
+                                  >
+                                    <span>View Details</span>
+                                  </motion.button>
+                                  <GuestRestrictedButton
+                                    isGuest={isGuest}
+                                    onClick={() => handleDeleteSchedule(schedule)}
+                                    actionType="delete"
+                                    className="flex items-center justify-center bg-red-500 text-white px-2 py-2 rounded-lg text-xs font-semibold hover:bg-red-600 transition-colors"
+                                    title="Delete meeting"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </GuestRestrictedButton>
+                                </div>
                               ) : (
                                 <div className="space-y-2">
-                                  <GuestRestrictedButton
-                                    isGuest={isGuest}
-                                    onClick={() => handleComplete(schedule)}
-                                    actionType="feedback"
-                                    className="w-full flex items-center justify-center space-x-1 bg-green-500 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-green-600 transition-colors"
-                                  >
-                                    <Check className="w-3 h-3" />
-                                    <span>Mark Done</span>
-                                  </GuestRestrictedButton>
-                                  <GuestRestrictedButton
-                                    isGuest={isGuest}
-                                    onClick={() => handleNotDone(schedule)}
-                                    actionType="delete"
-                                    className="w-full flex items-center justify-center space-x-1 bg-red-500 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-red-600 transition-colors"
-                                  >
-                                    <X className="w-3 h-3" />
-                                    <span>Not Done</span>
-                                  </GuestRestrictedButton>
+                                  {!isUnknown && (
+                                    <GuestRestrictedButton
+                                      isGuest={isGuest}
+                                      onClick={() => handleComplete(schedule)}
+                                      actionType="feedback"
+                                      className="w-full flex items-center justify-center space-x-1 bg-green-500 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-green-600 transition-colors"
+                                    >
+                                      <Check className="w-3 h-3" />
+                                      <span>Mark Done</span>
+                                    </GuestRestrictedButton>
+                                  )}
+                                  <div className="flex gap-2">
+                                    <GuestRestrictedButton
+                                      isGuest={isGuest}
+                                      onClick={() => handleNotDone(schedule)}
+                                      actionType="delete"
+                                      className="flex-1 flex items-center justify-center space-x-1 bg-red-500 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-red-600 transition-colors"
+                                    >
+                                      <X className="w-3 h-3" />
+                                      <span>Not Done</span>
+                                    </GuestRestrictedButton>
+                                    <GuestRestrictedButton
+                                      isGuest={isGuest}
+                                      onClick={() => handleDeleteSchedule(schedule)}
+                                      actionType="delete"
+                                      className="flex items-center justify-center bg-gray-500 text-white px-2 py-2 rounded-lg text-xs font-semibold hover:bg-gray-600 transition-colors"
+                                      title="Delete meeting"
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                    </GuestRestrictedButton>
+                                  </div>
                                 </div>
                               )}
                             </motion.div>
@@ -574,7 +626,10 @@ export default function SMCScheduling({ isGuest = false }) {
                       <div className="space-y-2 p-4">
                         {daySchedules.map(schedule => {
                           const startup = startups.find(s => s.id === schedule.startupId);
+                          const allStartup = allStartups.find(s => s.id === schedule.startupId);
+                          const displayStartup = startup || allStartup;
                           const isCompleted = schedule.status === 'Completed';
+                          const isUnknown = !displayStartup;
 
                           return (
                             <motion.div
@@ -582,9 +637,11 @@ export default function SMCScheduling({ isGuest = false }) {
                               initial={{ opacity: 0, x: -20 }}
                               animate={{ opacity: 1, x: 0 }}
                               className={`p-4 rounded-xl border-2 ${
-                                isCompleted
-                                  ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-                                  : 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                                isUnknown
+                                  ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20'
+                                  : isCompleted
+                                    ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                                    : 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
                               } shadow-sm hover:shadow-md transition-all`}
                             >
                               <div className="flex items-center justify-between gap-4">
@@ -597,11 +654,11 @@ export default function SMCScheduling({ isGuest = false }) {
                                   </div>
                                   <div className="flex-1 min-w-0">
                                     <p className="text-base font-semibold text-gray-900 dark:text-white truncate">
-                                      {startup?.companyName || 'Unknown'}
+                                      {displayStartup?.companyName || 'Unknown Startup'}
                                     </p>
-                                    {startup && (
+                                    {displayStartup && (
                                       <p className="text-xs text-gray-600 dark:text-gray-400">
-                                        {startup.founderName} • {startup.city}
+                                        {displayStartup.founderName} • {displayStartup.city}
                                       </p>
                                     )}
                                   </div>
@@ -610,29 +667,47 @@ export default function SMCScheduling({ isGuest = false }) {
                                       ✓ Completed
                                     </span>
                                   )}
+                                  {isUnknown && (
+                                    <span className="flex-shrink-0 px-3 py-1 bg-orange-500 text-white text-xs font-semibold rounded-full">
+                                      ⚠ Unknown
+                                    </span>
+                                  )}
                                 </div>
                                 
                                 <div className="flex items-center space-x-2 flex-shrink-0">
                                   {isCompleted ? (
-                                    <motion.button
-                                      whileHover={{ scale: 1.05 }}
-                                      whileTap={{ scale: 0.95 }}
-                                      onClick={() => handleViewHistory(schedule)}
-                                      className="flex items-center space-x-1 bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-600 transition-colors"
-                                    >
-                                      <span>View Details</span>
-                                    </motion.button>
-                                  ) : (
                                     <>
+                                      <motion.button
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        onClick={() => handleViewHistory(schedule)}
+                                        className="flex items-center space-x-1 bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-600 transition-colors"
+                                      >
+                                        <span>View Details</span>
+                                      </motion.button>
                                       <GuestRestrictedButton
                                         isGuest={isGuest}
-                                        onClick={() => handleComplete(schedule)}
-                                        actionType="feedback"
-                                        className="flex items-center space-x-1 bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-600 transition-colors"
+                                        onClick={() => handleDeleteSchedule(schedule)}
+                                        actionType="delete"
+                                        className="flex items-center justify-center bg-red-500 text-white px-3 py-2 rounded-lg text-sm font-semibold hover:bg-red-600 transition-colors"
+                                        title="Delete meeting"
                                       >
-                                        <Check className="w-4 h-4" />
-                                        <span>Mark Done</span>
+                                        <Trash2 className="w-4 h-4" />
                                       </GuestRestrictedButton>
+                                    </>
+                                  ) : (
+                                    <>
+                                      {!isUnknown && (
+                                        <GuestRestrictedButton
+                                          isGuest={isGuest}
+                                          onClick={() => handleComplete(schedule)}
+                                          actionType="feedback"
+                                          className="flex items-center space-x-1 bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-600 transition-colors"
+                                        >
+                                          <Check className="w-4 h-4" />
+                                          <span>Mark Done</span>
+                                        </GuestRestrictedButton>
+                                      )}
                                       <GuestRestrictedButton
                                         isGuest={isGuest}
                                         onClick={() => handleNotDone(schedule)}
@@ -641,6 +716,15 @@ export default function SMCScheduling({ isGuest = false }) {
                                       >
                                         <X className="w-4 h-4" />
                                         <span>Not Done</span>
+                                      </GuestRestrictedButton>
+                                      <GuestRestrictedButton
+                                        isGuest={isGuest}
+                                        onClick={() => handleDeleteSchedule(schedule)}
+                                        actionType="delete"
+                                        className="flex items-center justify-center bg-gray-500 text-white px-3 py-2 rounded-lg text-sm font-semibold hover:bg-gray-600 transition-colors"
+                                        title="Delete meeting"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
                                       </GuestRestrictedButton>
                                     </>
                                   )}

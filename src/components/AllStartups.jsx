@@ -1,29 +1,29 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Search, Filter } from 'lucide-react';
+import { AnimatePresence } from 'framer-motion';
+import { Plus } from 'lucide-react';
 import { startupApi } from '../utils/api';
-import { exportStartupsComprehensive, filterByDateRange, generateExportFileName } from '../utils/exportUtils';
+import { filterByDateRange, generateExportFileName, exportStartupsComprehensive } from '../utils/exportUtils';
 import ExportMenu from './ExportMenu';
-import DateRangeFilter from './DateRangeFilter';
-import StartupCard from './StartupCard';
-import StartupGridCard from './StartupGridCard';
-import StartupDetailModal from './StartupDetailModal';
 import RegistrationForm from './RegistrationForm';
 import ViewToggle from './ViewToggle';
 import GuestRestrictedButton from './GuestRestrictedButton';
 import AdminAuthModal from './AdminAuthModal';
+import { PageHeader, PAGE_GRADIENTS } from './shared/PageHeader';
+import SearchFilterBar, { createStageFilterOptions, createSectorFilterOptions, createDateFieldOptions } from './shared/SearchFilterBar';
+import StartupListContainer from './shared/StartupListContainer';
 
 export default function AllStartups({ isGuest = false, initialSectorFilter = null }) {
   const [startups, setStartups] = useState([]);
   const [filteredStartups, setFilteredStartups] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStage, setFilterStage] = useState('all');
-  const [filterSector, setFilterSector] = useState(initialSectorFilter || 'all');
+  const [filterValues, setFilterValues] = useState({
+    stage: 'all',
+    sector: initialSectorFilter || 'all',
+    dateField: 'createdAt'
+  });
   const [dateRange, setDateRange] = useState({ fromDate: null, toDate: null });
-  const [dateField, setDateField] = useState('createdAt'); // 'createdAt' or 'registrationDate'
   const [viewMode, setViewMode] = useState('grid');
-  const [selectedStartup, setSelectedStartup] = useState(null);
   const [loading, setLoading] = useState(true);
   const [adminAuthModal, setAdminAuthModal] = useState({
     isOpen: false,
@@ -33,34 +33,19 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
     actionType: 'warning'
   });
 
-  const handleExport = (format) => {
-    setAdminAuthModal({
-      isOpen: true,
-      title: 'Export Startups',
-      message: 'Please authenticate to export startup data. This ensures data security and tracks export activities.',
-      actionType: 'info',
-      onConfirm: () => {
-        // Export the already filtered data (filtered by inline date filter)
-        const fileName = generateExportFileName('All-Startups', dateRange.fromDate, dateRange.toDate);
-        exportStartupsComprehensive(filteredStartups, format, fileName.replace('MAGIC-', ''));
-        alert(`${filteredStartups.length} startup(s) exported as ${format.toUpperCase()}!`);
-      }
-    });
-  };
-
   useEffect(() => {
     loadStartups();
   }, []);
 
   useEffect(() => {
     if (initialSectorFilter) {
-      setFilterSector(initialSectorFilter);
+      setFilterValues(prev => ({ ...prev, sector: initialSectorFilter }));
     }
   }, [initialSectorFilter]);
 
   useEffect(() => {
     filterStartups();
-  }, [startups, searchTerm, filterStage, filterSector, dateRange, dateField]);
+  }, [startups, searchTerm, filterValues, dateRange]);
 
   const loadStartups = async () => {
     try {
@@ -86,20 +71,37 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
       );
     }
 
-    if (filterStage !== 'all') {
-      filtered = filtered.filter(s => s.stage === filterStage);
+    if (filterValues.stage !== 'all') {
+      filtered = filtered.filter(s => s.stage === filterValues.stage);
     }
 
-    if (filterSector !== 'all') {
-      filtered = filtered.filter(s => s.sector === filterSector);
+    if (filterValues.sector !== 'all') {
+      filtered = filtered.filter(s => s.sector === filterValues.sector);
     }
 
-    // Apply date range filter based on selected date field
     if (dateRange.fromDate || dateRange.toDate) {
-      filtered = filterByDateRange(filtered, dateField, dateRange.fromDate, dateRange.toDate);
+      filtered = filterByDateRange(filtered, filterValues.dateField, dateRange.fromDate, dateRange.toDate);
     }
 
     setFilteredStartups(filtered);
+  };
+
+  const handleFilterChange = (key, value) => {
+    setFilterValues(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleExport = (format) => {
+    setAdminAuthModal({
+      isOpen: true,
+      title: 'Export Startups',
+      message: 'Please authenticate to export startup data. This ensures data security and tracks export activities.',
+      actionType: 'info',
+      onConfirm: () => {
+        const fileName = generateExportFileName('All-Startups', dateRange.fromDate, dateRange.toDate);
+        exportStartupsComprehensive(filteredStartups, format, fileName.replace('MAGIC-', ''));
+        alert(`${filteredStartups.length} startup(s) exported as ${format.toUpperCase()}!`);
+      }
+    });
   };
 
   const handleAddStartup = async (startupData, documents = []) => {
@@ -110,7 +112,6 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
         status: 'Active'
       });
       
-      // Upload documents if any
       if (documents.length > 0) {
         const token = localStorage.getItem('token');
         for (const file of documents) {
@@ -121,9 +122,7 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
           try {
             await fetch('/api/documents', {
               method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${token}`
-              },
+              headers: { 'Authorization': `Bearer ${token}` },
               body: formData
             });
           } catch (docError) {
@@ -180,174 +179,67 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
     });
   };
 
-  // Dynamic grid columns based on number of startups
-  const getGridColumns = () => {
-    const count = filteredStartups.length;
-    if (count <= 4) return 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4';
-    if (count <= 8) return 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5';
-    if (count <= 12) return 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6';
-    return 'grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7';
-  };
+  // Filter configurations
+  const filters = [
+    { key: 'stage', options: createStageFilterOptions(), defaultValue: 'all' },
+    { key: 'sector', options: createSectorFilterOptions(startups), defaultValue: 'all' },
+    { key: 'dateField', options: createDateFieldOptions(), defaultValue: 'createdAt' }
+  ];
 
   return (
     <div className="max-w-7xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8 pl-16 lg:pl-0">
-        <div>
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold magic-text-gradient">
-            All Startups
-          </h1>
-          <p className="text-white mt-2 text-sm sm:text-base font-medium">
-            {filteredStartups.length} startup{filteredStartups.length !== 1 ? 's' : ''} found
-          </p>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <ExportMenu 
-            onExport={handleExport}
-            title="Export"
-            formats={['pdf', 'json', 'csv', 'excel']}
-          />
-          <GuestRestrictedButton
-            isGuest={isGuest}
-            onClick={() => setShowForm(true)}
-            actionType="add"
-            className="flex items-center justify-center space-x-2 magic-gradient text-white px-5 sm:px-6 py-3 rounded-xl shadow-magic hover:shadow-magic-lg transition-all text-sm sm:text-base whitespace-nowrap"
-          >
-            <Plus className="w-5 h-5" />
-            <span>Register Startup</span>
-          </GuestRestrictedButton>
-        </div>
-      </div>
+      <PageHeader
+        title="All Startups"
+        gradientColors={PAGE_GRADIENTS.allStartups}
+        count={filteredStartups.length}
+        countLabel="startup"
+        actions={
+          <>
+            <ExportMenu 
+              onExport={handleExport}
+              title="Export"
+              formats={['pdf', 'json', 'csv', 'excel']}
+            />
+            <GuestRestrictedButton
+              isGuest={isGuest}
+              onClick={() => setShowForm(true)}
+              actionType="add"
+              className="flex items-center justify-center space-x-2 magic-gradient text-white px-5 sm:px-6 py-3 rounded-xl shadow-magic hover:shadow-magic-lg transition-all text-sm sm:text-base whitespace-nowrap"
+            >
+              <Plus className="w-5 h-5" />
+              <span>Register Startup</span>
+            </GuestRestrictedButton>
+          </>
+        }
+      />
 
-      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-6">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400 w-5 h-5" />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search by name, founder, or magic code..."
-            className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all text-sm sm:text-base"
-          />
-        </div>
-        <div className="relative sm:w-48">
-          <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400 w-5 h-5" />
-          <select
-            value={filterStage}
-            onChange={(e) => setFilterStage(e.target.value)}
-            className="w-full pl-10 pr-8 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none appearance-none cursor-pointer transition-all text-sm sm:text-base"
-          >
-            <option value="all">All Stages</option>
-            <option value="S0">S0 - Registered</option>
-            <option value="S1">S1 - Stage 1</option>
-            <option value="S2">S2 - Stage 2</option>
-            <option value="S3">S3 - Stage 3</option>
-            <option value="One-on-One">One-on-One</option>
-          </select>
-        </div>
-        <div className="relative sm:w-48">
-          <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400 w-5 h-5" />
-          <select
-            value={filterSector}
-            onChange={(e) => setFilterSector(e.target.value)}
-            className="w-full pl-10 pr-8 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none appearance-none cursor-pointer transition-all text-sm sm:text-base"
-          >
-            <option value="all">All Sectors</option>
-            {[...new Set(startups.map(s => s.sector).filter(Boolean))].sort().map(sector => (
-              <option key={sector} value={sector}>{sector}</option>
-            ))}
-          </select>
-        </div>
-        <div className="relative sm:w-48">
-          <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400 w-5 h-5" />
-          <select
-            value={dateField}
-            onChange={(e) => setDateField(e.target.value)}
-            className="w-full pl-10 pr-8 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none appearance-none cursor-pointer transition-all text-sm sm:text-base"
-          >
-            <option value="createdAt">Created Date</option>
-            <option value="registeredDate">Registered Date</option>
-            <option value="onboardedDate">Onboarded Date</option>
-          </select>
-        </div>
-        <DateRangeFilter 
-          variant="inline"
-          onDateRangeChange={setDateRange}
-        />
-        <ViewToggle view={viewMode} onViewChange={setViewMode} />
-      </div>
+      <SearchFilterBar
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        searchPlaceholder="Search by name, founder, or magic code..."
+        filters={filters}
+        filterValues={filterValues}
+        onFilterChange={handleFilterChange}
+        showDateFilter={true}
+        onDateRangeChange={setDateRange}
+        additionalControls={<ViewToggle view={viewMode} onViewChange={setViewMode} />}
+      />
 
-      {/* Grid View */}
-      {viewMode === 'grid' && (
-        <div className={`grid ${getGridColumns()} gap-3 sm:gap-4`}>
-          <AnimatePresence>
-            {filteredStartups.map((startup) => (
-              <StartupGridCard
-                key={startup.id}
-                startup={startup}
-                onUpdate={handleUpdateStartup}
-                onDelete={handleDeleteStartup}
-                onClick={() => setSelectedStartup(startup)}
-                isGuest={isGuest}
-                isCompact={filteredStartups.length > 8}
-              />
-            ))}
-          </AnimatePresence>
-        </div>
-      )}
-
-      {/* List View */}
-      {viewMode === 'list' && (
-        <div className="space-y-4 sm:space-y-6">
-          <AnimatePresence>
-            {filteredStartups.map((startup) => (
-              <StartupCard
-                key={startup.id}
-                startup={startup}
-                onUpdate={handleUpdateStartup}
-                onDelete={handleDeleteStartup}
-                isGuest={isGuest}
-              />
-            ))}
-          </AnimatePresence>
-        </div>
-      )}
-
-      {loading && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-center py-12 sm:py-16 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-600"
-        >
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-700 dark:text-gray-300 font-medium">Loading startups...</p>
-        </motion.div>
-      )}
-
-      {!loading && filteredStartups.length === 0 && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-center py-12 sm:py-16 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-600"
-        >
-          <p className="text-gray-700 dark:text-gray-200 text-base sm:text-lg font-medium">
-            No startups found. Register your first startup!
-          </p>
-        </motion.div>
-      )}
+      <StartupListContainer
+        startups={filteredStartups}
+        loading={loading}
+        viewMode={viewMode}
+        onUpdate={handleUpdateStartup}
+        onDelete={handleDeleteStartup}
+        isGuest={isGuest}
+        emptyMessage="No startups found. Register your first startup!"
+      />
 
       <AnimatePresence>
         {showForm && (
           <RegistrationForm
             onClose={() => setShowForm(false)}
             onSubmit={handleAddStartup}
-          />
-        )}
-        {selectedStartup && (
-          <StartupDetailModal
-            startup={selectedStartup}
-            onClose={() => setSelectedStartup(null)}
-            onUpdate={handleUpdateStartup}
-            isGuest={isGuest}
           />
         )}
         <AdminAuthModal

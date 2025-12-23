@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, Clock, Plus, Check, X, Users, CheckCircle, XCircle, Grid, List, History } from 'lucide-react';
+import { Calendar, Clock, Plus, Check, X, Users, CheckCircle, XCircle, Grid, List, History, Trash2 } from 'lucide-react';
 import { startupApi, oneOnOneApi } from '../utils/api';
 import { exportOneOnOneSessionsToPDF, filterByDateRange, generateExportFileName } from '../utils/exportUtils';
 import ExportMenu from './ExportMenu';
@@ -199,6 +199,22 @@ export default function OneOnOneScheduling({ isGuest = false }) {
     } catch (error) {
       console.error('Error cancelling meeting:', error);
       alert('❌ Failed to cancel meeting: ' + error.message);
+    }
+  };
+
+  const handleDeleteSchedule = async (schedule) => {
+    const startup = startups.find(s => s.id === schedule.startupId);
+    const companyName = startup?.companyName || 'Unknown Startup';
+    
+    if (confirm(`Delete this meeting for "${companyName}"? This action cannot be undone.`)) {
+      try {
+        await oneOnOneApi.delete(schedule.id);
+        setSchedules(schedules.filter(s => s.id !== schedule.id));
+        alert('✅ Meeting deleted successfully.');
+      } catch (error) {
+        console.error('Error deleting schedule:', error);
+        alert('❌ Failed to delete schedule: ' + error.message);
+      }
     }
   };
 
@@ -491,8 +507,18 @@ export default function OneOnOneScheduling({ isGuest = false }) {
                                   onClick={() => handleCancelSchedule(upcomingSchedule)}
                                   actionType="delete"
                                   className="flex items-center justify-center bg-red-500 text-white px-2 py-1.5 rounded text-xs font-semibold hover:bg-red-600 transition-colors"
+                                  title="Cancel meeting"
                                 >
                                   <X className="w-3 h-3" />
+                                </GuestRestrictedButton>
+                                <GuestRestrictedButton
+                                  isGuest={isGuest}
+                                  onClick={() => handleDeleteSchedule(upcomingSchedule)}
+                                  actionType="delete"
+                                  className="flex items-center justify-center bg-gray-500 text-white px-2 py-1.5 rounded text-xs font-semibold hover:bg-gray-600 transition-colors"
+                                  title="Delete meeting"
+                                >
+                                  <Trash2 className="w-3 h-3" />
                                 </GuestRestrictedButton>
                               </div>
                             </div>
@@ -629,6 +655,15 @@ export default function OneOnOneScheduling({ isGuest = false }) {
                                 >
                                   <X className="w-4 h-4" />
                                   <span>Not Done</span>
+                                </GuestRestrictedButton>
+                                <GuestRestrictedButton
+                                  isGuest={isGuest}
+                                  onClick={() => handleDeleteSchedule(upcomingSchedule)}
+                                  actionType="delete"
+                                  className="flex items-center justify-center bg-gray-500 text-white px-3 py-2 rounded-lg font-semibold text-sm hover:bg-gray-600 transition-colors"
+                                  title="Delete meeting"
+                                >
+                                  <Trash2 className="w-4 h-4" />
                                 </GuestRestrictedButton>
                               </div>
                             </div>
@@ -990,9 +1025,20 @@ export default function OneOnOneScheduling({ isGuest = false }) {
                                 {startup?.founderName} • {startup?.sector}
                               </p>
                             </div>
-                            <span className="px-3 py-1 bg-green-500 text-white text-xs font-semibold rounded-full">
-                              ✓ Completed
-                            </span>
+                            <div className="flex items-center space-x-2">
+                              <span className="px-3 py-1 bg-green-500 text-white text-xs font-semibold rounded-full">
+                                ✓ Completed
+                              </span>
+                              <GuestRestrictedButton
+                                isGuest={isGuest}
+                                onClick={() => handleDeleteSchedule(session)}
+                                actionType="delete"
+                                className="p-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                                title="Delete meeting"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </GuestRestrictedButton>
+                            </div>
                           </div>
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                             <div>
