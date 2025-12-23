@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { AlertTriangle, X } from 'lucide-react';
+import { AlertTriangle, X, Loader2 } from 'lucide-react';
 
 export default function ConfirmationModal({ 
   isOpen, 
@@ -11,6 +12,8 @@ export default function ConfirmationModal({
   cancelText = 'No',
   type = 'warning' // 'warning', 'danger', 'info'
 }) {
+  const [isLoading, setIsLoading] = useState(false);
+  
   if (!isOpen) return null;
 
   const getTypeStyles = () => {
@@ -83,23 +86,31 @@ export default function ConfirmationModal({
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
             onClick={onClose}
-            className="px-6 py-2.5 border-2 border-gray-300 dark:border-gray-600 rounded-xl font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            disabled={isLoading}
+            className="px-6 py-2.5 border-2 border-gray-300 dark:border-gray-600 rounded-xl font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {cancelText}
           </motion.button>
           <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            onClick={() => {
+            whileHover={{ scale: isLoading ? 1 : 1.03 }}
+            whileTap={{ scale: isLoading ? 1 : 0.97 }}
+            disabled={isLoading}
+            onClick={async () => {
+              // Execute onConfirm first, then close
+              if (onConfirm) {
+                setIsLoading(true);
+                try {
+                  await onConfirm();
+                } finally {
+                  setIsLoading(false);
+                }
+              }
               onClose();
-              // Execute after a small delay to allow modal to close
-              setTimeout(() => {
-                onConfirm();
-              }, 100);
             }}
-            className={`px-6 py-2.5 ${styles.button} text-white rounded-xl font-semibold shadow-md hover:shadow-lg transition-all`}
+            className={`px-6 py-2.5 ${styles.button} text-white rounded-xl font-semibold shadow-md hover:shadow-lg transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center space-x-2`}
           >
-            {confirmText}
+            {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+            <span>{isLoading ? 'Processing...' : confirmText}</span>
           </motion.button>
         </div>
       </motion.div>
