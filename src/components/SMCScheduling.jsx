@@ -10,6 +10,7 @@ import ConfirmationModal from './ConfirmationModal';
 
 export default function SMCScheduling({ isGuest = false }) {
   const [startups, setStartups] = useState([]);
+  const [allStartups, setAllStartups] = useState([]); // All startups for history lookup
   const [schedules, setSchedules] = useState([]);
   const [filteredSchedules, setFilteredSchedules] = useState([]);
   const [dateRange, setDateRange] = useState({ fromDate: null, toDate: null });
@@ -91,7 +92,9 @@ export default function SMCScheduling({ isGuest = false }) {
         startupApi.getAll(),
         smcApi.getAll()
       ]);
-      // Filter startups for SMC eligibility
+      // Store all startups for history lookup (including One-on-One, Onboarded, etc.)
+      setAllStartups(startupsData);
+      // Filter startups for SMC eligibility (only S0, S1, S2 stages)
       const eligibleStartups = startupsData.filter(
         s => s.status === 'Active' && ['S0', 'S1', 'S2'].includes(s.stage)
       );
@@ -963,7 +966,10 @@ export default function SMCScheduling({ isGuest = false }) {
                     .filter(s => s.status === 'Completed')
                     .sort((a, b) => new Date(b.date) - new Date(a.date))
                     .map(session => {
-                      const startup = startups.find(s => s.id === session.startupId);
+                      // Use allStartups to find startup info (includes One-on-One, Onboarded, etc.)
+                      const startup = allStartups.find(s => s.id === session.startupId);
+                      const isNowOneOnOne = startup?.stage === 'One-on-One';
+                      const isNowOnboarded = startup?.status === 'Onboarded';
                       return (
                         <div
                           key={session.id}
@@ -978,9 +984,21 @@ export default function SMCScheduling({ isGuest = false }) {
                                 {startup?.founderName} • {startup?.sector}
                               </p>
                             </div>
-                            <span className="px-3 py-1 bg-green-500 text-white text-xs font-semibold rounded-full">
-                              ✓ Completed
-                            </span>
+                            <div className="flex items-center space-x-2">
+                              {isNowOneOnOne && (
+                                <span className="px-2 py-1 bg-indigo-500 text-white text-xs font-semibold rounded-full">
+                                  Now One-on-One
+                                </span>
+                              )}
+                              {isNowOnboarded && (
+                                <span className="px-2 py-1 bg-green-600 text-white text-xs font-semibold rounded-full">
+                                  Now Onboarded
+                                </span>
+                              )}
+                              <span className="px-3 py-1 bg-green-500 text-white text-xs font-semibold rounded-full">
+                                ✓ Completed
+                              </span>
+                            </div>
                           </div>
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                             <div>

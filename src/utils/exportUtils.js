@@ -167,10 +167,15 @@ export const exportStartupsToPDF = (startups, title = 'Startups Report', fromDat
       tableStartY = 37;
     }
     
+    // Determine if this is Onboarded/Graduated export (includes more data)
+    const isOnboardedOrGraduated = title.toLowerCase().includes('onboarded') || title.toLowerCase().includes('graduated');
+    
     // Prepare table data - handle both field name variations
     const tableData = startups.map(s => {
-      const totalRevenue = s.totalRevenue || s.revenueGenerated || (s.revenueHistory?.reduce((sum, r) => sum + (r.amount || 0), 0)) || 0;
-      return [
+      const totalRevenue = s.totalRevenue || s.revenueGenerated || (s.revenueHistory?.reduce((sum, r) => sum + (r.amount || 0), 0)) || (s.revenueEntries?.reduce((sum, r) => sum + (r.amount || 0), 0)) || 0;
+      const progressCount = s.progressHistory?.length || 0;
+      
+      const baseData = [
         getField(s, 'magicCode'),
         getField(s, 'companyName', 'name'),
         getField(s, 'founderName', 'founder'),
@@ -181,27 +186,54 @@ export const exportStartupsToPDF = (startups, title = 'Startups Report', fromDat
         (s.achievements?.length || 0),
         totalRevenue > 0 ? `₹${totalRevenue.toLocaleString()}` : '₹0'
       ];
+      
+      // Add extra columns for Onboarded/Graduated
+      if (isOnboardedOrGraduated) {
+        baseData.push(progressCount);
+        baseData.push(s.onboardedDate ? formatDate(s.onboardedDate) : 'N/A');
+        if (title.toLowerCase().includes('graduated')) {
+          baseData.push(s.graduatedDate ? formatDate(s.graduatedDate) : 'N/A');
+        }
+      }
+      
+      return baseData;
     });
+    
+    // Define headers based on export type
+    let headers = ['Magic Code', 'Company', 'Founder', 'City', 'Sector', 'Stage', 'Status', 'Achievements', 'Revenue'];
+    let columnStyles = {
+      0: { cellWidth: 25 },
+      1: { cellWidth: 35 },
+      2: { cellWidth: 30 },
+      3: { cellWidth: 25 },
+      4: { cellWidth: 30 },
+      5: { cellWidth: 20 },
+      6: { cellWidth: 25 },
+      7: { cellWidth: 20, halign: 'center' },
+      8: { cellWidth: 25, halign: 'right' }
+    };
+    
+    if (isOnboardedOrGraduated) {
+      headers.push('Progress');
+      headers.push('Onboarded');
+      columnStyles[9] = { cellWidth: 15, halign: 'center' };
+      columnStyles[10] = { cellWidth: 22 };
+      
+      if (title.toLowerCase().includes('graduated')) {
+        headers.push('Graduated');
+        columnStyles[11] = { cellWidth: 22 };
+      }
+    }
     
     // Add table
     autoTable(doc, {
       startY: tableStartY,
-      head: [['Magic Code', 'Company', 'Founder', 'City', 'Sector', 'Stage', 'Status', 'Achievements', 'Revenue']],
+      head: [headers],
       body: tableData,
       theme: 'striped',
       headStyles: { fillColor: [79, 70, 229], textColor: 255, fontStyle: 'bold' },
       styles: { fontSize: 8, cellPadding: 2 },
-      columnStyles: {
-        0: { cellWidth: 25 },
-        1: { cellWidth: 35 },
-        2: { cellWidth: 30 },
-        3: { cellWidth: 25 },
-        4: { cellWidth: 30 },
-        5: { cellWidth: 20 },
-        6: { cellWidth: 25 },
-        7: { cellWidth: 20, halign: 'center' },
-        8: { cellWidth: 25, halign: 'right' }
-      }
+      columnStyles
     });
     
     // Save PDF
@@ -413,7 +445,11 @@ export const exportSMCSchedulesToPDF = (schedules = null, startups = null, fromD
     doc.setFontSize(10);
     doc.setTextColor(100);
     doc.text(`Generated: ${formatDate(new Date())}`, 14, 22);
-    doc.text(`Total Schedules: ${smcData.length}`, 14, 27);
+    
+    // Count completed vs scheduled
+    const completedCount = smcData.filter(s => s.status === 'Completed').length;
+    const scheduledCount = smcData.filter(s => s.status === 'Scheduled').length;
+    doc.text(`Total: ${smcData.length} | Completed: ${completedCount} | Scheduled: ${scheduledCount}`, 14, 27);
     
     // Add date range if specified
     const dateRangeText = formatDateRangeDisplay(fromDate, toDate);
@@ -425,24 +461,29 @@ export const exportSMCSchedulesToPDF = (schedules = null, startups = null, fromD
     
     const tableData = smcData.map(schedule => {
       const startup = startupsData.find(s => s.id === schedule.startupId);
+      const stageProgression = startup?.stage || 'N/A';
       return [
         formatDate(schedule.date),
         schedule.timeSlot || schedule.time || '',
         startup?.name || startup?.companyName || 'Unknown',
         startup?.magicCode || '',
+        stageProgression,
         schedule.status || '',
-        schedule.attendees || schedule.completionData?.panelistName || '',
-        (schedule.agenda || schedule.completionData?.feedback || '').substring(0, 50)
+        schedule.completionData?.panelistName || schedule.attendees || '',
+        (schedule.completionData?.feedback || schedule.agenda || '').substring(0, 80)
       ];
     });
     
     autoTable(doc, {
       startY: tableStartY,
-      head: [['Date', 'Time', 'Company', 'Magic Code', 'Status', 'Attendees', 'Agenda']],
+      head: [['Date', 'Time', 'Company', 'Magic Code', 'Stage', 'Status', 'Panelist', 'Feedback']],
       body: tableData,
       theme: 'striped',
       headStyles: { fillColor: [79, 70, 229] },
-      styles: { fontSize: 8, cellPadding: 2 }
+      styles: { fontSize: 8, cellPadding: 2 },
+      columnStyles: {
+        7: { cellWidth: 60 } // Wider column for feedback
+      }
     });
     
     const fileName = generateExportFileName('SMC-Schedules', fromDate, toDate);
@@ -475,7 +516,11 @@ export const exportOneOnOneSessionsToPDF = (sessions = null, startups = null, fr
     doc.setFontSize(10);
     doc.setTextColor(100);
     doc.text(`Generated: ${formatDate(new Date())}`, 14, 22);
-    doc.text(`Total Sessions: ${sessionsData.length}`, 14, 27);
+    
+    // Count completed vs scheduled
+    const completedCount = sessionsData.filter(s => s.status === 'Completed').length;
+    const scheduledCount = sessionsData.filter(s => s.status === 'Scheduled').length;
+    doc.text(`Total: ${sessionsData.length} | Completed: ${completedCount} | Scheduled: ${scheduledCount}`, 14, 27);
     
     // Add date range if specified
     const dateRangeText = formatDateRangeDisplay(fromDate, toDate);
@@ -493,18 +538,23 @@ export const exportOneOnOneSessionsToPDF = (sessions = null, startups = null, fr
         startup?.name || startup?.companyName || 'Unknown',
         startup?.magicCode || '',
         session.status || '',
-        session.mentor || session.completionData?.mentorName || '',
-        session.topic || session.completionData?.progress || ''
+        session.completionData?.mentorName || session.mentor || '',
+        (session.completionData?.progress || session.topic || '').substring(0, 40),
+        (session.completionData?.feedback || '').substring(0, 60)
       ];
     });
     
     autoTable(doc, {
       startY: tableStartY,
-      head: [['Date', 'Time', 'Company', 'Magic Code', 'Status', 'Mentor', 'Topic']],
+      head: [['Date', 'Time', 'Company', 'Magic Code', 'Status', 'Mentor', 'Progress', 'Feedback']],
       body: tableData,
       theme: 'striped',
       headStyles: { fillColor: [99, 102, 241] },
-      styles: { fontSize: 8, cellPadding: 2 }
+      styles: { fontSize: 8, cellPadding: 2 },
+      columnStyles: {
+        6: { cellWidth: 35 },
+        7: { cellWidth: 50 }
+      }
     });
     
     const fileName = generateExportFileName('OneOnOne-Sessions', fromDate, toDate);
