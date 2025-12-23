@@ -10,7 +10,7 @@
  * @param {number} props.count - Count to display in subtitle (optional)
  * @param {string} props.countLabel - Label for count (e.g., 'startup', 'schedule')
  */
-export default function PageHeader({
+export function PageHeader({
   title,
   subtitle,
   gradientColors = 'from-purple-600 to-pink-600',
@@ -58,3 +58,6 @@ export const PAGE_GRADIENTS = {
   smcScheduling: 'from-blue-600 to-indigo-600',
   oneOnOne: 'from-indigo-600 to-purple-600'
 };
+
+// Default export for backward compatibility
+export default PageHeader;
