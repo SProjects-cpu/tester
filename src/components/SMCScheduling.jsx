@@ -271,8 +271,7 @@ export default function SMCScheduling({ isGuest = false }) {
   };
 
   const handleViewHistory = (schedule) => {
-    const allStartups = storage.get('startups', []);
-    const startup = allStartups.find(s => s.id === schedule.startupId);
+    const startup = startups.find(s => s.id === schedule.startupId);
     setShowHistoryModal({ schedule, startup });
   };
 
