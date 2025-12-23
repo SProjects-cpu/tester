@@ -78,6 +78,7 @@ model Startup {
   progressHistory  ProgressHistory[]
   smcMeetings      SMCMeeting[]
   revenueEntries   RevenueEntry[]
+  stageHistory     StageTransitionHistory[]
 
   @@map("startups")
 }
@@ -229,6 +230,8 @@ model StageTransitionHistory {
   reason      String?
   performedBy String?  @map("performed_by")
   createdAt   DateTime @default(now()) @map("created_at")
+  
+  startup     Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
 
   @@index([startupId])
   @@index([fromStage])

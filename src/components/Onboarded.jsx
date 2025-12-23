@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, TrendingUp, Award, GraduationCap, IndianRupee, BarChart3, X, Eye, History } from 'lucide-react';
+import { TrendingUp, Award, GraduationCap, IndianRupee, BarChart3, X, Eye, History } from 'lucide-react';
 import { startupApi } from '../utils/api';
 import { exportStartupsComprehensive, filterByDateRange, generateExportFileName } from '../utils/exportUtils';
 import ExportMenu from './ExportMenu';
-import DateRangeFilter from './DateRangeFilter';
 import StartupGridCard from './StartupGridCard';
 import StartupDetailModal from './StartupDetailModal';
 import ViewToggle from './ViewToggle';
@@ -14,6 +13,8 @@ import AchievementManager from './AchievementManager';
 import RevenueManager from './RevenueManager';
 import HistoryPanel from './HistoryPanel';
 import AdminAuthModal from './AdminAuthModal';
+import { PageHeader, PAGE_GRADIENTS } from './shared/PageHeader';
+import SearchFilterBar from './shared/SearchFilterBar';
 
 // Helper function to handle viewing/downloading base64 data URLs
 const handleViewAttachment = (mediaUrl, title) => {
@@ -182,47 +183,43 @@ export default function Onboarded({ isGuest = false }) {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8 pl-16 lg:pl-0">
-        <div>
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-            Onboarded Startups
-          </h1>
-          <p className="text-white mt-2 text-sm sm:text-base">
-            {filteredStartups.length} startup{filteredStartups.length !== 1 ? 's' : ''} successfully onboarded
-          </p>
-        </div>
-        <ExportMenu 
-          onExport={handleExport}
-          title="Export"
-          formats={['pdf', 'json', 'csv', 'excel']}
-        />
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-6">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search by name, founder, or sector..."
-            className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all text-sm sm:text-base"
+      <PageHeader
+        title="Onboarded Startups"
+        gradientColors={PAGE_GRADIENTS.onboarded}
+        count={filteredStartups.length}
+        countLabel="startup"
+        subtitle={`${filteredStartups.length} startup${filteredStartups.length !== 1 ? 's' : ''} successfully onboarded`}
+        actions={
+          <ExportMenu 
+            onExport={handleExport}
+            title="Export"
+            formats={['pdf', 'json', 'csv', 'excel']}
           />
-        </div>
-        <DateRangeFilter 
-          variant="inline"
-          onDateRangeChange={setDateRange}
-        />
-        <button
-          onClick={() => setShowHistoryPanel(true)}
-          className="flex items-center space-x-2 px-4 py-3 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-xl hover:bg-indigo-200 dark:hover:bg-indigo-900/50 transition-colors"
-          title="View section history"
-        >
-          <History className="w-5 h-5" />
-          <span className="hidden sm:inline font-medium">History</span>
-        </button>
-        <ViewToggle view={viewMode} onViewChange={setViewMode} />
-      </div>
+        }
+      />
+
+      <SearchFilterBar
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        searchPlaceholder="Search by name, founder, or sector..."
+        filters={[]}
+        filterValues={{}}
+        showDateFilter={true}
+        onDateRangeChange={setDateRange}
+        additionalControls={
+          <>
+            <button
+              onClick={() => setShowHistoryPanel(true)}
+              className="flex items-center space-x-2 px-4 py-3 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-xl hover:bg-indigo-200 dark:hover:bg-indigo-900/50 transition-colors"
+              title="View section history"
+            >
+              <History className="w-5 h-5" />
+              <span className="hidden sm:inline font-medium">History</span>
+            </button>
+            <ViewToggle view={viewMode} onViewChange={setViewMode} />
+          </>
+        }
+      />
 
       {/* Grid View */}
       {viewMode === 'grid' && (

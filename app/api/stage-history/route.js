@@ -17,58 +17,51 @@ export async function GET(request) {
     const toStage = searchParams.get('toStage');
     const startupId = searchParams.get('startupId');
 
+    // Build where clause
     const where = {};
     if (fromStage) where.fromStage = fromStage;
     if (toStage) where.toStage = toStage;
     if (startupId) where.startupId = startupId;
 
-    // Get transitions with startup info
-    const transitions = await prisma.$queryRaw`
-      SELECT 
-        sth.id,
-        sth.startup_id as "startupId",
-        sth.from_stage as "fromStage",
-        sth.to_stage as "toStage",
-        sth.reason,
-        sth.performed_by as "performedBy",
-        sth.created_at as "createdAt",
-        s.name as "startupName",
-        s.founder as "founderName",
-        s.sector,
-        s.stage as "currentStage"
-      FROM stage_transition_history sth
-      LEFT JOIN startups s ON sth.startup_id = s.id
-      WHERE 1=1
-        ${fromStage ? prisma.$queryRaw`AND sth.from_stage = ${fromStage}` : prisma.$queryRaw``}
-        ${toStage ? prisma.$queryRaw`AND sth.to_stage = ${toStage}` : prisma.$queryRaw``}
-        ${startupId ? prisma.$queryRaw`AND sth.startup_id = ${startupId}` : prisma.$queryRaw``}
-      ORDER BY sth.created_at DESC
-    `;
+    // Get transitions with startup info using Prisma's include
+    const transitions = await prisma.stageTransitionHistory.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        startup: {
+          select: {
+            id: true,
+            name: true,
+            founder: true,
+            sector: true,
+            stage: true
+          }
+        }
+      }
+    });
 
-    return NextResponse.json(transitions);
+    // Transform data to include startup info at top level for frontend compatibility
+    const transformedTransitions = transitions.map(t => ({
+      id: t.id,
+      startupId: t.startupId,
+      fromStage: t.fromStage,
+      toStage: t.toStage,
+      reason: t.reason,
+      performedBy: t.performedBy,
+      createdAt: t.createdAt,
+      startupName: t.startup?.name || 'Unknown Startup',
+      founderName: t.startup?.founder || null,
+      sector: t.startup?.sector || null,
+      currentStage: t.startup?.stage || null
+    }));
+
+    return NextResponse.json(transformedTransitions);
   } catch (error) {
     console.error('Error fetching stage history:', error);
-    
-    // Fallback to simpler query if raw query fails
-    try {
-      const { searchParams } = new URL(request.url);
-      const fromStage = searchParams.get('fromStage');
-      
-      const where = {};
-      if (fromStage) where.fromStage = fromStage;
-
-      const transitions = await prisma.stageTransitionHistory.findMany({
-        where,
-        orderBy: { createdAt: 'desc' }
-      });
-
-      return NextResponse.json(transitions);
-    } catch (fallbackError) {
-      return NextResponse.json(
-        { message: 'Server error', error: error.message },
-        { status: 500 }
-      );
-    }
+    return NextResponse.json(
+      { message: 'Server error', error: error.message },
+      { status: 500 }
+    );
   }
 }
 
