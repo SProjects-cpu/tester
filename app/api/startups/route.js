@@ -58,9 +58,14 @@ const transformStartup = (startup) => ({
   domain: startup.domain,
   logo: startup.logo,
   officePhoto: startup.officePhoto,
+  // Handle both full relations and counts
   achievements: startup.achievements || [],
   progressHistory: startup.progressHistory || [],
-  revenueEntries: startup.revenueEntries || []
+  revenueEntries: startup.revenueEntries || [],
+  // Include counts if available (for list view optimization)
+  achievementsCount: startup._count?.achievements ?? startup.achievements?.length ?? 0,
+  progressHistoryCount: startup._count?.progressHistory ?? startup.progressHistory?.length ?? 0,
+  revenueEntriesCount: startup._count?.revenueEntries ?? startup.revenueEntries?.length ?? 0
 });
 
 // Transform frontend data to database format
@@ -141,21 +146,47 @@ export async function GET(request) {
       ];
     }
 
-    const startups = await prisma.startup.findMany({
-      where,
-      include: {
-        achievements: {
-          orderBy: { date: 'desc' }
-        },
-        progressHistory: {
-          orderBy: { date: 'desc' }
-        },
-        revenueEntries: {
-          orderBy: { date: 'desc' }
-        }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+    // Add retry logic for connection issues
+    let retries = 2;
+    let startups;
+    
+    while (retries > 0) {
+      try {
+        // For list views, don't include heavy relations unless specifically requested
+        const includeRelations = searchParams.get('includeRelations') === 'true';
+        
+        startups = await prisma.startup.findMany({
+          where,
+          include: includeRelations ? {
+            achievements: {
+              orderBy: { date: 'desc' }
+            },
+            progressHistory: {
+              orderBy: { date: 'desc' }
+            },
+            revenueEntries: {
+              orderBy: { date: 'desc' }
+            }
+          } : {
+            // Only include counts for list view performance
+            _count: {
+              select: {
+                achievements: true,
+                progressHistory: true,
+                revenueEntries: true
+              }
+            }
+          },
+          orderBy: { createdAt: 'desc' }
+        });
+        break; // Success, exit retry loop
+      } catch (dbError) {
+        retries--;
+        if (retries === 0) throw dbError;
+        // Wait 500ms before retry
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
 
     // Transform to frontend format
     const transformedStartups = startups.map(transformStartup);
