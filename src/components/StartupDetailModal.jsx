@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronDown, ChevronUp, CheckCircle, XCircle, Users, Edit, GraduationCap, Lock, Download } from 'lucide-react';
+import { X, ChevronDown, ChevronUp, CheckCircle, XCircle, Users, Edit, GraduationCap, Lock, Download, TrendingUp, DollarSign, BarChart3 } from 'lucide-react';
 import { useState } from 'react';
 import EditStartupProfile from './EditStartupProfile';
 import GuestRestrictedButton from './GuestRestrictedButton';
@@ -19,7 +19,8 @@ export default function StartupDetailModal({ startup, onClose, onUpdate, isGuest
     pitchHistory: true,
     oneOnOne: true,
     onboarding: true,
-    rejection: true
+    rejection: true,
+    progressTracking: true
   });
   
   const [showEditProfile, setShowEditProfile] = useState(false);
@@ -187,9 +188,12 @@ export default function StartupDetailModal({ startup, onClose, onUpdate, isGuest
                 <span className={`px-2.5 py-1 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap ${getStatusColor(startup.status)}`}>
                   {startup.status}
                 </span>
-                <span className="px-2.5 py-1 bg-white/20 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap">
-                  {startup.stage}
-                </span>
+                {/* Only show stage badge if it's different from status */}
+                {startup.stage !== startup.status && (
+                  <span className="px-2.5 py-1 bg-white/20 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap">
+                    {startup.stage}
+                  </span>
+                )}
               </div>
               <div className="space-y-1 text-sm sm:text-base">
                 <p className="text-white/90">Magic Code: {getField(startup, 'magicCode')}</p>
@@ -525,6 +529,158 @@ export default function StartupDetailModal({ startup, onClose, onUpdate, isGuest
                     </div>
                   )}
                 </div>
+              </div>
+            </Section>
+          )}
+
+          {/* Progress Tracking Section - Show for Onboarded and Graduated */}
+          {(startup.status === 'Onboarded' || startup.status === 'Graduated') && startup.progressHistory && startup.progressHistory.length > 0 && (
+            <Section title="Progress Tracking" section="progressTracking">
+              <div className="space-y-4">
+                {startup.progressHistory.slice().reverse().map((record, index) => {
+                  // Parse notes from the progress record
+                  let notes = {};
+                  try {
+                    notes = typeof record.notes === 'string' ? JSON.parse(record.notes) : (record.notes || {});
+                  } catch (e) {
+                    notes = {};
+                  }
+                  
+                  const hasProgressData = notes.proofOfConcept || notes.prototypeDevelopment || notes.productDevelopment || notes.fieldTrials || notes.marketLaunch;
+                  const hasMetrics = notes.numberOfEmployees || notes.ipRegistrations || notes.gemPortalProducts || notes.successStories;
+                  const hasFunding = notes.loans || notes.angelFunding || notes.vcFunding || notes.quarterlyTurnover || notes.quarterlyGST;
+                  
+                  return (
+                    <div key={record.id || index} className="p-4 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-2 border-blue-200 dark:border-blue-700">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-semibold text-blue-900 dark:text-blue-200 flex items-center space-x-2">
+                          <BarChart3 className="w-5 h-5" />
+                          <span>Progress Update - {record.date ? new Date(record.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'No date'}</span>
+                        </h4>
+                      </div>
+                      
+                      {/* Section 1: Progress of Startup */}
+                      {hasProgressData && (
+                        <div className="mb-4">
+                          <h5 className="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-2 flex items-center space-x-1">
+                            <CheckCircle className="w-4 h-4" />
+                            <span>1. Progress of Startup</span>
+                          </h5>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+                            {notes.proofOfConcept && (
+                              <div className="bg-white dark:bg-gray-800 p-2 rounded border border-blue-200 dark:border-blue-700">
+                                <span className="text-xs text-gray-500 dark:text-gray-400">Proof of Concept</span>
+                                <p className="font-medium text-gray-900 dark:text-white">{notes.proofOfConcept}</p>
+                              </div>
+                            )}
+                            {notes.prototypeDevelopment && (
+                              <div className="bg-white dark:bg-gray-800 p-2 rounded border border-blue-200 dark:border-blue-700">
+                                <span className="text-xs text-gray-500 dark:text-gray-400">Prototype Development</span>
+                                <p className="font-medium text-gray-900 dark:text-white">{notes.prototypeDevelopment}</p>
+                              </div>
+                            )}
+                            {notes.productDevelopment && (
+                              <div className="bg-white dark:bg-gray-800 p-2 rounded border border-blue-200 dark:border-blue-700">
+                                <span className="text-xs text-gray-500 dark:text-gray-400">Product Development</span>
+                                <p className="font-medium text-gray-900 dark:text-white">{notes.productDevelopment}</p>
+                              </div>
+                            )}
+                            {notes.fieldTrials && (
+                              <div className="bg-white dark:bg-gray-800 p-2 rounded border border-blue-200 dark:border-blue-700">
+                                <span className="text-xs text-gray-500 dark:text-gray-400">Field Trials</span>
+                                <p className="font-medium text-gray-900 dark:text-white">{notes.fieldTrials}</p>
+                              </div>
+                            )}
+                            {notes.marketLaunch && (
+                              <div className="bg-white dark:bg-gray-800 p-2 rounded border border-blue-200 dark:border-blue-700">
+                                <span className="text-xs text-gray-500 dark:text-gray-400">Market Launch</span>
+                                <p className="font-medium text-gray-900 dark:text-white">{notes.marketLaunch}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Section 2: Other Metrics */}
+                      {hasMetrics && (
+                        <div className="mb-4">
+                          <h5 className="text-sm font-semibold text-purple-700 dark:text-purple-300 mb-2 flex items-center space-x-1">
+                            <Users className="w-4 h-4" />
+                            <span>2. Other Metrics</span>
+                          </h5>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+                            {notes.numberOfEmployees && (
+                              <div className="bg-white dark:bg-gray-800 p-2 rounded border border-purple-200 dark:border-purple-700">
+                                <span className="text-xs text-gray-500 dark:text-gray-400">Number of Employees</span>
+                                <p className="font-medium text-gray-900 dark:text-white">{notes.numberOfEmployees}</p>
+                              </div>
+                            )}
+                            {notes.ipRegistrations && (
+                              <div className="bg-white dark:bg-gray-800 p-2 rounded border border-purple-200 dark:border-purple-700">
+                                <span className="text-xs text-gray-500 dark:text-gray-400">IP Registrations</span>
+                                <p className="font-medium text-gray-900 dark:text-white">{notes.ipRegistrations}</p>
+                              </div>
+                            )}
+                            {notes.gemPortalProducts && (
+                              <div className="bg-white dark:bg-gray-800 p-2 rounded border border-purple-200 dark:border-purple-700">
+                                <span className="text-xs text-gray-500 dark:text-gray-400">GEM Portal Products</span>
+                                <p className="font-medium text-gray-900 dark:text-white">{notes.gemPortalProducts}</p>
+                              </div>
+                            )}
+                          </div>
+                          {notes.successStories && (
+                            <div className="mt-2 bg-white dark:bg-gray-800 p-2 rounded border border-purple-200 dark:border-purple-700">
+                              <span className="text-xs text-gray-500 dark:text-gray-400">Success Stories</span>
+                              <p className="font-medium text-gray-900 dark:text-white text-sm">{notes.successStories}</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      
+                      {/* Section 3: Funds Raised */}
+                      {hasFunding && (
+                        <div>
+                          <h5 className="text-sm font-semibold text-green-700 dark:text-green-300 mb-2 flex items-center space-x-1">
+                            <DollarSign className="w-4 h-4" />
+                            <span>3. Funds Raised</span>
+                          </h5>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+                            {notes.loans && (
+                              <div className="bg-white dark:bg-gray-800 p-2 rounded border border-green-200 dark:border-green-700">
+                                <span className="text-xs text-gray-500 dark:text-gray-400">Loans (INR)</span>
+                                <p className="font-medium text-green-600 dark:text-green-400">₹{Number(notes.loans).toLocaleString()}</p>
+                              </div>
+                            )}
+                            {notes.angelFunding && (
+                              <div className="bg-white dark:bg-gray-800 p-2 rounded border border-green-200 dark:border-green-700">
+                                <span className="text-xs text-gray-500 dark:text-gray-400">Angel Funding (INR)</span>
+                                <p className="font-medium text-green-600 dark:text-green-400">₹{Number(notes.angelFunding).toLocaleString()}</p>
+                              </div>
+                            )}
+                            {notes.vcFunding && (
+                              <div className="bg-white dark:bg-gray-800 p-2 rounded border border-green-200 dark:border-green-700">
+                                <span className="text-xs text-gray-500 dark:text-gray-400">VC Funding (INR)</span>
+                                <p className="font-medium text-green-600 dark:text-green-400">₹{Number(notes.vcFunding).toLocaleString()}</p>
+                              </div>
+                            )}
+                            {notes.quarterlyTurnover && (
+                              <div className="bg-white dark:bg-gray-800 p-2 rounded border border-green-200 dark:border-green-700">
+                                <span className="text-xs text-gray-500 dark:text-gray-400">Quarterly Turnover (INR)</span>
+                                <p className="font-medium text-green-600 dark:text-green-400">₹{Number(notes.quarterlyTurnover).toLocaleString()}</p>
+                              </div>
+                            )}
+                            {notes.quarterlyGST && (
+                              <div className="bg-white dark:bg-gray-800 p-2 rounded border border-green-200 dark:border-green-700">
+                                <span className="text-xs text-gray-500 dark:text-gray-400">Quarterly GST (INR)</span>
+                                <p className="font-medium text-green-600 dark:text-green-400">₹{Number(notes.quarterlyGST).toLocaleString()}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </Section>
           )}
