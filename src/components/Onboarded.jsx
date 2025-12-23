@@ -11,6 +11,7 @@ import ViewToggle from './ViewToggle';
 import GuestRestrictedButton from './GuestRestrictedButton';
 import StartupProgressModal from './StartupProgressModal';
 import AchievementManager from './AchievementManager';
+import RevenueManager from './RevenueManager';
 import AdminAuthModal from './AdminAuthModal';
 
 // Helper function to handle viewing/downloading base64 data URLs
@@ -65,6 +66,7 @@ export default function Onboarded({ isGuest = false }) {
   const [selectedStartup, setSelectedStartup] = useState(null);
   const [showAchievementModal, setShowAchievementModal] = useState(null);
   const [showProgressModal, setShowProgressModal] = useState(null);
+  const [showRevenueModal, setShowRevenueModal] = useState(null);
   const [loading, setLoading] = useState(false);
   const [adminAuthModal, setAdminAuthModal] = useState({
     isOpen: false,
@@ -496,6 +498,15 @@ export default function Onboarded({ isGuest = false }) {
                     </GuestRestrictedButton>
                     <GuestRestrictedButton
                       isGuest={isGuest}
+                      onClick={() => setShowRevenueModal(startup)}
+                      actionType="edit"
+                      className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg font-semibold text-sm shadow-md hover:shadow-lg transition-all"
+                    >
+                      <IndianRupee className="w-4 h-4" />
+                      <span>Manage Revenue</span>
+                    </GuestRestrictedButton>
+                    <GuestRestrictedButton
+                      isGuest={isGuest}
                       onClick={() => setShowAchievementModal(startup)}
                       actionType="edit"
                       className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg font-semibold text-sm shadow-md hover:shadow-lg transition-all"
@@ -568,6 +579,16 @@ export default function Onboarded({ isGuest = false }) {
           />
         )}
 
+        {/* Revenue Modal */}
+        {showRevenueModal && (
+          <RevenueModalWrapper
+            startup={showRevenueModal}
+            onClose={() => setShowRevenueModal(null)}
+            onUpdate={handleUpdateStartup}
+            isGuest={isGuest}
+          />
+        )}
+
         <AdminAuthModal
           isOpen={adminAuthModal.isOpen}
           onClose={() => setAdminAuthModal({ ...adminAuthModal, isOpen: false })}
@@ -621,6 +642,67 @@ function AchievementModalWrapper({ startup, onClose, onUpdate, isGuest }) {
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6">
           <AchievementManager 
+            startup={startup} 
+            onUpdate={(updatedStartup) => {
+              onUpdate(updatedStartup);
+            }}
+            isGuest={isGuest}
+          />
+        </div>
+
+        {/* Footer */}
+        <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+          <button
+            onClick={onClose}
+            className="w-full px-6 py-3 bg-gray-500 text-white rounded-xl font-semibold hover:bg-gray-600 transition-colors"
+          >
+            Close
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// Revenue Modal Wrapper for Revenue Management
+function RevenueModalWrapper({ startup, onClose, onUpdate, isGuest }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.9, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.9, y: 20 }}
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl my-8 max-h-[90vh] overflow-hidden flex flex-col"
+      >
+        {/* Header */}
+        <div className="bg-gradient-to-r from-yellow-500 to-orange-500 p-4 sm:p-6 text-white">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center space-x-3">
+              <IndianRupee className="w-10 h-10" />
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-bold">Manage Revenue</h2>
+                <p className="text-white/90">{startup.companyName}</p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+          <RevenueManager 
             startup={startup} 
             onUpdate={(updatedStartup) => {
               onUpdate(updatedStartup);
