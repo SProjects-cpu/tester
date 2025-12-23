@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search } from 'lucide-react';
+import { Search, History } from 'lucide-react';
 import { startupApi } from '../utils/api';
 import { exportStartupsComprehensive, filterByDateRange, generateExportFileName } from '../utils/exportUtils';
 import ExportMenu from './ExportMenu';
@@ -8,6 +8,7 @@ import DateRangeFilter from './DateRangeFilter';
 import StartupGridCard from './StartupGridCard';
 import StartupDetailModal from './StartupDetailModal';
 import ViewToggle from './ViewToggle';
+import HistoryPanel from './HistoryPanel';
 import AdminAuthModal from './AdminAuthModal';
 
 export default function Rejected({ isGuest = false }) {
@@ -17,6 +18,7 @@ export default function Rejected({ isGuest = false }) {
   const [dateRange, setDateRange] = useState({ fromDate: null, toDate: null });
   const [viewMode, setViewMode] = useState('grid');
   const [selectedStartup, setSelectedStartup] = useState(null);
+  const [showHistoryPanel, setShowHistoryPanel] = useState(false);
   const [loading, setLoading] = useState(true);
   const [adminAuthModal, setAdminAuthModal] = useState({
     isOpen: false,
@@ -130,6 +132,14 @@ export default function Rejected({ isGuest = false }) {
           variant="inline"
           onDateRangeChange={setDateRange}
         />
+        <button
+          onClick={() => setShowHistoryPanel(true)}
+          className="flex items-center space-x-2 px-4 py-3 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-xl hover:bg-indigo-200 dark:hover:bg-indigo-900/50 transition-colors"
+          title="View section history"
+        >
+          <History className="w-5 h-5" />
+          <span className="hidden sm:inline font-medium">History</span>
+        </button>
         <ViewToggle view={viewMode} onViewChange={setViewMode} />
       </div>
 
@@ -248,6 +258,13 @@ export default function Rejected({ isGuest = false }) {
           title={adminAuthModal.title}
           message={adminAuthModal.message}
           actionType={adminAuthModal.actionType}
+        />
+
+        <HistoryPanel
+          isOpen={showHistoryPanel}
+          onClose={() => setShowHistoryPanel(false)}
+          sectionType="rejected"
+          title="Rejected Section History"
         />
       </AnimatePresence>
     </div>

@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { AlertTriangle, Clock, Mail, Phone, Calendar, TrendingDown, RefreshCw, Download, FileJson, FileSpreadsheet, ChevronDown } from 'lucide-react';
+import { AlertTriangle, Clock, Mail, Phone, Calendar, TrendingDown, RefreshCw, Download, FileJson, FileSpreadsheet, ChevronDown, History } from 'lucide-react';
 import { startupApi } from '../utils/api';
 import { exportStartupsComprehensive, filterByDateRange, generateExportFileName } from '../utils/exportUtils';
 import ExportMenu from './ExportMenu';
 import DateRangeFilter from './DateRangeFilter';
+import HistoryPanel from './HistoryPanel';
 
 export default function InactiveStartups() {
   const [inactiveStartups, setInactiveStartups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [dateRange, setDateRange] = useState({ fromDate: null, toDate: null });
+  const [showHistoryPanel, setShowHistoryPanel] = useState(false);
 
   const handleExport = (format) => {
     // Export the already filtered data (filtered by inline date filter)
@@ -112,6 +114,14 @@ export default function InactiveStartups() {
               variant="inline"
               onDateRangeChange={setDateRange}
             />
+            <button
+              onClick={() => setShowHistoryPanel(true)}
+              className="flex items-center space-x-2 px-4 py-3 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-xl hover:bg-indigo-200 dark:hover:bg-indigo-900/50 transition-colors"
+              title="View section history"
+            >
+              <History className="w-5 h-5" />
+              <span className="hidden sm:inline font-medium">History</span>
+            </button>
             <ExportMenu onExport={handleExport} title="Export" formats={['pdf', 'json', 'csv', 'excel']} />
             <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={checkInactiveStartups}
               className="flex items-center space-x-2 bg-gradient-to-r from-orange-500 to-red-500 text-white px-5 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all text-sm font-semibold">
@@ -202,6 +212,13 @@ export default function InactiveStartups() {
           ))}
         </div>
       )}
+
+      <HistoryPanel
+        isOpen={showHistoryPanel}
+        onClose={() => setShowHistoryPanel(false)}
+        sectionType="inactive"
+        title="Inactive Section History"
+      />
     </div>
   );
 }
