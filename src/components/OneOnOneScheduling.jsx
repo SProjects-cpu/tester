@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, Clock, Plus, Check, X, Users, CheckCircle, XCircle, Grid, List } from 'lucide-react';
+import { Calendar, Clock, Plus, Check, X, Users, CheckCircle, XCircle, Grid, List, History } from 'lucide-react';
 import { startupApi, oneOnOneApi } from '../utils/api';
 import { exportOneOnOneSessionsToPDF, filterByDateRange, generateExportFileName } from '../utils/exportUtils';
 import ExportMenu from './ExportMenu';
@@ -27,6 +27,7 @@ export default function OneOnOneScheduling({ isGuest = false }) {
   const [showRejectionModal, setShowRejectionModal] = useState(null);
   const [showHistoryModal, setShowHistoryModal] = useState(null);
   const [showOnboardingModal, setShowOnboardingModal] = useState(null);
+  const [showCompletedHistory, setShowCompletedHistory] = useState(false);
   const [viewMode, setViewMode] = useState('grid');
   const [completionData, setCompletionData] = useState({
     mentorName: '',
@@ -209,6 +210,7 @@ export default function OneOnOneScheduling({ isGuest = false }) {
     const startup = showOnboardingModal;
     try {
       await startupApi.update(startup.id, { 
+        stage: 'Onboarded',
         status: 'Onboarded', 
         onboardingDescription: onboardingData.description,
         agreementDate: onboardingData.agreementDate,
@@ -227,6 +229,7 @@ export default function OneOnOneScheduling({ isGuest = false }) {
   const handleReject = async (startup, rejectionRemark) => {
     try {
       await startupApi.update(startup.id, { 
+        stage: 'Rejected',
         status: 'Rejected',
         rejectionRemark,
         rejectedDate: new Date().toISOString(),
@@ -267,6 +270,14 @@ export default function OneOnOneScheduling({ isGuest = false }) {
             variant="inline"
             onDateRangeChange={setDateRange}
           />
+          <button
+            onClick={() => setShowCompletedHistory(true)}
+            className="flex items-center space-x-2 px-4 py-2 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-xl hover:bg-indigo-200 dark:hover:bg-indigo-900/50 transition-colors"
+            title="View completed sessions history"
+          >
+            <History className="w-5 h-5" />
+            <span className="hidden sm:inline font-medium">History</span>
+          </button>
           <ExportMenu 
             onExport={handleExport}
             title="Export"
@@ -921,6 +932,120 @@ export default function OneOnOneScheduling({ isGuest = false }) {
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
                   onClick={() => setShowHistoryModal(null)}
+                  className="px-6 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all"
+                >
+                  Close
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* Completed Sessions History Modal */}
+        {showCompletedHistory && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            onClick={() => setShowCompletedHistory(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl p-6 max-h-[80vh] overflow-y-auto"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                  Completed One-on-One Sessions
+                </h3>
+                <button
+                  onClick={() => setShowCompletedHistory(false)}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                  <X className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+                </button>
+              </div>
+
+              {schedules.filter(s => s.status === 'Completed').length > 0 ? (
+                <div className="space-y-4">
+                  {schedules
+                    .filter(s => s.status === 'Completed')
+                    .sort((a, b) => new Date(b.date) - new Date(a.date))
+                    .map(session => {
+                      const startup = startups.find(s => s.id === session.startupId);
+                      return (
+                        <div
+                          key={session.id}
+                          className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl p-4 border border-green-200 dark:border-green-700"
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div>
+                              <h4 className="font-bold text-gray-900 dark:text-white">
+                                {startup?.companyName || 'Unknown Startup'}
+                              </h4>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">
+                                {startup?.founderName} • {startup?.sector}
+                              </p>
+                            </div>
+                            <span className="px-3 py-1 bg-green-500 text-white text-xs font-semibold rounded-full">
+                              ✓ Completed
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                            <div>
+                              <span className="text-gray-600 dark:text-gray-400">Date:</span>
+                              <p className="font-medium text-gray-900 dark:text-white">
+                                {new Date(session.date).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric'
+                                })}
+                              </p>
+                            </div>
+                            <div>
+                              <span className="text-gray-600 dark:text-gray-400">Time:</span>
+                              <p className="font-medium text-gray-900 dark:text-white">
+                                {session.time}
+                              </p>
+                            </div>
+                            {session.completionData?.mentorName && (
+                              <div>
+                                <span className="text-gray-600 dark:text-gray-400">Mentor:</span>
+                                <p className="font-medium text-gray-900 dark:text-white">
+                                  {session.completionData.mentorName}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                          {session.completionData?.feedback && (
+                            <div className="mt-3 pt-3 border-t border-green-200 dark:border-green-700">
+                              <span className="text-sm text-gray-600 dark:text-gray-400">Feedback:</span>
+                              <p className="text-sm text-gray-900 dark:text-white mt-1">
+                                {session.completionData.feedback}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <History className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+                  <p className="text-gray-500 dark:text-gray-400 text-lg">
+                    No completed sessions yet
+                  </p>
+                </div>
+              )}
+
+              <div className="mt-6 flex justify-end">
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => setShowCompletedHistory(false)}
                   className="px-6 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all"
                 >
                   Close

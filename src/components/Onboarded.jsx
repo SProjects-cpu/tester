@@ -149,6 +149,7 @@ export default function Onboarded({ isGuest = false }) {
       onConfirm: async () => {
         try {
           await startupApi.update(startup.id, { 
+            stage: 'Graduated',
             status: 'Graduated', 
             graduatedDate: new Date().toISOString() 
           });
@@ -431,7 +432,7 @@ export default function Onboarded({ isGuest = false }) {
                     <div className="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg text-center">
                       <IndianRupee className="w-5 h-5 mx-auto text-purple-600 mb-1" />
                       <p className="text-lg font-bold text-gray-900 dark:text-white">
-                        {startup.revenueHistory?.length || 0}
+                        {startup.revenueEntries?.length || 0}
                       </p>
                       <p className="text-xs text-gray-600 dark:text-gray-400">Revenue Entries</p>
                     </div>
@@ -477,17 +478,17 @@ export default function Onboarded({ isGuest = false }) {
                   )}
 
                   {/* Recent Revenue */}
-                  {startup.revenueHistory && startup.revenueHistory.length > 0 && (
+                  {startup.revenueEntries && startup.revenueEntries.length > 0 && (
                     <div className="space-y-2">
                       <h4 className="font-semibold text-gray-900 dark:text-white text-sm flex items-center space-x-2">
                         <TrendingUp className="w-4 h-4 text-green-500" />
                         <span>Recent Revenue</span>
                       </h4>
-                      {startup.revenueHistory.slice(-2).map((rev, idx) => (
+                      {startup.revenueEntries.slice(-2).map((rev, idx) => (
                         <div key={idx} className="p-2 bg-green-50 dark:bg-green-900/20 rounded-lg text-sm flex justify-between items-center">
                           <div>
-                            <p className="font-medium text-gray-900 dark:text-white">{rev.source}</p>
-                            <p className="text-xs text-gray-600 dark:text-gray-400">{rev.date}</p>
+                            <p className="font-medium text-gray-900 dark:text-white">{rev.source || 'Revenue'}</p>
+                            <p className="text-xs text-gray-600 dark:text-gray-400">{rev.date ? new Date(rev.date).toLocaleDateString() : 'No date'}</p>
                           </div>
                           <span className="font-bold text-green-600">₹{rev.amount?.toLocaleString()}</span>
                         </div>

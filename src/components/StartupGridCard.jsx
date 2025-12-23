@@ -74,9 +74,13 @@ export default function StartupGridCard({ startup, onUpdate, onDelete, onClick, 
           <span className={`${isCompact ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-1 text-xs'} rounded-full font-medium ${getStatusColor(startup.status)}`}>
             {startup.status}
           </span>
-          <span className={`${isCompact ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-1 text-xs'} bg-white/20 rounded-full font-medium text-white`}>
-            {startup.stage}
-          </span>
+          {/* Only show stage badge if it's different from status AND status is not Onboarded/Graduated/Rejected */}
+          {startup.stage && startup.stage !== startup.status && 
+           !['Onboarded', 'Graduated', 'Rejected'].includes(startup.status) && (
+            <span className={`${isCompact ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-1 text-xs'} bg-white/20 rounded-full font-medium text-white`}>
+              {startup.stage}
+            </span>
+          )}
         </div>
       </div>
 

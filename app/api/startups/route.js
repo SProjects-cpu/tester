@@ -59,7 +59,8 @@ const transformStartup = (startup) => ({
   logo: startup.logo,
   officePhoto: startup.officePhoto,
   achievements: startup.achievements || [],
-  progressHistory: startup.progressHistory || []
+  progressHistory: startup.progressHistory || [],
+  revenueEntries: startup.revenueEntries || []
 });
 
 // Transform frontend data to database format
@@ -144,12 +145,13 @@ export async function GET(request) {
       where,
       include: {
         achievements: {
-          orderBy: { date: 'desc' },
-          take: 5
+          orderBy: { date: 'desc' }
         },
         progressHistory: {
-          orderBy: { date: 'desc' },
-          take: 5
+          orderBy: { date: 'desc' }
+        },
+        revenueEntries: {
+          orderBy: { date: 'desc' }
         }
       },
       orderBy: { createdAt: 'desc' }

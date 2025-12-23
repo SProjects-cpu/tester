@@ -74,6 +74,7 @@ export default function StartupCard({ startup, onUpdate, onDelete, isGuest = fal
   const confirmOnboard = (onboardingData) => {
     onUpdate({ 
       ...startup, 
+      stage: 'Onboarded',
       status: 'Onboarded', 
       onboardingDescription: onboardingData.description,
       agreementDate: onboardingData.agreementDate,
@@ -92,6 +93,7 @@ export default function StartupCard({ startup, onUpdate, onDelete, isGuest = fal
       onConfirm: () => {
         onUpdate({ 
           ...startup, 
+          stage: 'Rejected',
           status: 'Rejected', 
           rejectionRemark,
           rejectedDate: new Date().toISOString(),
@@ -159,7 +161,7 @@ export default function StartupCard({ startup, onUpdate, onDelete, isGuest = fal
       message: `You are about to graduate "${companyName}". This will lock the startup and mark it as completed. Please authenticate to proceed.`,
       actionType: 'info',
       onConfirm: () => {
-        onUpdate({ ...startup, status: 'Graduated', graduatedDate: new Date().toISOString() });
+        onUpdate({ ...startup, stage: 'Graduated', status: 'Graduated', graduatedDate: new Date().toISOString() });
         alert('✅ Startup graduated successfully!');
       }
     });
@@ -240,9 +242,12 @@ export default function StartupCard({ startup, onUpdate, onDelete, isGuest = fal
                 <span className={`px-2.5 py-1 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap ${getStatusColor(startup.status)}`}>
                   {startup.status}
                 </span>
-                <span className="px-2.5 py-1 bg-white/20 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap">
-                  {startup.stage}
-                </span>
+                {/* Only show stage badge if it's different from status */}
+                {startup.stage !== startup.status && (
+                  <span className="px-2.5 py-1 bg-white/20 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap">
+                    {startup.stage}
+                  </span>
+                )}
               </div>
               <div className="space-y-1 text-sm sm:text-base">
                 <p className="text-white/90 truncate">Magic Code: {getField(startup, 'magicCode')}</p>

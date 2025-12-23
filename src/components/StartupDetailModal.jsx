@@ -64,6 +64,7 @@ export default function StartupDetailModal({ startup, onClose, onUpdate, isGuest
   const confirmOnboard = (onboardingData) => {
     onUpdate({ 
       ...startup, 
+      stage: 'Onboarded',
       status: 'Onboarded',
       onboardingDescription: onboardingData.description,
       agreementDate: onboardingData.agreementDate,
@@ -77,6 +78,7 @@ export default function StartupDetailModal({ startup, onClose, onUpdate, isGuest
   const handleReject = (rejectionRemark) => {
     onUpdate({ 
       ...startup, 
+      stage: 'Rejected',
       status: 'Rejected',
       rejectionRemark,
       rejectedDate: new Date().toISOString(),
@@ -112,6 +114,7 @@ export default function StartupDetailModal({ startup, onClose, onUpdate, isGuest
         const dateToUse = graduationDate || new Date().toISOString().split('T')[0];
         onUpdate({ 
           ...startup, 
+          stage: 'Graduated',
           status: 'Graduated',
           graduatedDate: dateToUse
         });

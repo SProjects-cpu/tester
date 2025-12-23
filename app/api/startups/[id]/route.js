@@ -60,6 +60,7 @@ const transformStartup = (startup) => ({
   officePhoto: startup.officePhoto,
   achievements: startup.achievements || [],
   progressHistory: startup.progressHistory || [],
+  revenueEntries: startup.revenueEntries || [],
   oneOnOneMeetings: startup.oneOnOneMeetings || [],
   smcMeetings: startup.smcMeetings || [],
   agreements: startup.agreements || []
@@ -236,7 +237,8 @@ export async function PUT(request, { params }) {
       data: updateData,
       include: {
         achievements: { orderBy: { date: 'desc' } },
-        progressHistory: { orderBy: { date: 'desc' } }
+        progressHistory: { orderBy: { date: 'desc' } },
+        revenueEntries: { orderBy: { date: 'desc' } }
       }
     });
 

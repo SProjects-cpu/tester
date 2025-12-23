@@ -27,11 +27,13 @@ export default function RevenueManager({ startup, onUpdate, isGuest = false }) {
       const data = await revenueApi.getByStartupId(startup.id);
       setEntries(data.entries || []);
       setTotalRevenue(data.total || 0);
+      return data;
     } catch (error) {
       console.error('Error loading revenue:', error);
       // Fallback to startup data if API fails
       setEntries(startup.revenueHistory || []);
       setTotalRevenue(startup.totalRevenue || 0);
+      return { entries: startup.revenueHistory || [], total: startup.totalRevenue || 0 };
     } finally {
       setLoading(false);
     }
@@ -51,10 +53,15 @@ export default function RevenueManager({ startup, onUpdate, isGuest = false }) {
       } else {
         await revenueApi.create(startup.id, formData);
       }
-      await loadRevenue();
+      const revenueData = await loadRevenue();
       resetForm();
       if (onUpdate) {
-        onUpdate({ ...startup, totalRevenue: totalRevenue + parseFloat(formData.amount) });
+        // Pass updated startup with new revenue entries and total
+        onUpdate({ 
+          ...startup, 
+          totalRevenue: revenueData?.total || totalRevenue,
+          revenueEntries: revenueData?.entries || entries
+        });
       }
     } catch (error) {
       console.error('Error saving revenue:', error);
@@ -70,9 +77,13 @@ export default function RevenueManager({ startup, onUpdate, isGuest = false }) {
     setSaving(true);
     try {
       await revenueApi.delete(startup.id, entryId);
-      await loadRevenue();
+      const revenueData = await loadRevenue();
       if (onUpdate) {
-        onUpdate({ ...startup });
+        onUpdate({ 
+          ...startup, 
+          totalRevenue: revenueData?.total || totalRevenue,
+          revenueEntries: revenueData?.entries || entries
+        });
       }
     } catch (error) {
       console.error('Error deleting revenue:', error);
