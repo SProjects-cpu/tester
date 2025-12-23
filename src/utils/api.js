@@ -365,4 +365,72 @@ export const progressApi = {
   },
 };
 
-export default { startupApi, authApi, smcApi, oneOnOneApi, guestApi, documentApi, achievementApi, progressApi };
+// Magic Code API methods
+export const magicCodeApi = {
+  // Generate a new unique magic code
+  generate: async () => {
+    return apiRequest('/magic-code/generate');
+  },
+
+  // Validate a magic code for uniqueness
+  validate: async (code, excludeStartupId = null) => {
+    return apiRequest('/magic-code/validate', {
+      method: 'POST',
+      body: JSON.stringify({ code, excludeStartupId }),
+    });
+  },
+};
+
+// Revenue API methods
+export const revenueApi = {
+  // Get all revenue entries for a startup
+  getByStartupId: async (startupId) => {
+    return apiRequest(`/revenue/${startupId}`);
+  },
+
+  // Create revenue entry
+  create: async (startupId, data) => {
+    return apiRequest(`/revenue/${startupId}`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // Update revenue entry
+  update: async (startupId, entryId, data) => {
+    return apiRequest(`/revenue/${startupId}/${entryId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // Delete revenue entry
+  delete: async (startupId, entryId) => {
+    return apiRequest(`/revenue/${startupId}/${entryId}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+// Stage History API methods
+export const stageHistoryApi = {
+  // Get stage transition history for a startup
+  getByStartupId: async (startupId) => {
+    return apiRequest(`/stage-history/${startupId}`);
+  },
+
+  // Get history for a specific section (startups that left this stage)
+  getByFromStage: async (stage) => {
+    return apiRequest(`/stage-history?fromStage=${stage}`);
+  },
+
+  // Record a stage transition
+  create: async (data) => {
+    return apiRequest('/stage-history', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+};
+
+export default { startupApi, authApi, smcApi, oneOnOneApi, guestApi, documentApi, achievementApi, progressApi, magicCodeApi, revenueApi, stageHistoryApi };

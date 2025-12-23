@@ -41,8 +41,13 @@ model Startup {
   recognitionDate  DateTime?         @map("recognition_date")
   bhaskarId        String?           @map("bhaskar_id")
   
+  // Stage transition tracking
+  previousStage     String?          @map("previous_stage")
+  stageChangedAt    DateTime?        @map("stage_changed_at")
+  stageChangeReason String?          @map("stage_change_reason")
+  
   // Registration Info fields
-  magicCode         String?          @map("magic_code")
+  magicCode         String?          @unique @map("magic_code")
   city              String?
   stageOfIdea       String?          @map("stage_of_idea")
   solution          String?
@@ -72,6 +77,7 @@ model Startup {
   oneOnOneMeetings OneOnOneMeeting[]
   progressHistory  ProgressHistory[]
   smcMeetings      SMCMeeting[]
+  revenueEntries   RevenueEntry[]
 
   @@map("startups")
 }
@@ -197,4 +203,35 @@ model Document {
 
   @@index([startupId])
   @@map("documents")
+}
+
+
+model RevenueEntry {
+  id          String   @id @default(uuid())
+  startupId   String   @map("startup_id")
+  amount      Float
+  date        DateTime @default(now())
+  description String?
+  source      String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  startup     Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+
+  @@index([startupId])
+  @@map("revenue_entries")
+}
+
+model StageTransitionHistory {
+  id          String   @id @default(uuid())
+  startupId   String   @map("startup_id")
+  fromStage   String   @map("from_stage")
+  toStage     String   @map("to_stage")
+  reason      String?
+  performedBy String?  @map("performed_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([startupId])
+  @@index([fromStage])
+  @@index([toStage])
+  @@map("stage_transition_history")
 }

@@ -188,14 +188,75 @@ export async function PUT(request, { params }) {
     const { id } = params;
     const body = await request.json();
     
+    // Get current startup to check for stage change
+    const currentStartup = await prisma.startup.findUnique({
+      where: { id },
+      select: { stage: true }
+    });
+
+    if (!currentStartup) {
+      return NextResponse.json({ message: 'Startup not found' }, { status: 404 });
+    }
+
+    const updateData = transformToDb(body);
+    
+    // Determine the new stage (from body.stage or body.status mapping)
+    let newStage = updateData.stage || currentStartup.stage;
+    
+    // Check if stage is changing
+    const isStageChanging = newStage && newStage !== currentStartup.stage;
+    
+    // If stage is changing, add tracking fields and record history
+    if (isStageChanging) {
+      updateData.previousStage = currentStartup.stage;
+      updateData.stageChangedAt = new Date();
+      updateData.stageChangeReason = body.stageChangeReason || null;
+      
+      // Handle special transitions
+      if (newStage === 'Graduated' && !updateData.graduatedDate) {
+        updateData.graduatedDate = new Date();
+      }
+      
+      // If moving to One-on-One, cancel pending SMC meetings
+      if (newStage === 'One-on-One') {
+        await prisma.sMCMeeting.updateMany({
+          where: {
+            startupId: id,
+            status: 'scheduled'
+          },
+          data: {
+            status: 'cancelled'
+          }
+        });
+      }
+    }
+    
     const startup = await prisma.startup.update({
       where: { id },
-      data: transformToDb(body),
+      data: updateData,
       include: {
         achievements: { orderBy: { date: 'desc' } },
         progressHistory: { orderBy: { date: 'desc' } }
       }
     });
+
+    // Record stage transition in history table
+    if (isStageChanging) {
+      try {
+        await prisma.stageTransitionHistory.create({
+          data: {
+            startupId: id,
+            fromStage: currentStartup.stage,
+            toStage: newStage,
+            reason: body.stageChangeReason || null,
+            performedBy: user.email || 'admin'
+          }
+        });
+      } catch (historyError) {
+        // Log but don't fail the main operation
+        console.error('Failed to record stage transition history:', historyError);
+      }
+    }
 
     return NextResponse.json(transformStartup(startup));
   } catch (error) {
