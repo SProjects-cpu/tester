@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, TrendingUp, Award, GraduationCap, IndianRupee, BarChart3, X, Eye } from 'lucide-react';
+import { Search, TrendingUp, Award, GraduationCap, IndianRupee, BarChart3, X, Eye, History } from 'lucide-react';
 import { startupApi } from '../utils/api';
 import { exportStartupsComprehensive, filterByDateRange, generateExportFileName } from '../utils/exportUtils';
 import ExportMenu from './ExportMenu';
@@ -12,6 +12,7 @@ import GuestRestrictedButton from './GuestRestrictedButton';
 import StartupProgressModal from './StartupProgressModal';
 import AchievementManager from './AchievementManager';
 import RevenueManager from './RevenueManager';
+import HistoryPanel from './HistoryPanel';
 import AdminAuthModal from './AdminAuthModal';
 
 // Helper function to handle viewing/downloading base64 data URLs
@@ -67,6 +68,7 @@ export default function Onboarded({ isGuest = false }) {
   const [showAchievementModal, setShowAchievementModal] = useState(null);
   const [showProgressModal, setShowProgressModal] = useState(null);
   const [showRevenueModal, setShowRevenueModal] = useState(null);
+  const [showHistoryPanel, setShowHistoryPanel] = useState(false);
   const [loading, setLoading] = useState(false);
   const [adminAuthModal, setAdminAuthModal] = useState({
     isOpen: false,
@@ -210,6 +212,14 @@ export default function Onboarded({ isGuest = false }) {
           variant="inline"
           onDateRangeChange={setDateRange}
         />
+        <button
+          onClick={() => setShowHistoryPanel(true)}
+          className="flex items-center space-x-2 px-4 py-3 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-xl hover:bg-indigo-200 dark:hover:bg-indigo-900/50 transition-colors"
+          title="View section history"
+        >
+          <History className="w-5 h-5" />
+          <span className="hidden sm:inline font-medium">History</span>
+        </button>
         <ViewToggle view={viewMode} onViewChange={setViewMode} />
       </div>
 
@@ -596,6 +606,13 @@ export default function Onboarded({ isGuest = false }) {
           title={adminAuthModal.title}
           message={adminAuthModal.message}
           actionType={adminAuthModal.actionType}
+        />
+
+        <HistoryPanel
+          isOpen={showHistoryPanel}
+          onClose={() => setShowHistoryPanel(false)}
+          sectionType="onboarded"
+          title="Onboarded Section History"
         />
       </AnimatePresence>
     </div>
