@@ -240,7 +240,7 @@ export default function SMCScheduling({ isGuest = false }) {
     let newStage = startup.stage;
     if (startup.stage === 'S0') newStage = 'S1';
     else if (startup.stage === 'S1') newStage = 'S2';
-    else if (startup.stage === 'S2') newStage = 'S3';
+    else if (startup.stage === 'S2') newStage = 'One-on-One'; // After S2, move to One-on-One stage
 
     // Show confirmation modal
     setConfirmationModal({

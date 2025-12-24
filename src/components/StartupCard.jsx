@@ -516,6 +516,50 @@ export default function StartupCard({ startup, onUpdate, onDelete, isGuest = fal
           </div>
         )}
 
+        {/* Onboarding Agreement Details Section */}
+        {isOnboarded && (startup.onboardingDescription || startup.agreementDate || startup.engagementMedium) && (
+          <Section title="Onboarding Agreement" section="onboarded">
+            <div className="p-4 rounded-lg bg-gradient-to-r from-green-50 to-emerald-100 dark:from-green-900/20 dark:to-emerald-800/20 border-2 border-green-200 dark:border-green-700">
+              <div className="space-y-3">
+                {startup.onboardingDescription && (
+                  <div>
+                    <span className="text-xs font-semibold text-green-700 dark:text-green-300 uppercase">Startup Description</span>
+                    <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">{startup.onboardingDescription}</p>
+                  </div>
+                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {startup.agreementDate && (
+                    <div>
+                      <span className="text-xs font-semibold text-green-700 dark:text-green-300 uppercase">Agreement Date</span>
+                      <p className="text-sm text-gray-900 dark:text-white mt-1">
+                        {new Date(startup.agreementDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                      </p>
+                    </div>
+                  )}
+                  {startup.engagementMedium && (
+                    <div>
+                      <span className="text-xs font-semibold text-green-700 dark:text-green-300 uppercase">Engagement Medium</span>
+                      <p className="text-sm text-gray-900 dark:text-white mt-1">
+                        <span className="inline-block px-2 py-1 bg-green-500 text-white rounded-full text-xs font-semibold">
+                          {startup.engagementMedium}
+                        </span>
+                      </p>
+                    </div>
+                  )}
+                  {startup.onboardedDate && (
+                    <div>
+                      <span className="text-xs font-semibold text-green-700 dark:text-green-300 uppercase">Onboarded Date</span>
+                      <p className="text-sm text-gray-900 dark:text-white mt-1">
+                        {new Date(startup.onboardedDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </Section>
+        )}
+
         <Section title="Startup Information" section="startup">
           {/* Logo and Office Photo Display */}
           {(getField(startup, 'logo') || getField(startup, 'officePhoto')) && (

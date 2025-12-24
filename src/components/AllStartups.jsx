@@ -106,14 +106,44 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
 
   const handleAddStartup = async (startupData, documents = []) => {
     try {
+      // Extract pitch deck file if present
+      const pitchDeckFile = startupData.pitchDeck?.file;
+      
+      // Remove the file object from startupData before sending to API
+      const cleanStartupData = { ...startupData };
+      if (cleanStartupData.pitchDeck?.file) {
+        delete cleanStartupData.pitchDeck;
+      }
+      
       const newStartup = await startupApi.create({
-        ...startupData,
+        ...cleanStartupData,
         stage: 'S0',
         status: 'Active'
       });
       
+      const token = localStorage.getItem('token');
+      let uploadedDocs = 0;
+      
+      // Upload pitch deck to Supabase if present
+      if (pitchDeckFile) {
+        const formData = new FormData();
+        formData.append('file', pitchDeckFile);
+        formData.append('startupId', newStartup.id);
+        
+        try {
+          await fetch('/api/documents', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formData
+          });
+          uploadedDocs++;
+        } catch (docError) {
+          console.error('Error uploading pitch deck:', docError);
+        }
+      }
+      
+      // Upload other documents
       if (documents.length > 0) {
-        const token = localStorage.getItem('token');
         for (const file of documents) {
           const formData = new FormData();
           formData.append('file', file);
@@ -125,6 +155,7 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
               headers: { 'Authorization': `Bearer ${token}` },
               body: formData
             });
+            uploadedDocs++;
           } catch (docError) {
             console.error('Error uploading document:', docError);
           }
@@ -133,7 +164,7 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
       
       setStartups([newStartup, ...startups]);
       setShowForm(false);
-      alert('✅ Startup registered successfully!' + (documents.length > 0 ? ` ${documents.length} document(s) uploaded.` : ''));
+      alert('✅ Startup registered successfully!' + (uploadedDocs > 0 ? ` ${uploadedDocs} document(s) uploaded.` : ''));
     } catch (error) {
       console.error('Error creating startup:', error);
       alert('❌ Failed to create startup: ' + error.message);

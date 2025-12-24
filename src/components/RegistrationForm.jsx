@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { X, ChevronDown, ChevronUp, Upload } from 'lucide-react';
+import { X, ChevronDown, ChevronUp, Upload, FileText, Trash2 } from 'lucide-react';
 import DocumentUpload from './DocumentUpload';
 import MagicCodeInput from './MagicCodeInput';
 
@@ -78,31 +78,64 @@ const Textarea = ({ label, name, required = false, value, onChange, error, rows 
   </div>
 );
 
-const FileUpload = ({ label, name, required = false, onChange, accept = "*" }) => (
-  <div>
-    <label className="block text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100 mb-1.5 sm:mb-2">
-      {label} {required && <span className="text-red-500 font-bold">*</span>}
-    </label>
-    <div className="relative">
-      <input
-        type="file"
-        name={name}
-        onChange={onChange}
-        accept={accept}
-        required={required}
-        className="hidden"
-        id={name}
-      />
-      <label
-        htmlFor={name}
-        className="flex items-center justify-center space-x-2 w-full px-3 sm:px-4 py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:border-magic-500 cursor-pointer transition-all text-sm sm:text-base"
-      >
-        <Upload className="w-4 h-4" />
-        <span>Choose File</span>
+const FileUpload = ({ label, name, required = false, onChange, accept = "*", value, onRemove }) => {
+  const inputRef = useRef(null);
+  const hasFile = value && (value.file || value.name);
+  
+  return (
+    <div>
+      <label className="block text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100 mb-1.5 sm:mb-2">
+        {label} {required && <span className="text-red-500 font-bold">*</span>}
       </label>
+      {hasFile ? (
+        <div className="flex items-center justify-between p-3 bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-300 dark:border-purple-600 rounded-xl">
+          <div className="flex items-center space-x-3 min-w-0">
+            <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+              <FileText className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                {value.name || value.file?.name || 'Uploaded file'}
+              </p>
+              {value.size && (
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {(value.size / 1024).toFixed(1)} KB
+                </p>
+              )}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onRemove}
+            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+      ) : (
+        <div className="relative">
+          <input
+            ref={inputRef}
+            type="file"
+            name={name}
+            onChange={onChange}
+            accept={accept}
+            required={required}
+            className="hidden"
+            id={name}
+          />
+          <label
+            htmlFor={name}
+            className="flex items-center justify-center space-x-2 w-full px-3 sm:px-4 py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:border-magic-500 cursor-pointer transition-all text-sm sm:text-base"
+          >
+            <Upload className="w-4 h-4" />
+            <span>Choose File</span>
+          </label>
+        </div>
+      )}
     </div>
-  </div>
-);
+  );
+};
 
 export default function RegistrationForm({ onClose, onSubmit, initialData = null }) {
   const [formData, setFormData] = useState(initialData || {
@@ -207,15 +240,36 @@ export default function RegistrationForm({ onClose, onSubmit, initialData = null
     const { name, files } = e.target;
     if (files && files[0]) {
       const file = files[0];
-      const reader = new FileReader();
-      reader.onloadend = () => {
+      // Store the actual file object for pitch deck (to upload to Supabase later)
+      if (name === 'pitchDeck') {
         setFormData(prev => ({
           ...prev,
-          [name]: reader.result
+          [name]: {
+            file: file,
+            name: file.name,
+            size: file.size,
+            type: file.type
+          }
         }));
-      };
-      reader.readAsDataURL(file);
+      } else {
+        // For other files (logo, etc.), keep base64 encoding
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setFormData(prev => ({
+            ...prev,
+            [name]: reader.result
+          }));
+        };
+        reader.readAsDataURL(file);
+      }
     }
+  };
+
+  const handleRemovePitchDeck = () => {
+    setFormData(prev => ({
+      ...prev,
+      pitchDeck: null
+    }));
   };
 
   const validateForm = () => {
@@ -418,6 +472,8 @@ export default function RegistrationForm({ onClose, onSubmit, initialData = null
                 name="pitchDeck" 
                 onChange={handleFileChange}
                 accept=".pdf,.ppt,.pptx"
+                value={formData.pitchDeck}
+                onRemove={handleRemovePitchDeck}
               />
               {formData.isRegistered === 'Yes' && (
                 <Input 
