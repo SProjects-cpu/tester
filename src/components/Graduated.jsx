@@ -126,13 +126,9 @@ export default function Graduated({ isGuest = false }) {
   };
 
   const handleUpdateStartup = async (updatedStartup) => {
-    try {
-      await startupApi.update(updatedStartup.id, updatedStartup);
-      await loadStartups();
-    } catch (error) {
-      console.error('Error updating startup:', error);
-      alert('Failed to update startup: ' + error.message);
-    }
+    // Simply reload startups to get fresh data from database
+    // Achievement and Revenue managers handle their own API calls
+    await loadStartups();
   };
 
   const getGridColumns = () => {

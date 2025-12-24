@@ -132,13 +132,9 @@ export default function Onboarded({ isGuest = false }) {
   };
 
   const handleUpdateStartup = async (updatedStartup) => {
-    try {
-      await startupApi.update(updatedStartup.id, updatedStartup);
-      await loadStartups();
-    } catch (error) {
-      console.error('Error updating startup:', error);
-      alert('Failed to update startup: ' + error.message);
-    }
+    // Simply reload startups to get fresh data from database
+    // Achievement and Revenue managers handle their own API calls
+    await loadStartups();
   };
 
   const handleGraduate = (startup) => {
@@ -620,6 +616,12 @@ export default function Onboarded({ isGuest = false }) {
 
 // Achievement Modal Wrapper for Quick Achievement Addition
 function AchievementModalWrapper({ startup, onClose, onUpdate, isGuest }) {
+  const handleAchievementUpdate = async (updatedStartup) => {
+    // Call onUpdate to refresh the startups list from the database
+    // This ensures the UI shows the latest data including new achievements
+    await onUpdate(updatedStartup);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -658,9 +660,7 @@ function AchievementModalWrapper({ startup, onClose, onUpdate, isGuest }) {
         <div className="flex-1 overflow-y-auto p-4 sm:p-6">
           <AchievementManager 
             startup={startup} 
-            onUpdate={(updatedStartup) => {
-              onUpdate(updatedStartup);
-            }}
+            onUpdate={handleAchievementUpdate}
             isGuest={isGuest}
           />
         </div>
