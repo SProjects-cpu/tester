@@ -22,6 +22,7 @@ function App() {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [darkMode, setDarkMode] = useState(false);
   const [sectorFilter, setSectorFilter] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
   
   const { user, loading, login, logout, isAuthenticated } = useAuth();
 
@@ -91,6 +92,16 @@ function App() {
   const handleNavigateWithSector = (page, sector = null) => {
     setCurrentPage(page);
     setSectorFilter(sector);
+    // Increment refresh key to force data refresh when navigating
+    setRefreshKey(prev => prev + 1);
+  };
+
+  // Navigation handler that triggers refresh
+  const handleNavigate = (page) => {
+    setCurrentPage(page);
+    setSectorFilter(null);
+    // Increment refresh key to force data refresh when navigating
+    setRefreshKey(prev => prev + 1);
   };
 
   const isGuest = user?.role === 'guest';
@@ -98,27 +109,27 @@ function App() {
   const renderPage = () => {
     switch (currentPage) {
       case 'dashboard':
-        return <Dashboard onNavigate={setCurrentPage} onNavigateWithSector={handleNavigateWithSector} isGuest={isGuest} />;
+        return <Dashboard key={`dashboard-${refreshKey}`} onNavigate={handleNavigate} onNavigateWithSector={handleNavigateWithSector} isGuest={isGuest} />;
       case 'startups':
-        return <AllStartups isGuest={isGuest} initialSectorFilter={sectorFilter} />;
+        return <AllStartups key={`startups-${refreshKey}`} isGuest={isGuest} initialSectorFilter={sectorFilter} />;
       case 'inactive':
-        return <InactiveStartups isGuest={isGuest} />;
+        return <InactiveStartups key={`inactive-${refreshKey}`} isGuest={isGuest} />;
       case 'smc':
-        return <SMCScheduling isGuest={isGuest} />;
+        return <SMCScheduling key={`smc-${refreshKey}`} isGuest={isGuest} />;
       case 'oneOnOne':
-        return <OneOnOneScheduling isGuest={isGuest} />;
+        return <OneOnOneScheduling key={`oneOnOne-${refreshKey}`} isGuest={isGuest} />;
       case 'onboarded':
-        return <Onboarded isGuest={isGuest} />;
+        return <Onboarded key={`onboarded-${refreshKey}`} isGuest={isGuest} />;
       case 'graduated':
-        return <Graduated isGuest={isGuest} />;
+        return <Graduated key={`graduated-${refreshKey}`} isGuest={isGuest} />;
       case 'rejected':
-        return <Rejected isGuest={isGuest} />;
+        return <Rejected key={`rejected-${refreshKey}`} isGuest={isGuest} />;
       case 'settings':
         return <Settings darkMode={darkMode} toggleDarkMode={toggleDarkMode} isGuest={isGuest} />;
       case 'landingEditor':
         return <LandingPageEditor onPreview={() => window.open('/', '_blank')} />;
       default:
-        return <Dashboard onNavigate={setCurrentPage} isGuest={isGuest} />;
+        return <Dashboard key={`dashboard-default-${refreshKey}`} onNavigate={handleNavigate} isGuest={isGuest} />;
     }
   };
 
@@ -127,7 +138,7 @@ function App() {
       <div className="flex h-screen transition-colors duration-300 overflow-hidden">
         <Sidebar 
           currentPage={currentPage} 
-          onNavigate={setCurrentPage}
+          onNavigate={handleNavigate}
           onLogout={handleLogout}
           darkMode={darkMode}
           toggleDarkMode={toggleDarkMode}

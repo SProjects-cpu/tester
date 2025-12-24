@@ -5,6 +5,41 @@ import { getAuthUser } from '@/lib/auth';
 // Force dynamic rendering to avoid build-time database access
 export const dynamic = 'force-dynamic';
 
+// Transform SMC meetings to pitch history format
+const transformSmcToPitchHistory = (smcMeetings) => {
+  if (!smcMeetings || smcMeetings.length === 0) return [];
+  
+  return smcMeetings
+    .filter(m => m.status === 'completed')
+    .map((meeting) => {
+      const agendaParts = meeting.agenda?.split('|') || [];
+      // Format: timeSlot|completionTime|stageAtCompletion
+      const stage = agendaParts[2] || 'S0'; // Default to S0 if not stored
+      return {
+        stage: stage,
+        date: meeting.date ? meeting.date.toISOString().split('T')[0] : null,
+        time: agendaParts[1] || agendaParts[0] || '',
+        panelistName: meeting.attendees || '',
+        feedback: meeting.decisions || ''
+      };
+    });
+};
+
+// Transform One-on-One meetings to history format
+const transformOneOnOneToHistory = (oneOnOneMeetings) => {
+  if (!oneOnOneMeetings || oneOnOneMeetings.length === 0) return [];
+  
+  return oneOnOneMeetings
+    .filter(m => m.status === 'completed')
+    .map(meeting => ({
+      date: meeting.date ? meeting.date.toISOString().split('T')[0] : null,
+      time: meeting.topic || '',
+      mentorName: meeting.mentor || '',
+      feedback: meeting.notes || '',
+      progress: meeting.actionItems || ''
+    }));
+};
+
 // Transform database startup to frontend format
 const transformStartup = (startup) => ({
   id: startup.id,
@@ -61,6 +96,10 @@ const transformStartup = (startup) => ({
   achievements: startup.achievements || [],
   progressHistory: startup.progressHistory || [],
   revenueEntries: startup.revenueEntries || [],
+  // Transform SMC meetings to pitch history format
+  pitchHistory: transformSmcToPitchHistory(startup.smcMeetings),
+  // Transform One-on-One meetings to history format
+  oneOnOneHistory: transformOneOnOneToHistory(startup.oneOnOneMeetings),
   oneOnOneMeetings: startup.oneOnOneMeetings || [],
   smcMeetings: startup.smcMeetings || [],
   agreements: startup.agreements || []
@@ -163,7 +202,7 @@ export async function GET(request, { params }) {
         achievements: { orderBy: { date: 'desc' } },
         progressHistory: { orderBy: { date: 'desc' } },
         oneOnOneMeetings: { orderBy: { date: 'desc' } },
-        smcMeetings: { orderBy: { date: 'desc' } },
+        smcMeetings: { orderBy: { date: 'asc' } },
         agreements: { orderBy: { uploadDate: 'desc' } }
       }
     });

@@ -250,6 +250,9 @@ export default function SMCScheduling({ isGuest = false }) {
       type: 'info',
       onConfirm: async () => {
         try {
+          // Close confirmation modal first
+          closeConfirmationModal();
+          
           // Update startup stage via API
           await startupApi.update(startup.id, { stage: newStage });
 
@@ -260,9 +263,12 @@ export default function SMCScheduling({ isGuest = false }) {
             completionData
           });
 
-          // Reload data
-          await loadData();
+          // Close completion form
           setShowCompletionForm(null);
+          
+          // Reload data to refresh the startup list
+          await loadData();
+          
           alert('SMC marked as completed and startup stage updated!');
         } catch (error) {
           console.error('Error completing SMC:', error);

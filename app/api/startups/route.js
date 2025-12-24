@@ -5,6 +5,41 @@ import { getAuthUser } from '@/lib/auth';
 // Force dynamic rendering to avoid build-time database access
 export const dynamic = 'force-dynamic';
 
+// Transform SMC meetings to pitch history format
+const transformSmcToPitchHistory = (smcMeetings) => {
+  if (!smcMeetings || smcMeetings.length === 0) return [];
+  
+  return smcMeetings
+    .filter(m => m.status === 'completed')
+    .map((meeting) => {
+      const agendaParts = meeting.agenda?.split('|') || [];
+      // Format: timeSlot|completionTime|stageAtCompletion
+      const stage = agendaParts[2] || 'S0'; // Default to S0 if not stored
+      return {
+        stage: stage,
+        date: meeting.date ? meeting.date.toISOString().split('T')[0] : null,
+        time: agendaParts[1] || agendaParts[0] || '',
+        panelistName: meeting.attendees || '',
+        feedback: meeting.decisions || ''
+      };
+    });
+};
+
+// Transform One-on-One meetings to history format
+const transformOneOnOneToHistory = (oneOnOneMeetings) => {
+  if (!oneOnOneMeetings || oneOnOneMeetings.length === 0) return [];
+  
+  return oneOnOneMeetings
+    .filter(m => m.status === 'completed')
+    .map(meeting => ({
+      date: meeting.date ? meeting.date.toISOString().split('T')[0] : null,
+      time: meeting.topic || '',
+      mentorName: meeting.mentor || '',
+      feedback: meeting.notes || '',
+      progress: meeting.actionItems || ''
+    }));
+};
+
 // Transform database startup to frontend format
 const transformStartup = (startup) => ({
   id: startup.id,
@@ -62,6 +97,10 @@ const transformStartup = (startup) => ({
   achievements: startup.achievements || [],
   progressHistory: startup.progressHistory || [],
   revenueEntries: startup.revenueEntries || [],
+  // Transform SMC meetings to pitch history format
+  pitchHistory: transformSmcToPitchHistory(startup.smcMeetings),
+  // Transform One-on-One meetings to history format
+  oneOnOneHistory: transformOneOnOneToHistory(startup.oneOnOneMeetings),
   // Include counts if available (for list view optimization)
   achievementsCount: startup._count?.achievements ?? startup.achievements?.length ?? 0,
   progressHistoryCount: startup._count?.progressHistory ?? startup.progressHistory?.length ?? 0,
@@ -153,7 +192,10 @@ export async function GET(request) {
     while (retries > 0) {
       try {
         // For list views, don't include heavy relations unless specifically requested
-        const includeRelations = searchParams.get('includeRelations') === 'true';
+        // Always include full relations for Onboarded and Graduated statuses since they need achievements
+        const includeRelations = searchParams.get('includeRelations') === 'true' || 
+                                 status === 'Onboarded' || 
+                                 status === 'Graduated';
         
         startups = await prisma.startup.findMany({
           where,
@@ -166,8 +208,23 @@ export async function GET(request) {
             },
             revenueEntries: {
               orderBy: { date: 'desc' }
+            },
+            smcMeetings: {
+              orderBy: { date: 'desc' }
+            },
+            oneOnOneMeetings: {
+              orderBy: { date: 'desc' }
             }
           } : {
+            // Include SMC and One-on-One meetings for pitch history even in list view
+            smcMeetings: {
+              where: { status: 'completed' },
+              orderBy: { date: 'asc' }
+            },
+            oneOnOneMeetings: {
+              where: { status: 'completed' },
+              orderBy: { date: 'asc' }
+            },
             // Only include counts for list view performance
             _count: {
               select: {

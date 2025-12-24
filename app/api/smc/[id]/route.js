@@ -15,11 +15,24 @@ export async function PUT(request, { params }) {
     const { id } = params;
     const body = await request.json();
     
+    // Get the current startup stage before updating
+    const existingMeeting = await prisma.sMCMeeting.findUnique({
+      where: { id },
+      include: { startup: { select: { stage: true } } }
+    });
+    
+    // Store the stage at which this SMC was completed in the agenda field
+    // Format: timeSlot|completionTime|stageAtCompletion
+    const stageAtCompletion = existingMeeting?.startup?.stage || '';
+    const agendaData = body.timeSlot 
+      ? `${body.timeSlot}|${body.completionData?.time || ''}|${stageAtCompletion}`
+      : undefined;
+    
     const meeting = await prisma.sMCMeeting.update({
       where: { id },
       data: {
         date: body.date ? new Date(body.date) : undefined,
-        agenda: body.timeSlot ? `${body.timeSlot}|${body.completionData?.time || ''}` : undefined,
+        agenda: agendaData,
         decisions: body.completionData?.feedback,
         attendees: body.completionData?.panelistName,
         status: body.status === 'Completed' ? 'completed' : 'scheduled'

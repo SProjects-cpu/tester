@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Rocket, Users, Star, XCircle, TrendingUp, GraduationCap } from 'lucide-react';
 import { startupApi } from '../utils/api';
@@ -12,43 +12,51 @@ export default function Dashboard({ onNavigate, onNavigateWithSector }) {
   const [sectorStats, setSectorStats] = useState({});
   const [loading, setLoading] = useState(true);
 
+  const fetchStartups = useCallback(async () => {
+    try {
+      setLoading(true);
+      const startups = await startupApi.getAll();
+      
+      const newStats = {
+        s0: startups.filter(s => s.stage === 'S0').length,
+        s1: startups.filter(s => s.stage === 'S1').length,
+        s2: startups.filter(s => s.stage === 'S2').length,
+        s3: startups.filter(s => s.stage === 'S3').length,
+        oneOnOne: startups.filter(s => s.stage === 'One-on-One').length,
+        onboarded: startups.filter(s => s.status === 'Onboarded').length,
+        graduated: startups.filter(s => s.status === 'Graduated').length,
+        rejected: startups.filter(s => s.status === 'Rejected').length,
+        total: startups.length
+      };
+      
+      // Calculate sector statistics
+      const sectors = {};
+      startups.forEach(startup => {
+        if (startup.sector) {
+          sectors[startup.sector] = (sectors[startup.sector] || 0) + 1;
+        }
+      });
+      
+      setStats(newStats);
+      setSectorStats(sectors);
+    } catch (error) {
+      console.error('Error fetching startups:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
-    const fetchStartups = async () => {
-      try {
-        setLoading(true);
-        const startups = await startupApi.getAll();
-        
-        const newStats = {
-          s0: startups.filter(s => s.stage === 'S0').length,
-          s1: startups.filter(s => s.stage === 'S1').length,
-          s2: startups.filter(s => s.stage === 'S2').length,
-          s3: startups.filter(s => s.stage === 'S3').length,
-          oneOnOne: startups.filter(s => s.stage === 'One-on-One').length,
-          onboarded: startups.filter(s => s.status === 'Onboarded').length,
-          graduated: startups.filter(s => s.status === 'Graduated').length,
-          rejected: startups.filter(s => s.status === 'Rejected').length,
-          total: startups.length
-        };
-        
-        // Calculate sector statistics
-        const sectors = {};
-        startups.forEach(startup => {
-          if (startup.sector) {
-            sectors[startup.sector] = (sectors[startup.sector] || 0) + 1;
-          }
-        });
-        
-        setStats(newStats);
-        setSectorStats(sectors);
-      } catch (error) {
-        console.error('Error fetching startups:', error);
-      } finally {
-        setLoading(false);
-      }
+    fetchStartups();
+    
+    // Refresh data when window gains focus (user returns to tab)
+    const handleFocus = () => {
+      fetchStartups();
     };
     
-    fetchStartups();
-  }, []);
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [fetchStartups]);
 
   const cards = [
     { 
