@@ -132,9 +132,31 @@ export default function Onboarded({ isGuest = false }) {
   };
 
   const handleUpdateStartup = async (updatedStartup) => {
-    // Simply reload startups to get fresh data from database
-    // Achievement and Revenue managers handle their own API calls
+    // Reload startups to get fresh data from database
     await loadStartups();
+    
+    // Update the modal's startup data if it's open
+    // This ensures the modal shows the latest achievements/revenue
+    const freshData = await startupApi.getAll({ status: 'Onboarded' });
+    
+    if (showAchievementModal && updatedStartup?.id === showAchievementModal.id) {
+      const updatedModalStartup = freshData.find(s => s.id === showAchievementModal.id);
+      if (updatedModalStartup) {
+        setShowAchievementModal(updatedModalStartup);
+      }
+    }
+    if (showRevenueModal && updatedStartup?.id === showRevenueModal.id) {
+      const updatedModalStartup = freshData.find(s => s.id === showRevenueModal.id);
+      if (updatedModalStartup) {
+        setShowRevenueModal(updatedModalStartup);
+      }
+    }
+    if (selectedStartup && updatedStartup?.id === selectedStartup.id) {
+      const updatedModalStartup = freshData.find(s => s.id === selectedStartup.id);
+      if (updatedModalStartup) {
+        setSelectedStartup(updatedModalStartup);
+      }
+    }
   };
 
   const handleGraduate = (startup) => {

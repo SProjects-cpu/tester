@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, X, Upload, FileText, Image as ImageIcon, Award, Calendar, ExternalLink, Edit2, Trash2, Download, Eye } from 'lucide-react';
 import { achievementApi } from '../utils/api';
@@ -61,6 +61,12 @@ export default function AchievementManager({ startup, onUpdate, isGuest = false 
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingAchievement, setEditingAchievement] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  // Sync achievements state when startup prop changes
+  useEffect(() => {
+    setAchievements(startup.achievements || []);
+  }, [startup.achievements, startup.id]);
+
   const [newAchievement, setNewAchievement] = useState({
     title: '',
     description: '',

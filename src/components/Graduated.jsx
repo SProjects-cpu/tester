@@ -85,7 +85,7 @@ export default function Graduated({ isGuest = false }) {
   const loadStartups = async () => {
     try {
       setLoading(true);
-      const data = await startupApi.getAll();
+      const data = await startupApi.getAll({ status: 'Graduated' });
       setStartups(data.filter(s => s.status === 'Graduated'));
     } catch (error) {
       console.error('Error loading startups:', error);
@@ -126,9 +126,31 @@ export default function Graduated({ isGuest = false }) {
   };
 
   const handleUpdateStartup = async (updatedStartup) => {
-    // Simply reload startups to get fresh data from database
-    // Achievement and Revenue managers handle their own API calls
+    // Reload startups to get fresh data from database
     await loadStartups();
+    
+    // Update the modal's startup data if it's open
+    // This ensures the modal shows the latest achievements
+    const freshData = await startupApi.getAll({ status: 'Graduated' });
+    
+    if (showAchievementModal && updatedStartup?.id === showAchievementModal.id) {
+      const updatedModalStartup = freshData.find(s => s.id === showAchievementModal.id);
+      if (updatedModalStartup) {
+        setShowAchievementModal(updatedModalStartup);
+      }
+    }
+    if (showProgressModal && updatedStartup?.id === showProgressModal.id) {
+      const updatedModalStartup = freshData.find(s => s.id === showProgressModal.id);
+      if (updatedModalStartup) {
+        setShowProgressModal(updatedModalStartup);
+      }
+    }
+    if (selectedStartup && updatedStartup?.id === selectedStartup.id) {
+      const updatedModalStartup = freshData.find(s => s.id === selectedStartup.id);
+      if (updatedModalStartup) {
+        setSelectedStartup(updatedModalStartup);
+      }
+    }
   };
 
   const getGridColumns = () => {
