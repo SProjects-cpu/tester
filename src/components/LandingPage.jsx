@@ -29,6 +29,14 @@ const LandingPage = ({ onNavigateToLogin }) => {
     onboarded: 0,
     graduated: 0
   });
+  const [monthlyGrowth, setMonthlyGrowth] = useState([]);
+  const [successMetrics, setSuccessMetrics] = useState({
+    successRate: 0,
+    fundingSecured: 0,
+    marketReady: 0,
+    revenueGrowth: 0
+  });
+  const [statsLoading, setStatsLoading] = useState(true);
 
   useEffect(() => {
     // Load landing page data from storage
@@ -37,16 +45,8 @@ const LandingPage = ({ onNavigateToLogin }) => {
       setLandingData(data);
     }
 
-    // Load real startup statistics
-    const startups = storage.get('startups', []);
-    const stats = {
-      total: startups.length,
-      registered: startups.filter(s => s.stage === 'S0').length,
-      mentored: startups.filter(s => s.stage === 'One-on-One').length,
-      onboarded: startups.filter(s => s.status === 'Onboarded').length,
-      graduated: startups.filter(s => s.status === 'Graduated').length
-    };
-    setStartupStats(stats);
+    // Fetch real-time statistics from API
+    fetchPublicStats();
 
     if (!data) {
       // Load default data
@@ -55,6 +55,42 @@ const LandingPage = ({ onNavigateToLogin }) => {
       });
     }
   }, []);
+
+  // Fetch real-time stats from the public API
+  const fetchPublicStats = async () => {
+    try {
+      setStatsLoading(true);
+      const response = await fetch('/api/public/stats');
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Update startup distribution
+        setStartupStats({
+          total: data.distribution.total,
+          registered: data.distribution.registered,
+          mentored: data.distribution.mentored,
+          onboarded: data.distribution.onboarded,
+          graduated: data.distribution.graduated
+        });
+        
+        // Update monthly growth data
+        setMonthlyGrowth(data.monthlyGrowth || []);
+        
+        // Update success metrics
+        setSuccessMetrics({
+          successRate: data.successMetrics.successRate,
+          fundingSecured: data.successMetrics.fundingSecured,
+          marketReady: data.successMetrics.marketReady,
+          revenueGrowth: data.successMetrics.revenueGrowth
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching public stats:', error);
+      // Keep default values on error
+    } finally {
+      setStatsLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (landingData?.news?.length > 1) {
@@ -344,36 +380,47 @@ const LandingPage = ({ onNavigateToLogin }) => {
             className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-3xl p-8 shadow-2xl"
           >
             <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-6 text-center">
-              Monthly Growth
+              Monthly Registrations
             </h4>
             <div className="h-48 flex items-end justify-between space-x-3 mb-4">
-              {[65, 78, 85, 92, 88, 95].map((height, idx) => (
+              {(monthlyGrowth.length > 0 ? monthlyGrowth : [
+                { month: 'Jan', percentage: 0, count: 0 },
+                { month: 'Feb', percentage: 0, count: 0 },
+                { month: 'Mar', percentage: 0, count: 0 },
+                { month: 'Apr', percentage: 0, count: 0 },
+                { month: 'May', percentage: 0, count: 0 },
+                { month: 'Jun', percentage: 0, count: 0 }
+              ]).map((data, idx) => (
                 <div key={idx} className="flex-1 flex flex-col items-center">
                   <motion.div
                     initial={{ height: 0 }}
-                    whileInView={{ height: `${height}%` }}
+                    whileInView={{ height: `${Math.max(data.percentage, 5)}%` }}
                     transition={{ duration: 1, delay: 0.2 + idx * 0.1 }}
-                    className="w-full rounded-t-lg bg-gradient-to-t from-purple-500 via-pink-500 to-orange-400 relative group"
+                    className="w-full rounded-t-lg bg-gradient-to-t from-purple-500 via-pink-500 to-orange-400 relative group min-h-[8px]"
                   >
                     <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
-                      {height}%
+                      {data.count} startups
                     </div>
                   </motion.div>
                 </div>
               ))}
             </div>
             <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400">
-              <span>Jan</span>
-              <span>Feb</span>
-              <span>Mar</span>
-              <span>Apr</span>
-              <span>May</span>
-              <span>Jun</span>
+              {(monthlyGrowth.length > 0 ? monthlyGrowth : [
+                { month: 'Jan' }, { month: 'Feb' }, { month: 'Mar' },
+                { month: 'Apr' }, { month: 'May' }, { month: 'Jun' }
+              ]).map((data, idx) => (
+                <span key={idx}>{data.month}</span>
+              ))}
             </div>
             <div className="mt-6 p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl">
               <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">↑ 45%</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Growth This Quarter</div>
+                <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                  {monthlyGrowth.length > 0 
+                    ? monthlyGrowth.reduce((sum, m) => sum + m.count, 0)
+                    : 0} Total
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Registrations (6 months)</div>
               </div>
             </div>
           </motion.div>
@@ -407,7 +454,7 @@ const LandingPage = ({ onNavigateToLogin }) => {
                   fill="none"
                   strokeLinecap="round"
                   initial={{ strokeDasharray: "0 502" }}
-                  whileInView={{ strokeDasharray: "477 502" }}
+                  whileInView={{ strokeDasharray: `${(successMetrics.successRate / 100) * 502} 502` }}
                   transition={{ duration: 2, delay: 0.3 }}
                 />
                 <defs>
@@ -425,7 +472,7 @@ const LandingPage = ({ onNavigateToLogin }) => {
                     transition={{ duration: 0.5, delay: 1 }}
                     className="text-4xl font-bold bg-gradient-to-r from-green-500 to-blue-500 bg-clip-text text-transparent"
                   >
-                    95%
+                    {successMetrics.successRate}%
                   </motion.div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">Success Rate</div>
                 </div>
@@ -433,9 +480,9 @@ const LandingPage = ({ onNavigateToLogin }) => {
             </div>
             <div className="space-y-3">
               {[
-                { label: 'Funding Secured', value: 92, color: 'from-green-400 to-emerald-500' },
-                { label: 'Market Ready', value: 88, color: 'from-blue-400 to-cyan-500' },
-                { label: 'Revenue Growth', value: 95, color: 'from-purple-400 to-pink-500' }
+                { label: 'Funding Secured', value: successMetrics.fundingSecured, color: 'from-green-400 to-emerald-500' },
+                { label: 'Market Ready', value: successMetrics.marketReady, color: 'from-blue-400 to-cyan-500' },
+                { label: 'Revenue Growth', value: successMetrics.revenueGrowth, color: 'from-purple-400 to-pink-500' }
               ].map((metric, idx) => (
                 <div key={idx}>
                   <div className="flex justify-between text-sm mb-1">
