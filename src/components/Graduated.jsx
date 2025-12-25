@@ -229,10 +229,11 @@ export default function Graduated({ isGuest = false }) {
         <div className="space-y-4">
           <AnimatePresence>
             {filteredStartups.map(startup => {
-              // Check both revenueEntries (new format) and revenueHistory (legacy format)
-              const totalRevenue = startup.totalRevenue || 
-                (startup.revenueEntries?.reduce((sum, r) => sum + (r.amount || 0), 0)) || 
-                (startup.revenueHistory?.reduce((sum, r) => sum + (r.amount || 0), 0)) || 0;
+              // First check revenueEntries (new format from RevenueManager), then revenueHistory, then totalRevenue
+              const totalRevenue = 
+                (startup.revenueEntries?.length > 0 ? startup.revenueEntries.reduce((sum, r) => sum + (r.amount || 0), 0) : null) ??
+                (startup.revenueHistory?.length > 0 ? startup.revenueHistory.reduce((sum, r) => sum + (r.amount || 0), 0) : null) ??
+                startup.totalRevenue ?? 0;
               
               return (
                 <motion.div
@@ -489,10 +490,11 @@ function GraduatedDetailModal({ startup, onClose, onUpdate, isGuest = false }) {
     setExpanded(prev => ({ ...prev, [section]: !prev[section] }));
   };
 
-  // Check both revenueEntries (new format) and revenueHistory (legacy format)
-  const totalRevenue = startup.totalRevenue || 
-    (startup.revenueEntries?.reduce((sum, r) => sum + (r.amount || 0), 0)) || 
-    (startup.revenueHistory?.reduce((sum, r) => sum + (r.amount || 0), 0)) || 0;
+  // First check revenueEntries (new format from RevenueManager), then revenueHistory, then totalRevenue
+  const totalRevenue = 
+    (startup.revenueEntries?.length > 0 ? startup.revenueEntries.reduce((sum, r) => sum + (r.amount || 0), 0) : null) ??
+    (startup.revenueHistory?.length > 0 ? startup.revenueHistory.reduce((sum, r) => sum + (r.amount || 0), 0) : null) ??
+    startup.totalRevenue ?? 0;
 
   const Section = ({ title, section, children, icon: Icon }) => (
     <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">

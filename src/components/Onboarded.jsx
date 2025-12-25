@@ -183,14 +183,16 @@ export default function Onboarded({ isGuest = false }) {
   };
 
   const getTotalRevenue = (startup) => {
-    if (startup.totalRevenue) return startup.totalRevenue;
-    // Check both revenueEntries (new format) and revenueHistory (legacy format)
+    // First check revenueEntries (new format from RevenueManager)
     if (startup.revenueEntries && startup.revenueEntries.length > 0) {
       return startup.revenueEntries.reduce((sum, r) => sum + (r.amount || 0), 0);
     }
+    // Then check revenueHistory (legacy format)
     if (startup.revenueHistory && startup.revenueHistory.length > 0) {
       return startup.revenueHistory.reduce((sum, r) => sum + (r.amount || 0), 0);
     }
+    // Fall back to totalRevenue field only if no entries exist
+    if (startup.totalRevenue) return startup.totalRevenue;
     return 0;
   };
 
