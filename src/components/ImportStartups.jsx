@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Upload, Download, FileSpreadsheet, AlertCircle, CheckCircle, FileText } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { generateId } from '../utils/storage';
+import { startupApi, magicCodeApi } from '../utils/api';
 
 export default function ImportStartups({ onClose, onImport }) {
   const [file, setFile] = useState(null);
@@ -237,8 +238,15 @@ export default function ImportStartups({ onClose, onImport }) {
 
       const allErrors = [];
       const validStartups = [];
-      const existingStartups = JSON.parse(localStorage.getItem('startups') || '[]');
-      let magicCodeCounter = existingStartups.length + 1;
+      
+      // Fetch actual startup count from database for magic code generation
+      let magicCodeCounter = 1;
+      try {
+        const existingStartups = await startupApi.getAll();
+        magicCodeCounter = existingStartups.length + 1;
+      } catch (e) {
+        console.warn('Could not fetch existing startups, using default counter');
+      }
 
       jsonData.forEach((row, index) => {
         // Validate row
@@ -257,7 +265,11 @@ export default function ImportStartups({ onClose, onImport }) {
           // Handle magic code
           if (dbField === 'magicCode') {
             if (!value || value === 'AUTO') {
+              // Generate unique magic code
               value = String(magicCodeCounter++);
+            } else {
+              // Use provided value but ensure it's a string
+              value = String(value);
             }
           }
           
