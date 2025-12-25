@@ -261,10 +261,13 @@ export default function OneOnOneScheduling({ isGuest = false }) {
   };
 
   const getSchedulesForStartup = (startupId) => {
-    return schedules.filter(s => s.startupId === startupId);
+    // Use filteredSchedules when date range is applied, otherwise use all schedules
+    const schedulesToFilter = (dateRange.fromDate || dateRange.toDate) ? filteredSchedules : schedules;
+    return schedulesToFilter.filter(s => s.startupId === startupId);
   };
 
   const getUpcomingSchedule = (startupId) => {
+    // Upcoming schedules should always check all schedules (not filtered by date range)
     return schedules.find(s => s.startupId === startupId && s.status === 'Scheduled');
   };
 

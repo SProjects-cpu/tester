@@ -77,13 +77,40 @@ export default function SMCScheduling({ isGuest = false }) {
   }, []);
 
   useEffect(() => {
-    // Apply date range filter
+    // Apply date range filter to schedules
     if (dateRange.fromDate || dateRange.toDate) {
       setFilteredSchedules(filterByDateRange(schedules, 'date', dateRange.fromDate, dateRange.toDate));
     } else {
       setFilteredSchedules(schedules);
     }
   }, [schedules, dateRange]);
+
+  // Filter saturdays based on date range
+  const getFilteredSaturdays = () => {
+    if (!dateRange.fromDate && !dateRange.toDate) {
+      return saturdays;
+    }
+    
+    return saturdays.filter(dateStr => {
+      const date = new Date(dateStr);
+      
+      if (dateRange.fromDate) {
+        const from = new Date(dateRange.fromDate);
+        from.setHours(0, 0, 0, 0);
+        if (date < from) return false;
+      }
+      
+      if (dateRange.toDate) {
+        const to = new Date(dateRange.toDate);
+        to.setHours(23, 59, 59, 999);
+        if (date > to) return false;
+      }
+      
+      return true;
+    });
+  };
+
+  const displaySaturdays = getFilteredSaturdays();
 
   const loadData = async () => {
     try {
@@ -462,7 +489,10 @@ export default function SMCScheduling({ isGuest = false }) {
                 {monthNames[selectedMonth]} {selectedYear} - Saturdays
               </h2>
               <span className="text-sm text-gray-600 dark:text-gray-400">
-                {saturdays.length} Saturday{saturdays.length !== 1 ? 's' : ''}
+                {displaySaturdays.length} Saturday{displaySaturdays.length !== 1 ? 's' : ''}
+                {(dateRange.fromDate || dateRange.toDate) && displaySaturdays.length !== saturdays.length && 
+                  ` (filtered from ${saturdays.length})`
+                }
               </span>
             </div>
             {/* View Toggle */}
@@ -492,9 +522,9 @@ export default function SMCScheduling({ isGuest = false }) {
             </div>
           </div>
 
-          {saturdays.length > 0 ? (
+          {displaySaturdays.length > 0 ? (
             <div className="space-y-6">
-              {saturdays.map(date => {
+              {displaySaturdays.map(date => {
                 const daySchedules = schedules
                   .filter(s => s.date === date)
                   .sort((a, b) => (a.timeSlot || '').localeCompare(b.timeSlot || ''));
@@ -755,7 +785,10 @@ export default function SMCScheduling({ isGuest = false }) {
             <div className="text-center py-12 bg-gray-50 dark:bg-gray-700 rounded-xl">
               <Calendar className="w-16 h-16 mx-auto text-gray-400 mb-4" />
               <p className="text-gray-500 dark:text-gray-400 text-lg">
-                No Saturdays in {monthNames[selectedMonth]} {selectedYear}
+                {dateRange.fromDate || dateRange.toDate 
+                  ? 'No Saturdays match the selected date range'
+                  : `No Saturdays in ${monthNames[selectedMonth]} ${selectedYear}`
+                }
               </p>
             </div>
           )}
