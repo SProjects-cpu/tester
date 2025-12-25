@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingUp, Award, GraduationCap, IndianRupee, BarChart3, X, Eye, History } from 'lucide-react';
+import { TrendingUp, Award, GraduationCap, IndianRupee, BarChart3, X, Eye, History, Loader2 } from 'lucide-react';
 import { startupApi } from '../utils/api';
 import { exportStartupsComprehensive, filterByDateRange, generateExportFileName } from '../utils/exportUtils';
 import ExportMenu from './ExportMenu';
@@ -61,7 +61,6 @@ const isImageUrl = (url) => {
 
 export default function Onboarded({ isGuest = false }) {
   const [startups, setStartups] = useState([]);
-  const [filteredStartups, setFilteredStartups] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [dateRange, setDateRange] = useState({ fromDate: null, toDate: null });
   const [viewMode, setViewMode] = useState('list');
@@ -70,7 +69,7 @@ export default function Onboarded({ isGuest = false }) {
   const [showProgressModal, setShowProgressModal] = useState(null);
   const [showRevenueModal, setShowRevenueModal] = useState(null);
   const [showHistoryPanel, setShowHistoryPanel] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [adminAuthModal, setAdminAuthModal] = useState({
     isOpen: false,
     title: '',
@@ -83,38 +82,34 @@ export default function Onboarded({ isGuest = false }) {
     loadStartups();
   }, []);
 
-  useEffect(() => {
-    filterStartups();
+  // Memoized filtering - no separate state needed
+  const filteredStartups = useMemo(() => {
+    let filtered = startups;
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(s =>
+        s.companyName?.toLowerCase().includes(searchLower) ||
+        s.founderName?.toLowerCase().includes(searchLower) ||
+        s.sector?.toLowerCase().includes(searchLower)
+      );
+    }
+    if (dateRange.fromDate || dateRange.toDate) {
+      filtered = filterByDateRange(filtered, 'onboardedDate', dateRange.fromDate, dateRange.toDate);
+    }
+    return filtered;
   }, [startups, searchTerm, dateRange]);
 
-  const loadStartups = async () => {
+  const loadStartups = useCallback(async () => {
     try {
       setLoading(true);
       const data = await startupApi.getAll({ status: 'Onboarded' });
-      // Filter for Onboarded status on client side as well
       setStartups(data.filter(s => s.status === 'Onboarded'));
     } catch (error) {
       console.error('Error loading startups:', error);
     } finally {
       setLoading(false);
     }
-  };
-
-  const filterStartups = () => {
-    let filtered = startups;
-    if (searchTerm) {
-      filtered = filtered.filter(s =>
-        s.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.founderName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.sector?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-    // Apply date range filter on onboardedDate
-    if (dateRange.fromDate || dateRange.toDate) {
-      filtered = filterByDateRange(filtered, 'onboardedDate', dateRange.fromDate, dateRange.toDate);
-    }
-    setFilteredStartups(filtered);
-  };
+  }, []);
 
   const handleExport = (format) => {
     setAdminAuthModal({
@@ -131,14 +126,13 @@ export default function Onboarded({ isGuest = false }) {
     });
   };
 
-  const handleUpdateStartup = async (updatedStartup) => {
-    // Reload startups to get fresh data from database
-    await loadStartups();
+  const handleUpdateStartup = useCallback(async (updatedStartup) => {
+    // Reload startups to get fresh data from database - single API call
+    const data = await startupApi.getAll({ status: 'Onboarded' });
+    const freshData = data.filter(s => s.status === 'Onboarded');
+    setStartups(freshData);
     
     // Update the modal's startup data if it's open
-    // This ensures the modal shows the latest achievements/revenue
-    const freshData = await startupApi.getAll({ status: 'Onboarded' });
-    
     if (showAchievementModal && updatedStartup?.id === showAchievementModal.id) {
       const updatedModalStartup = freshData.find(s => s.id === showAchievementModal.id);
       if (updatedModalStartup) {
@@ -157,9 +151,9 @@ export default function Onboarded({ isGuest = false }) {
         setSelectedStartup(updatedModalStartup);
       }
     }
-  };
+  }, [showAchievementModal, showRevenueModal, selectedStartup]);
 
-  const handleGraduate = (startup) => {
+  const handleGraduate = useCallback((startup) => {
     setAdminAuthModal({
       isOpen: true,
       title: 'Graduate Startup',
@@ -180,30 +174,46 @@ export default function Onboarded({ isGuest = false }) {
         }
       }
     });
-  };
+  }, [loadStartups]);
 
-  const getTotalRevenue = (startup) => {
-    // First check revenueEntries (new format from RevenueManager)
+  const getTotalRevenue = useCallback((startup) => {
     if (startup.revenueEntries && startup.revenueEntries.length > 0) {
       return startup.revenueEntries.reduce((sum, r) => sum + (r.amount || 0), 0);
     }
-    // Then check revenueHistory (legacy format)
     if (startup.revenueHistory && startup.revenueHistory.length > 0) {
       return startup.revenueHistory.reduce((sum, r) => sum + (r.amount || 0), 0);
     }
-    // Fall back to totalRevenue field only if no entries exist
     if (startup.totalRevenue) return startup.totalRevenue;
     return 0;
-  };
+  }, []);
 
-  // Dynamic grid columns based on number of startups
-  const getGridColumns = () => {
+  // Memoized grid columns
+  const gridColumns = useMemo(() => {
     const count = filteredStartups.length;
     if (count <= 4) return 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4';
     if (count <= 8) return 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5';
     if (count <= 12) return 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6';
     return 'grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7';
-  };
+  }, [filteredStartups.length]);
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto">
+        <PageHeader
+          title="Onboarded Startups"
+          gradientColors={PAGE_GRADIENTS.onboarded}
+          count={0}
+          countLabel="startup"
+          subtitle="Loading..."
+        />
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-8 h-8 animate-spin text-green-500" />
+          <span className="ml-3 text-gray-600 dark:text-gray-400">Loading startups...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -247,20 +257,18 @@ export default function Onboarded({ isGuest = false }) {
 
       {/* Grid View */}
       {viewMode === 'grid' && (
-        <div className={`grid ${getGridColumns()} gap-3 sm:gap-4`}>
-          <AnimatePresence>
-            {filteredStartups.map(startup => (
-              <StartupGridCard
-                key={startup.id}
-                startup={startup}
-                onUpdate={handleUpdateStartup}
-                onDelete={() => {}}
-                onClick={() => setSelectedStartup(startup)}
-                isGuest={isGuest}
-                isCompact={filteredStartups.length > 8}
-              />
-            ))}
-          </AnimatePresence>
+        <div className={`grid ${gridColumns} gap-3 sm:gap-4`}>
+          {filteredStartups.map(startup => (
+            <StartupGridCard
+              key={startup.id}
+              startup={startup}
+              onUpdate={handleUpdateStartup}
+              onDelete={() => {}}
+              onClick={() => setSelectedStartup(startup)}
+              isGuest={isGuest}
+              isCompact={filteredStartups.length > 8}
+            />
+          ))}
         </div>
       )}
 

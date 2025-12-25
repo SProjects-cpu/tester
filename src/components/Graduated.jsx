@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Download, GraduationCap, Lock, TrendingUp, Award, Eye, X, ChevronDown, ChevronUp, BarChart3, FileJson, FileSpreadsheet, History, CheckCircle, Users, DollarSign, FileText } from 'lucide-react';
+import { Search, Download, GraduationCap, Lock, TrendingUp, Award, Eye, X, ChevronDown, ChevronUp, BarChart3, History, CheckCircle, Users, DollarSign, FileText, Loader2 } from 'lucide-react';
 import { startupApi } from '../utils/api';
 import { exportStartupsComprehensive, filterByDateRange, generateExportFileName } from '../utils/exportUtils';
 import ExportMenu from './ExportMenu';
@@ -57,7 +57,6 @@ const isImageUrl = (url) => {
 
 export default function Graduated({ isGuest = false }) {
   const [startups, setStartups] = useState([]);
-  const [filteredStartups, setFilteredStartups] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [dateRange, setDateRange] = useState({ fromDate: null, toDate: null });
   const [viewMode, setViewMode] = useState('list');
@@ -78,11 +77,24 @@ export default function Graduated({ isGuest = false }) {
     loadStartups();
   }, []);
 
-  useEffect(() => {
-    filterStartups();
+  // Memoized filtering - no separate state needed
+  const filteredStartups = useMemo(() => {
+    let filtered = startups;
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(s =>
+        s.companyName?.toLowerCase().includes(searchLower) ||
+        s.founderName?.toLowerCase().includes(searchLower) ||
+        s.sector?.toLowerCase().includes(searchLower)
+      );
+    }
+    if (dateRange.fromDate || dateRange.toDate) {
+      filtered = filterByDateRange(filtered, 'graduatedDate', dateRange.fromDate, dateRange.toDate);
+    }
+    return filtered;
   }, [startups, searchTerm, dateRange]);
 
-  const loadStartups = async () => {
+  const loadStartups = useCallback(async () => {
     try {
       setLoading(true);
       const data = await startupApi.getAll({ status: 'Graduated' });
@@ -92,23 +104,7 @@ export default function Graduated({ isGuest = false }) {
     } finally {
       setLoading(false);
     }
-  };
-
-  const filterStartups = () => {
-    let filtered = startups;
-    if (searchTerm) {
-      filtered = filtered.filter(s =>
-        s.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.founderName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.sector?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-    // Apply date range filter on graduatedDate
-    if (dateRange.fromDate || dateRange.toDate) {
-      filtered = filterByDateRange(filtered, 'graduatedDate', dateRange.fromDate, dateRange.toDate);
-    }
-    setFilteredStartups(filtered);
-  };
+  }, []);
 
   const handleExport = (format) => {
     setAdminAuthModal({
@@ -117,7 +113,6 @@ export default function Graduated({ isGuest = false }) {
       message: 'Please authenticate to export graduated startup data. This ensures data security and tracks export activities.',
       actionType: 'info',
       onConfirm: () => {
-        // Export the already filtered data (filtered by inline date filter)
         const fileName = generateExportFileName('Graduated-Startups', dateRange.fromDate, dateRange.toDate);
         exportStartupsComprehensive(filteredStartups, format, fileName.replace('MAGIC-', ''));
         alert(`${filteredStartups.length} graduated startup(s) exported as ${format.toUpperCase()}!`);
@@ -125,14 +120,13 @@ export default function Graduated({ isGuest = false }) {
     });
   };
 
-  const handleUpdateStartup = async (updatedStartup) => {
-    // Reload startups to get fresh data from database
-    await loadStartups();
+  const handleUpdateStartup = useCallback(async (updatedStartup) => {
+    // Reload startups to get fresh data from database - single API call
+    const data = await startupApi.getAll({ status: 'Graduated' });
+    const freshData = data.filter(s => s.status === 'Graduated');
+    setStartups(freshData);
     
     // Update the modal's startup data if it's open
-    // This ensures the modal shows the latest achievements
-    const freshData = await startupApi.getAll({ status: 'Graduated' });
-    
     if (showAchievementModal && updatedStartup?.id === showAchievementModal.id) {
       const updatedModalStartup = freshData.find(s => s.id === showAchievementModal.id);
       if (updatedModalStartup) {
@@ -151,15 +145,36 @@ export default function Graduated({ isGuest = false }) {
         setSelectedStartup(updatedModalStartup);
       }
     }
-  };
+  }, [showAchievementModal, showProgressModal, selectedStartup]);
 
-  const getGridColumns = () => {
+  // Memoized grid columns
+  const gridColumns = useMemo(() => {
     const count = filteredStartups.length;
     if (count <= 4) return 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4';
     if (count <= 8) return 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5';
     if (count <= 12) return 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6';
     return 'grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7';
-  };
+  }, [filteredStartups.length]);
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8 pl-16 lg:pl-0">
+          <div>
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              Graduated Startups
+            </h1>
+            <p className="text-white mt-2 text-sm sm:text-base">Loading...</p>
+          </div>
+        </div>
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+          <span className="ml-3 text-gray-600 dark:text-gray-400">Loading startups...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -207,20 +222,18 @@ export default function Graduated({ isGuest = false }) {
 
       {/* Grid View */}
       {viewMode === 'grid' && (
-        <div className={`grid ${getGridColumns()} gap-3 sm:gap-4`}>
-          <AnimatePresence>
-            {filteredStartups.map(startup => (
-              <StartupGridCard
-                key={startup.id}
-                startup={startup}
-                onUpdate={handleUpdateStartup}
-                onDelete={() => {}}
-                onClick={() => setSelectedStartup(startup)}
-                isGuest={isGuest}
-                isCompact={filteredStartups.length > 8}
-              />
-            ))}
-          </AnimatePresence>
+        <div className={`grid ${gridColumns} gap-3 sm:gap-4`}>
+          {filteredStartups.map(startup => (
+            <StartupGridCard
+              key={startup.id}
+              startup={startup}
+              onUpdate={handleUpdateStartup}
+              onDelete={() => {}}
+              onClick={() => setSelectedStartup(startup)}
+              isGuest={isGuest}
+              isCompact={filteredStartups.length > 8}
+            />
+          ))}
         </div>
       )}
 
