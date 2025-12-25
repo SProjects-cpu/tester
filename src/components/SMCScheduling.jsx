@@ -85,33 +85,6 @@ export default function SMCScheduling({ isGuest = false }) {
     }
   }, [schedules, dateRange]);
 
-  // Filter saturdays based on date range
-  const getFilteredSaturdays = () => {
-    if (!dateRange.fromDate && !dateRange.toDate) {
-      return saturdays;
-    }
-    
-    return saturdays.filter(dateStr => {
-      const date = new Date(dateStr);
-      
-      if (dateRange.fromDate) {
-        const from = new Date(dateRange.fromDate);
-        from.setHours(0, 0, 0, 0);
-        if (date < from) return false;
-      }
-      
-      if (dateRange.toDate) {
-        const to = new Date(dateRange.toDate);
-        to.setHours(23, 59, 59, 999);
-        if (date > to) return false;
-      }
-      
-      return true;
-    });
-  };
-
-  const displaySaturdays = getFilteredSaturdays();
-
   const loadData = async () => {
     try {
       setLoading(true);
@@ -329,6 +302,33 @@ export default function SMCScheduling({ isGuest = false }) {
   };
 
   const saturdays = getSaturdays(selectedMonth, selectedYear);
+
+  // Filter saturdays based on date range
+  const getFilteredSaturdays = () => {
+    if (!dateRange.fromDate && !dateRange.toDate) {
+      return saturdays;
+    }
+    
+    return saturdays.filter(dateStr => {
+      const date = new Date(dateStr);
+      
+      if (dateRange.fromDate) {
+        const from = new Date(dateRange.fromDate);
+        from.setHours(0, 0, 0, 0);
+        if (date < from) return false;
+      }
+      
+      if (dateRange.toDate) {
+        const to = new Date(dateRange.toDate);
+        to.setHours(23, 59, 59, 999);
+        if (date > to) return false;
+      }
+      
+      return true;
+    });
+  };
+
+  const displaySaturdays = getFilteredSaturdays();
 
   return (
     <div>
