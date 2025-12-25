@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search } from 'lucide-react';
+import { Search, Loader2 } from 'lucide-react';
 import { startupApi } from '../utils/api';
 import { exportStartupsComprehensive, filterByDateRange, generateExportFileName } from '../utils/exportUtils';
 import ExportMenu from './ExportMenu';
@@ -12,7 +12,6 @@ import AdminAuthModal from './AdminAuthModal';
 
 export default function Rejected({ isGuest = false }) {
   const [startups, setStartups] = useState([]);
-  const [filteredStartups, setFilteredStartups] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [dateRange, setDateRange] = useState({ fromDate: null, toDate: null });
   const [viewMode, setViewMode] = useState('grid');
@@ -26,7 +25,45 @@ export default function Rejected({ isGuest = false }) {
     actionType: 'warning'
   });
 
-  const handleExport = (format) => {
+  // Memoized filtering - no separate state needed
+  const filteredStartups = useMemo(() => {
+    let filtered = startups;
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(s =>
+        s.companyName?.toLowerCase().includes(searchLower) ||
+        s.founderName?.toLowerCase().includes(searchLower) ||
+        s.sector?.toLowerCase().includes(searchLower)
+      );
+    }
+    // Apply date range filter on rejectedDate (fallback to updatedAt)
+    if (dateRange.fromDate || dateRange.toDate) {
+      let dateFiltered = filterByDateRange(filtered, 'rejectedDate', dateRange.fromDate, dateRange.toDate);
+      if (dateFiltered.length === 0) {
+        dateFiltered = filterByDateRange(filtered, 'updatedAt', dateRange.fromDate, dateRange.toDate);
+      }
+      filtered = dateFiltered;
+    }
+    return filtered;
+  }, [startups, searchTerm, dateRange]);
+
+  const loadStartups = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await startupApi.getAll({ status: 'Rejected' });
+      setStartups(data.filter(s => s.status === 'Rejected'));
+    } catch (error) {
+      console.error('Error loading startups:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadStartups();
+  }, [loadStartups]);
+
+  const handleExport = useCallback((format) => {
     setAdminAuthModal({
       isOpen: true,
       title: 'Export Rejected Startups',
@@ -39,63 +76,48 @@ export default function Rejected({ isGuest = false }) {
         alert(`${filteredStartups.length} rejected startup(s) exported as ${format.toUpperCase()}!`);
       }
     });
-  };
+  }, [filteredStartups, dateRange]);
 
-  useEffect(() => {
-    loadStartups();
-  }, []);
-
-  useEffect(() => {
-    filterStartups();
-  }, [startups, searchTerm, dateRange]);
-
-  const loadStartups = async () => {
-    try {
-      setLoading(true);
-      const data = await startupApi.getAll();
-      setStartups(data.filter(s => s.status === 'Rejected'));
-    } catch (error) {
-      console.error('Error loading startups:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const filterStartups = () => {
-    let filtered = startups;
-    if (searchTerm) {
-      filtered = filtered.filter(s =>
-        s.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.founderName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.sector?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-    // Apply date range filter on rejectedDate (fallback to updatedAt)
-    if (dateRange.fromDate || dateRange.toDate) {
-      let dateFiltered = filterByDateRange(filtered, 'rejectedDate', dateRange.fromDate, dateRange.toDate);
-      if (dateFiltered.length === 0) {
-        dateFiltered = filterByDateRange(filtered, 'updatedAt', dateRange.fromDate, dateRange.toDate);
+  const handleUpdateStartup = useCallback(async (updatedStartup) => {
+    // Reload startups to get fresh data from database
+    await loadStartups();
+    // Update selected startup if it's open
+    if (selectedStartup && updatedStartup?.id === selectedStartup.id) {
+      const updated = startups.find(s => s.id === selectedStartup.id);
+      if (updated) {
+        setSelectedStartup(updated);
       }
-      filtered = dateFiltered;
     }
-    setFilteredStartups(filtered);
-  };
+  }, [loadStartups, selectedStartup, startups]);
 
-  const handleUpdateStartup = (updatedStartup) => {
-    const allStartups = storage.get('startups', []);
-    const updated = allStartups.map(s => s.id === updatedStartup.id ? updatedStartup : s);
-    storage.set('startups', updated);
-    loadStartups();
-  };
-
-  // Dynamic grid columns based on number of startups
-  const getGridColumns = () => {
+  // Memoized grid columns
+  const gridColumns = useMemo(() => {
     const count = filteredStartups.length;
     if (count <= 4) return 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4';
     if (count <= 8) return 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5';
     if (count <= 12) return 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6';
     return 'grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7';
-  };
+  }, [filteredStartups.length]);
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8 pl-16 lg:pl-0">
+          <div>
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">
+              Rejected Startups
+            </h1>
+            <p className="text-white mt-2 text-sm sm:text-base">Loading...</p>
+          </div>
+        </div>
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-8 h-8 animate-spin text-red-500" />
+          <span className="ml-3 text-white">Loading startups...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -135,20 +157,18 @@ export default function Rejected({ isGuest = false }) {
 
       {/* Grid View */}
       {viewMode === 'grid' && (
-        <div className={`grid ${getGridColumns()} gap-3 sm:gap-4`}>
-          <AnimatePresence>
-            {filteredStartups.map(startup => (
-              <StartupGridCard
-                key={startup.id}
-                startup={startup}
-                onUpdate={handleUpdateStartup}
-                onDelete={() => {}}
-                onClick={() => setSelectedStartup(startup)}
-                isGuest={isGuest}
-                isCompact={filteredStartups.length > 8}
-              />
-            ))}
-          </AnimatePresence>
+        <div className={`grid ${gridColumns} gap-3 sm:gap-4`}>
+          {filteredStartups.map(startup => (
+            <StartupGridCard
+              key={startup.id}
+              startup={startup}
+              onUpdate={handleUpdateStartup}
+              onDelete={() => {}}
+              onClick={() => setSelectedStartup(startup)}
+              isGuest={isGuest}
+              isCompact={filteredStartups.length > 8}
+            />
+          ))}
         </div>
       )}
 

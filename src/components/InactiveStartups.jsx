@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { AlertTriangle, Clock, Mail, Phone, Calendar, TrendingDown, RefreshCw, Download, FileJson, FileSpreadsheet, ChevronDown, History } from 'lucide-react';
+import { AlertTriangle, Clock, Mail, Phone, Calendar, TrendingDown, RefreshCw, Download, FileJson, FileSpreadsheet, ChevronDown, History, Loader2 } from 'lucide-react';
 import { startupApi } from '../utils/api';
 import { exportStartupsComprehensive, filterByDateRange, generateExportFileName } from '../utils/exportUtils';
 import ExportMenu from './ExportMenu';
@@ -14,18 +14,14 @@ export default function InactiveStartups() {
   const [dateRange, setDateRange] = useState({ fromDate: null, toDate: null });
   const [showHistoryPanel, setShowHistoryPanel] = useState(false);
 
-  const handleExport = (format) => {
+  const handleExport = useCallback((format) => {
     // Export the already filtered data (filtered by inline date filter)
     const fileName = generateExportFileName('Inactive-Startups', dateRange.fromDate, dateRange.toDate);
     exportStartupsComprehensive(filteredStartups, format, fileName.replace('MAGIC-', ''));
     alert(`${filteredStartups.length} inactive startup(s) exported as ${format.toUpperCase()}!`);
-  };
+  }, [filteredStartups, dateRange]);
 
-  useEffect(() => {
-    checkInactiveStartups();
-  }, []);
-
-  const checkInactiveStartups = async () => {
+  const checkInactiveStartups = useCallback(async () => {
     setLoading(true);
     try {
       const startups = await startupApi.getAll();
@@ -55,20 +51,14 @@ export default function InactiveStartups() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const getStageColor = (stage) => {
-    const colors = {
-      'S0': 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300',
-      'S1': 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-300',
-      'S2': 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border-purple-300',
-      'S3': 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border-orange-300',
-      'One-on-One': 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border-indigo-300'
-    };
-    return colors[stage] || 'bg-gray-100 text-gray-700';
-  };
+  useEffect(() => {
+    checkInactiveStartups();
+  }, [checkInactiveStartups]);
 
-  const filteredStartups = (() => {
+  // Memoized filtered startups
+  const filteredStartups = useMemo(() => {
     let filtered = filter === 'all' 
       ? inactiveStartups 
       : inactiveStartups.filter(s => {
@@ -86,16 +76,30 @@ export default function InactiveStartups() {
     }
     
     return filtered;
-  })();
+  }, [inactiveStartups, filter, dateRange]);
 
-  const stats = {
+  // Memoized stats
+  const stats = useMemo(() => ({
     total: inactiveStartups.length,
     s0: inactiveStartups.filter(s => s.stage === 'S0').length,
     s1: inactiveStartups.filter(s => s.stage === 'S1').length,
     s2: inactiveStartups.filter(s => s.stage === 'S2').length,
     s3: inactiveStartups.filter(s => s.stage === 'S3').length,
     oneOnOne: inactiveStartups.filter(s => s.stage === 'One-on-One').length
+  }), [inactiveStartups]);
+
+  const getStageColor = (stage) => {
+    const colors = {
+      'S0': 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300',
+      'S1': 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-300',
+      'S2': 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border-purple-300',
+      'S3': 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border-orange-300',
+      'One-on-One': 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border-indigo-300'
+    };
+    return colors[stage] || 'bg-gray-100 text-gray-700';
   };
+
+  }, [inactiveStartups]);
 
   return (
     <div className="max-w-7xl mx-auto">

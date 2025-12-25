@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { Plus } from 'lucide-react';
 import { startupApi } from '../utils/api';
@@ -14,7 +14,6 @@ import StartupListContainer from './shared/StartupListContainer';
 
 export default function AllStartups({ isGuest = false, initialSectorFilter = null }) {
   const [startups, setStartups] = useState([]);
-  const [filteredStartups, setFilteredStartups] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterValues, setFilterValues] = useState({
@@ -33,41 +32,16 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
     actionType: 'warning'
   });
 
-  useEffect(() => {
-    loadStartups();
-  }, []);
-
-  useEffect(() => {
-    if (initialSectorFilter) {
-      setFilterValues(prev => ({ ...prev, sector: initialSectorFilter }));
-    }
-  }, [initialSectorFilter]);
-
-  useEffect(() => {
-    filterStartups();
-  }, [startups, searchTerm, filterValues, dateRange]);
-
-  const loadStartups = async () => {
-    try {
-      setLoading(true);
-      const data = await startupApi.getAll();
-      setStartups(data);
-    } catch (error) {
-      console.error('Error loading startups:', error);
-      alert('Failed to load startups: ' + error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const filterStartups = () => {
+  // Memoized filtering - no separate state needed, computed on render
+  const filteredStartups = useMemo(() => {
     let filtered = startups;
 
     if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
       filtered = filtered.filter(s => 
-        s.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.founderName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.magicCode?.toLowerCase().includes(searchTerm.toLowerCase())
+        s.companyName?.toLowerCase().includes(searchLower) ||
+        s.founderName?.toLowerCase().includes(searchLower) ||
+        s.magicCode?.toLowerCase().includes(searchLower)
       );
     }
 
@@ -83,14 +57,37 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
       filtered = filterByDateRange(filtered, filterValues.dateField, dateRange.fromDate, dateRange.toDate);
     }
 
-    setFilteredStartups(filtered);
-  };
+    return filtered;
+  }, [startups, searchTerm, filterValues, dateRange]);
 
-  const handleFilterChange = (key, value) => {
+  const loadStartups = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await startupApi.getAll();
+      setStartups(data);
+    } catch (error) {
+      console.error('Error loading startups:', error);
+      alert('Failed to load startups: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadStartups();
+  }, [loadStartups]);
+
+  useEffect(() => {
+    if (initialSectorFilter) {
+      setFilterValues(prev => ({ ...prev, sector: initialSectorFilter }));
+    }
+  }, [initialSectorFilter]);
+
+  const handleFilterChange = useCallback((key, value) => {
     setFilterValues(prev => ({ ...prev, [key]: value }));
-  };
+  }, []);
 
-  const handleExport = (format) => {
+  const handleExport = useCallback((format) => {
     setAdminAuthModal({
       isOpen: true,
       title: 'Export Startups',
@@ -102,9 +99,9 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
         alert(`${filteredStartups.length} startup(s) exported as ${format.toUpperCase()}!`);
       }
     });
-  };
+  }, [filteredStartups, dateRange]);
 
-  const handleAddStartup = async (startupData, documents = []) => {
+  const handleAddStartup = useCallback(async (startupData, documents = []) => {
     try {
       // Extract pitch deck file if present
       const pitchDeckFile = startupData.pitchDeck?.file;
@@ -169,9 +166,9 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
       console.error('Error creating startup:', error);
       alert('❌ Failed to create startup: ' + error.message);
     }
-  };
+  }, [startups]);
 
-  const handleUpdateStartup = (updatedStartup) => {
+  const handleUpdateStartup = useCallback((updatedStartup) => {
     setAdminAuthModal({
       isOpen: true,
       title: 'Edit Startup',
@@ -188,9 +185,9 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
         }
       }
     });
-  };
+  }, [startups]);
 
-  const handleDeleteStartup = (id) => {
+  const handleDeleteStartup = useCallback((id) => {
     const startup = startups.find(s => s.id === id);
     setAdminAuthModal({
       isOpen: true,
@@ -208,10 +205,10 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
         }
       }
     });
-  };
+  }, [startups]);
 
-  // Filter configurations
-  const filters = [
+  // Memoized filter configurations
+  const filters = useMemo(() => [
     { key: 'stage', options: createStageFilterOptions(), defaultValue: 'all' },
     { key: 'sector', options: createSectorFilterOptions(startups), defaultValue: 'all' },
     { key: 'dateField', options: createDateFieldOptions(), defaultValue: 'createdAt' }

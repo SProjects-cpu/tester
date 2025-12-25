@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, Clock, Plus, Check, X, Grid, List, History, Trash2 } from 'lucide-react';
+import { Calendar, Clock, Plus, Check, X, Grid, List, History, Trash2, Loader2 } from 'lucide-react';
 import { startupApi, smcApi } from '../utils/api';
 import { exportSMCSchedulesToPDF, filterByDateRange, generateExportFileName } from '../utils/exportUtils';
 import ExportMenu from './ExportMenu';
@@ -12,7 +12,6 @@ export default function SMCScheduling({ isGuest = false }) {
   const [startups, setStartups] = useState([]);
   const [allStartups, setAllStartups] = useState([]); // All startups for history lookup
   const [schedules, setSchedules] = useState([]);
-  const [filteredSchedules, setFilteredSchedules] = useState([]);
   const [dateRange, setDateRange] = useState({ fromDate: null, toDate: null });
   const [loading, setLoading] = useState(true);
   const currentYear = new Date().getFullYear();
@@ -41,7 +40,15 @@ export default function SMCScheduling({ isGuest = false }) {
     type: 'warning'
   });
 
-  const handleExport = (format) => {
+  // Memoized filtered schedules
+  const filteredSchedules = useMemo(() => {
+    if (dateRange.fromDate || dateRange.toDate) {
+      return filterByDateRange(schedules, 'date', dateRange.fromDate, dateRange.toDate);
+    }
+    return schedules;
+  }, [schedules, dateRange]);
+
+  const handleExport = useCallback((format) => {
     // Export the already filtered schedules (filtered by inline date filter)
     const fileName = generateExportFileName('SMC-Schedules', dateRange.fromDate, dateRange.toDate);
     
@@ -71,22 +78,9 @@ export default function SMCScheduling({ isGuest = false }) {
       URL.revokeObjectURL(url);
     }
     alert(`${filteredSchedules.length} SMC schedule(s) exported as ${format.toUpperCase()}!`);
-  };
+  }, [filteredSchedules, startups, dateRange]);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  useEffect(() => {
-    // Apply date range filter to schedules
-    if (dateRange.fromDate || dateRange.toDate) {
-      setFilteredSchedules(filterByDateRange(schedules, 'date', dateRange.fromDate, dateRange.toDate));
-    } else {
-      setFilteredSchedules(schedules);
-    }
-  }, [schedules, dateRange]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       const [startupsData, schedulesData] = await Promise.all([
@@ -106,37 +100,42 @@ export default function SMCScheduling({ isGuest = false }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const getSaturdays = (month, year) => {
-    const saturdays = [];
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Memoized Saturdays calculation
+  const saturdays = useMemo(() => {
+    const result = [];
+    const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
     
     for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(year, month, day, 12, 0, 0); // Set to noon to avoid timezone issues
-      if (date.getDay() === 6) { // Saturday (0 = Sunday, 6 = Saturday)
-        // Format date as YYYY-MM-DD
-        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        saturdays.push(dateStr);
+      const date = new Date(selectedYear, selectedMonth, day, 12, 0, 0);
+      if (date.getDay() === 6) {
+        const dateStr = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        result.push(dateStr);
       }
     }
-    return saturdays;
-  };
+    return result;
+  }, [selectedMonth, selectedYear]);
 
-  const getYearOptions = () => {
+  // Memoized year options
+  const yearOptions = useMemo(() => {
     const years = [];
     for (let year = currentYear; year <= 2060; year++) {
       years.push(year);
     }
     return years;
-  };
+  }, [currentYear]);
 
-  const monthNames = [
+  const monthNames = useMemo(() => [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
-  ];
+  ], []);
 
-  const handleSchedule = async () => {
+  const handleSchedule = useCallback(async () => {
     if (!selectedDate || !selectedSlot || !selectedStartup) {
       alert('Please select date, time slot, and startup');
       return;
@@ -182,7 +181,7 @@ export default function SMCScheduling({ isGuest = false }) {
 
     try {
       const created = await smcApi.create(newSchedule);
-      setSchedules([...schedules, created]);
+      setSchedules(prev => [...prev, created]);
       setSelectedStartup(null);
       setSelectedSlot(null);
       alert('✅ SMC scheduled successfully!');
@@ -190,14 +189,14 @@ export default function SMCScheduling({ isGuest = false }) {
       console.error('Error scheduling SMC:', error);
       alert('❌ Failed to schedule SMC: ' + error.message);
     }
-  };
+  }, [selectedDate, selectedSlot, selectedStartup, schedules, startups]);
 
-  const handleComplete = (schedule) => {
+  const handleComplete = useCallback((schedule) => {
     setShowCompletionForm(schedule);
     setCompletionData({ panelistName: '', time: '', feedback: '' });
-  };
+  }, []);
 
-  const handleNotDone = async (schedule) => {
+  const handleNotDone = useCallback(async (schedule) => {
     if (confirm('Mark this meeting as "Not Done"? The meeting will remain in the schedule with "Not Done" status.')) {
       try {
         await smcApi.update(schedule.id, {
@@ -212,9 +211,9 @@ export default function SMCScheduling({ isGuest = false }) {
         alert('❌ Failed to update schedule: ' + error.message);
       }
     }
-  };
+  }, [loadData]);
 
-  const handleDeleteSchedule = async (schedule) => {
+  const handleDeleteSchedule = useCallback(async (schedule) => {
     const startup = startups.find(s => s.id === schedule.startupId) || allStartups.find(s => s.id === schedule.startupId);
     const companyName = startup?.companyName || 'Unknown Startup';
     
@@ -228,9 +227,9 @@ export default function SMCScheduling({ isGuest = false }) {
         alert('❌ Failed to delete schedule: ' + error.message);
       }
     }
-  };
+  }, [startups, allStartups, schedules]);
 
-  const submitCompletion = () => {
+  const submitCompletion = useCallback(() => {
     if (!completionData.panelistName || !completionData.time || !completionData.feedback) {
       alert('Please fill all fields');
       return;
@@ -298,9 +297,9 @@ export default function SMCScheduling({ isGuest = false }) {
         }
       }
     });
-  };
+  }, [completionData, showCompletionForm, startups, loadData]);
 
-  const closeConfirmationModal = () => {
+  const closeConfirmationModal = useCallback(() => {
     setConfirmationModal({
       isOpen: false,
       title: '',
@@ -308,17 +307,17 @@ export default function SMCScheduling({ isGuest = false }) {
       onConfirm: null,
       type: 'warning'
     });
-  };
+  }, []);
 
-  const getScheduleForSlot = (date, slot) => {
+  const getScheduleForSlot = useCallback((date, slot) => {
     return schedules.find(s => s.date === date && s.timeSlot === slot && s.status === 'Scheduled');
-  };
+  }, [schedules]);
 
-  const getCompletedScheduleForSlot = (date, slot) => {
+  const getCompletedScheduleForSlot = useCallback((date, slot) => {
     return schedules.find(s => s.date === date && s.timeSlot === slot && s.status === 'Completed');
-  };
+  }, [schedules]);
 
-  const handleViewHistory = (schedule) => {
+  const handleViewHistory = useCallback((schedule) => {
     // First try to find in eligible startups, then in all startups
     // Also check schedule.startup which is included from the API response
     const startup = startups.find(s => s.id === schedule.startupId) || 
@@ -331,12 +330,10 @@ export default function SMCScheduling({ isGuest = false }) {
                       isPartialData: true
                     } : null);
     setShowHistoryModal({ schedule, startup });
-  };
+  }, [startups, allStartups]);
 
-  const saturdays = getSaturdays(selectedMonth, selectedYear);
-
-  // Filter saturdays based on date range
-  const getFilteredSaturdays = () => {
+  // Memoized filtered saturdays based on date range
+  const displaySaturdays = useMemo(() => {
     if (!dateRange.fromDate && !dateRange.toDate) {
       return saturdays;
     }
@@ -358,9 +355,7 @@ export default function SMCScheduling({ isGuest = false }) {
       
       return true;
     });
-  };
-
-  const displaySaturdays = getFilteredSaturdays();
+  }, [saturdays, dateRange]);
 
   return (
     <div>
@@ -435,7 +430,7 @@ export default function SMCScheduling({ isGuest = false }) {
                   }}
                   className="w-full px-3 sm:px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-magic-500 focus:border-magic-500 outline-none transition-all text-sm sm:text-base"
                 >
-                  {getYearOptions().map(year => (
+                  {yearOptions.map(year => (
                     <option key={year} value={year}>
                       {year}
                     </option>
