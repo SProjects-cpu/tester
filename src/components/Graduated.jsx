@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Download, GraduationCap, Lock, TrendingUp, Award, Eye, X, ChevronDown, ChevronUp, BarChart3, FileJson, FileSpreadsheet, History } from 'lucide-react';
+import { Search, Download, GraduationCap, Lock, TrendingUp, Award, Eye, X, ChevronDown, ChevronUp, BarChart3, FileJson, FileSpreadsheet, History, CheckCircle, Users, DollarSign } from 'lucide-react';
 import { startupApi } from '../utils/api';
 import { exportStartupsComprehensive, filterByDateRange, generateExportFileName } from '../utils/exportUtils';
 import ExportMenu from './ExportMenu';
@@ -474,8 +474,10 @@ function GraduatedDetailModal({ startup, onClose, onUpdate, isGuest = false }) {
     achievements: true,
     revenue: true,
     pitchHistory: false,
-    oneOnOne: false
+    oneOnOne: false,
+    progressTracking: true
   });
+  const [showProgressModal, setShowProgressModal] = useState(false);
 
   const toggleSection = (section) => {
     setExpanded(prev => ({ ...prev, [section]: !prev[section] }));
@@ -634,6 +636,185 @@ function GraduatedDetailModal({ startup, onClose, onUpdate, isGuest = false }) {
             />
           </Section>
 
+          {/* Progress Tracking Section */}
+          <Section title="Progress Tracking" section="progressTracking" icon={BarChart3}>
+            <div className="space-y-4">
+              {/* Update Progress Button */}
+              <div className="flex justify-end">
+                <GuestRestrictedButton
+                  isGuest={isGuest}
+                  onClick={() => setShowProgressModal(true)}
+                  actionType="edit"
+                  className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg font-semibold text-sm shadow-md hover:shadow-lg transition-all"
+                >
+                  <BarChart3 className="w-4 h-4" />
+                  <span>Update Progress</span>
+                </GuestRestrictedButton>
+              </div>
+
+              {/* Progress History Display */}
+              {startup.progressHistory && startup.progressHistory.length > 0 ? (
+                <div className="space-y-4">
+                  {startup.progressHistory.slice().reverse().map((record, index) => {
+                    // Parse notes from the progress record
+                    let notes = {};
+                    try {
+                      notes = typeof record.notes === 'string' ? JSON.parse(record.notes) : (record.notes || {});
+                    } catch (e) {
+                      notes = {};
+                    }
+                    
+                    const hasProgressData = notes.proofOfConcept || notes.prototypeDevelopment || notes.productDevelopment || notes.fieldTrials || notes.marketLaunch;
+                    const hasMetrics = notes.numberOfEmployees || notes.ipRegistrations || notes.gemPortalProducts || notes.successStories;
+                    const hasFunding = notes.loans || notes.angelFunding || notes.vcFunding || notes.quarterlyTurnover || notes.quarterlyGST;
+                    
+                    return (
+                      <div key={record.id || index} className="p-4 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-2 border-blue-200 dark:border-blue-700">
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="font-semibold text-blue-900 dark:text-blue-200 flex items-center space-x-2">
+                            <BarChart3 className="w-5 h-5" />
+                            <span>Progress Update - {record.date ? new Date(record.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'No date'}</span>
+                          </h4>
+                        </div>
+                        
+                        {/* Section 1: Progress of Startup */}
+                        {hasProgressData && (
+                          <div className="mb-4">
+                            <h5 className="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-2 flex items-center space-x-1">
+                              <CheckCircle className="w-4 h-4" />
+                              <span>1. Progress of Startup</span>
+                            </h5>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+                              {notes.proofOfConcept && (
+                                <div className="bg-white dark:bg-gray-800 p-2 rounded border border-blue-200 dark:border-blue-700">
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">Proof of Concept</span>
+                                  <p className="font-medium text-gray-900 dark:text-white">{notes.proofOfConcept}</p>
+                                </div>
+                              )}
+                              {notes.prototypeDevelopment && (
+                                <div className="bg-white dark:bg-gray-800 p-2 rounded border border-blue-200 dark:border-blue-700">
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">Prototype Development</span>
+                                  <p className="font-medium text-gray-900 dark:text-white">{notes.prototypeDevelopment}</p>
+                                </div>
+                              )}
+                              {notes.productDevelopment && (
+                                <div className="bg-white dark:bg-gray-800 p-2 rounded border border-blue-200 dark:border-blue-700">
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">Product Development</span>
+                                  <p className="font-medium text-gray-900 dark:text-white">{notes.productDevelopment}</p>
+                                </div>
+                              )}
+                              {notes.fieldTrials && (
+                                <div className="bg-white dark:bg-gray-800 p-2 rounded border border-blue-200 dark:border-blue-700">
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">Field Trials</span>
+                                  <p className="font-medium text-gray-900 dark:text-white">{notes.fieldTrials}</p>
+                                </div>
+                              )}
+                              {notes.marketLaunch && (
+                                <div className="bg-white dark:bg-gray-800 p-2 rounded border border-blue-200 dark:border-blue-700">
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">Market Launch</span>
+                                  <p className="font-medium text-gray-900 dark:text-white">{notes.marketLaunch}</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Section 2: Other Metrics */}
+                        {hasMetrics && (
+                          <div className="mb-4">
+                            <h5 className="text-sm font-semibold text-purple-700 dark:text-purple-300 mb-2 flex items-center space-x-1">
+                              <Users className="w-4 h-4" />
+                              <span>2. Other Metrics</span>
+                            </h5>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+                              {notes.numberOfEmployees && (
+                                <div className="bg-white dark:bg-gray-800 p-2 rounded border border-purple-200 dark:border-purple-700">
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">Number of Employees</span>
+                                  <p className="font-medium text-gray-900 dark:text-white">{notes.numberOfEmployees}</p>
+                                </div>
+                              )}
+                              {notes.ipRegistrations && (
+                                <div className="bg-white dark:bg-gray-800 p-2 rounded border border-purple-200 dark:border-purple-700">
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">IP Registrations</span>
+                                  <p className="font-medium text-gray-900 dark:text-white">{notes.ipRegistrations}</p>
+                                </div>
+                              )}
+                              {notes.gemPortalProducts && (
+                                <div className="bg-white dark:bg-gray-800 p-2 rounded border border-purple-200 dark:border-purple-700">
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">GeM Portal Products</span>
+                                  <p className="font-medium text-gray-900 dark:text-white">{notes.gemPortalProducts}</p>
+                                </div>
+                              )}
+                            </div>
+                            {notes.successStories && (
+                              <div className="mt-2 bg-white dark:bg-gray-800 p-2 rounded border border-purple-200 dark:border-purple-700">
+                                <span className="text-xs text-gray-500 dark:text-gray-400">Success Stories</span>
+                                <p className="font-medium text-gray-900 dark:text-white text-sm">{notes.successStories}</p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        
+                        {/* Section 3: Funds Raised */}
+                        {hasFunding && (
+                          <div>
+                            <h5 className="text-sm font-semibold text-green-700 dark:text-green-300 mb-2 flex items-center space-x-1">
+                              <DollarSign className="w-4 h-4" />
+                              <span>3. Funds Raised</span>
+                            </h5>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+                              {notes.loans && (
+                                <div className="bg-white dark:bg-gray-800 p-2 rounded border border-green-200 dark:border-green-700">
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">Loans (INR)</span>
+                                  <p className="font-medium text-gray-900 dark:text-white">{notes.loans}</p>
+                                </div>
+                              )}
+                              {notes.angelFunding && (
+                                <div className="bg-white dark:bg-gray-800 p-2 rounded border border-green-200 dark:border-green-700">
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">Angel Funding (INR)</span>
+                                  <p className="font-medium text-gray-900 dark:text-white">{notes.angelFunding}</p>
+                                </div>
+                              )}
+                              {notes.vcFunding && (
+                                <div className="bg-white dark:bg-gray-800 p-2 rounded border border-green-200 dark:border-green-700">
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">VC Funding (INR)</span>
+                                  <p className="font-medium text-gray-900 dark:text-white">{notes.vcFunding}</p>
+                                </div>
+                              )}
+                              {notes.quarterlyTurnover && (
+                                <div className="bg-white dark:bg-gray-800 p-2 rounded border border-green-200 dark:border-green-700">
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">Quarterly Turnover (INR)</span>
+                                  <p className="font-medium text-gray-900 dark:text-white">{notes.quarterlyTurnover}</p>
+                                </div>
+                              )}
+                              {notes.quarterlyGST && (
+                                <div className="bg-white dark:bg-gray-800 p-2 rounded border border-green-200 dark:border-green-700">
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">Quarterly GST (INR)</span>
+                                  <p className="font-medium text-gray-900 dark:text-white">{notes.quarterlyGST}</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Show message if no data in any section */}
+                        {!hasProgressData && !hasMetrics && !hasFunding && (
+                          <p className="text-sm text-gray-500 dark:text-gray-400 italic">No detailed progress data available for this entry.</p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                  <BarChart3 className="w-12 h-12 mx-auto text-gray-400 mb-3" />
+                  <p className="text-gray-500 dark:text-gray-400">No progress updates recorded yet.</p>
+                  <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Click "Update Progress" to add the first progress entry.</p>
+                </div>
+              )}
+            </div>
+          </Section>
+
           {/* Revenue History - Check both revenueEntries and revenueHistory */}
           {((startup.revenueEntries && startup.revenueEntries.length > 0) || (startup.revenueHistory && startup.revenueHistory.length > 0)) && (
             <Section title="Revenue History" section="revenue" icon={TrendingUp}>
@@ -711,6 +892,20 @@ function GraduatedDetailModal({ startup, onClose, onUpdate, isGuest = false }) {
           </button>
         </div>
       </motion.div>
+
+      {/* Progress Modal */}
+      <AnimatePresence>
+        {showProgressModal && (
+          <StartupProgressModal
+            startup={startup}
+            onClose={() => setShowProgressModal(false)}
+            onSave={(updatedStartup) => {
+              onUpdate(updatedStartup);
+              setShowProgressModal(false);
+            }}
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
