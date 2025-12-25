@@ -70,6 +70,7 @@ export default function StartupDetailModal({ startup, onClose, onUpdate, isGuest
       onboardingDescription: onboardingData.description,
       agreementDate: onboardingData.agreementDate,
       engagementMedium: onboardingData.engagementMedium,
+      agreementCopy: onboardingData.agreementCopy,
       onboardedDate: onboardingData.onboardedDate
     });
     setShowOnboardingModal(false);
@@ -426,54 +427,9 @@ export default function StartupDetailModal({ startup, onClose, onUpdate, isGuest
             </Section>
           )}
 
-          {startup.pitchHistory && startup.pitchHistory.length > 0 && (
-            <Section title="Pitch History" section="pitchHistory">
-              <div className="space-y-4">
-                {startup.pitchHistory.map((pitch, index) => (
-                  <div key={index} className={`p-4 rounded-lg bg-gradient-to-r ${
-                    pitch.stage === 'S1' ? 'from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20' :
-                    pitch.stage === 'S2' ? 'from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20' :
-                    'from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20'
-                  }`}>
-                    <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
-                      Pitch {index + 1} - {pitch.stage}
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                      <Field label="Date" value={pitch.date} />
-                      <Field label="Time" value={pitch.time} />
-                      <Field label="Panelist" value={pitch.panelistName} />
-                    </div>
-                    <Field label="Feedback" value={pitch.feedback} />
-                  </div>
-                ))}
-              </div>
-            </Section>
-          )}
-
-          {startup.oneOnOneHistory && startup.oneOnOneHistory.length > 0 && (
-            <Section title="One-on-One Sessions" section="oneOnOne">
-              <div className="space-y-4">
-                {startup.oneOnOneHistory.map((session, index) => (
-                  <div key={index} className="p-4 rounded-lg bg-gradient-to-r from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20">
-                    <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
-                      Session {index + 1}
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                      <Field label="Date" value={session.date} />
-                      <Field label="Time" value={session.time} />
-                      <Field label="Mentor" value={session.mentorName} />
-                    </div>
-                    <Field label="Feedback" value={session.feedback} />
-                    <Field label="Progress" value={session.progress} />
-                  </div>
-                ))}
-              </div>
-            </Section>
-          )}
-
-          {/* Onboarding Information - Show for Onboarded and Graduated */}
+          {/* Onboard Details - Show for Onboarded and Graduated */}
           {(startup.status === 'Onboarded' || startup.status === 'Graduated') && (startup.onboardingDescription || startup.agreementDate || startup.engagementMedium || startup.agreementCopy) && (
-            <Section title="Onboarding Information" section="onboarding">
+            <Section title="Onboard Details" section="onboarding">
               <div className="p-4 rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-2 border-green-200 dark:border-green-700">
                 <div className="space-y-3">
                   {startup.onboardingDescription && (
@@ -529,6 +485,51 @@ export default function StartupDetailModal({ startup, onClose, onUpdate, isGuest
                     </div>
                   )}
                 </div>
+              </div>
+            </Section>
+          )}
+
+          {startup.pitchHistory && startup.pitchHistory.length > 0 && (
+            <Section title="Pitch (SMC) History" section="pitchHistory">
+              <div className="space-y-4">
+                {startup.pitchHistory.map((pitch, index) => (
+                  <div key={index} className={`p-4 rounded-lg bg-gradient-to-r ${
+                    pitch.stage === 'S1' ? 'from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20' :
+                    pitch.stage === 'S2' ? 'from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20' :
+                    'from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20'
+                  }`}>
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                      Pitch {index + 1} - {pitch.stage}
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                      <Field label="Date" value={pitch.date} />
+                      <Field label="Time" value={pitch.time} />
+                      <Field label="Panelist" value={pitch.panelistName} />
+                    </div>
+                    <Field label="Feedback" value={pitch.feedback} />
+                  </div>
+                ))}
+              </div>
+            </Section>
+          )}
+
+          {startup.oneOnOneHistory && startup.oneOnOneHistory.length > 0 && (
+            <Section title="One-on-One Sessions" section="oneOnOne">
+              <div className="space-y-4">
+                {startup.oneOnOneHistory.map((session, index) => (
+                  <div key={index} className="p-4 rounded-lg bg-gradient-to-r from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20">
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                      Session {index + 1}
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                      <Field label="Date" value={session.date} />
+                      <Field label="Time" value={session.time} />
+                      <Field label="Mentor" value={session.mentorName} />
+                    </div>
+                    <Field label="Feedback" value={session.feedback} />
+                    <Field label="Progress" value={session.progress} />
+                  </div>
+                ))}
               </div>
             </Section>
           )}
