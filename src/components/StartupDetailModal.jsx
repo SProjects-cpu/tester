@@ -428,28 +428,20 @@ export default function StartupDetailModal({ startup, onClose, onUpdate, isGuest
           )}
 
           {/* Onboard Details - Show for Onboarded and Graduated */}
-          {(startup.status === 'Onboarded' || startup.status === 'Graduated') && (startup.onboardingDescription || startup.agreementDate || startup.engagementMedium || startup.agreementCopy) && (
+          {(startup.status === 'Onboarded' || startup.status === 'Graduated') && (
             <Section title="Onboard Details" section="onboarding">
               <div className="p-4 rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-2 border-green-200 dark:border-green-700">
                 <div className="space-y-3">
-                  {startup.onboardingDescription && (
-                    <div>
-                      <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-semibold">Description</span>
-                      <p className="text-sm sm:text-base text-gray-900 dark:text-white mt-1">
-                        {startup.onboardingDescription}
-                      </p>
-                    </div>
-                  )}
+                  <div>
+                    <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-semibold">Description</span>
+                    <p className="text-sm sm:text-base text-gray-900 dark:text-white mt-1">
+                      {startup.onboardingDescription || 'N/A'}
+                    </p>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {startup.agreementDate && (
-                      <Field label="Agreement Date" value={new Date(startup.agreementDate).toLocaleDateString()} />
-                    )}
-                    {startup.engagementMedium && (
-                      <Field label="Engagement Medium" value={startup.engagementMedium} />
-                    )}
-                    {startup.onboardedDate && (
-                      <Field label="Onboarded On" value={new Date(startup.onboardedDate).toLocaleDateString()} />
-                    )}
+                    <Field label="Agreement Date" value={startup.agreementDate ? new Date(startup.agreementDate).toLocaleDateString() : 'N/A'} />
+                    <Field label="Engagement Medium" value={startup.engagementMedium || 'N/A'} />
+                    <Field label="Onboarded On" value={startup.onboardedDate ? new Date(startup.onboardedDate).toLocaleDateString() : 'N/A'} />
                   </div>
                   {startup.agreementCopy && (
                     <div className="mt-4 pt-4 border-t border-green-200 dark:border-green-700">
@@ -482,6 +474,14 @@ export default function StartupDetailModal({ startup, onClose, onUpdate, isGuest
                           <span>Download Agreement Copy</span>
                         </a>
                       )}
+                    </div>
+                  )}
+                  {!startup.agreementCopy && (
+                    <div className="mt-4 pt-4 border-t border-green-200 dark:border-green-700">
+                      <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-semibold block mb-2">
+                        Agreement Copy
+                      </span>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">No agreement copy uploaded</p>
                     </div>
                   )}
                 </div>
