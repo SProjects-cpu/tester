@@ -320,8 +320,16 @@ export default function SMCScheduling({ isGuest = false }) {
 
   const handleViewHistory = (schedule) => {
     // First try to find in eligible startups, then in all startups
+    // Also check schedule.startup which is included from the API response
     const startup = startups.find(s => s.id === schedule.startupId) || 
-                    allStartups.find(s => s.id === schedule.startupId);
+                    allStartups.find(s => s.id === schedule.startupId) ||
+                    (schedule.startup ? {
+                      id: schedule.startup.id,
+                      companyName: schedule.startup.companyName,
+                      founderName: schedule.startup.founderName,
+                      // Mark as partial data from schedule
+                      isPartialData: true
+                    } : null);
     setShowHistoryModal({ schedule, startup });
   };
 
@@ -966,51 +974,56 @@ export default function SMCScheduling({ isGuest = false }) {
                           {showHistoryModal.startup.companyName}
                         </p>
                       </div>
-                      <div>
-                        <span className="text-gray-600 dark:text-gray-400">Magic Code:</span>
-                        <p className="font-medium text-gray-900 dark:text-white">
-                          {showHistoryModal.startup.magicCode}
-                        </p>
-                      </div>
+                      {showHistoryModal.startup.magicCode && (
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">Magic Code:</span>
+                          <p className="font-medium text-gray-900 dark:text-white">
+                            {showHistoryModal.startup.magicCode}
+                          </p>
+                        </div>
+                      )}
                       <div>
                         <span className="text-gray-600 dark:text-gray-400">Founder:</span>
                         <p className="font-medium text-gray-900 dark:text-white">
                           {showHistoryModal.startup.founderName}
                         </p>
                       </div>
-                      <div>
-                        <span className="text-gray-600 dark:text-gray-400">Current Stage/Status:</span>
-                        <p className="font-medium text-gray-900 dark:text-white">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
-                            showHistoryModal.startup.status === 'Onboarded' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
-                            showHistoryModal.startup.status === 'Graduated' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' :
-                            showHistoryModal.startup.status === 'Rejected' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' :
-                            showHistoryModal.startup.stage === 'One-on-One' ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300' :
-                            'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
-                          }`}>
-                            {showHistoryModal.startup.status === 'Active' ? showHistoryModal.startup.stage : showHistoryModal.startup.status}
-                          </span>
-                        </p>
-                      </div>
-                      <div>
-                        <span className="text-gray-600 dark:text-gray-400">City:</span>
-                        <p className="font-medium text-gray-900 dark:text-white">
-                          {showHistoryModal.startup.city}
-                        </p>
-                      </div>
-                      <div>
-                        <span className="text-gray-600 dark:text-gray-400">Sector:</span>
-                        <p className="font-medium text-gray-900 dark:text-white">
-                          {showHistoryModal.startup.sector}
-                        </p>
-                      </div>
+                      {!showHistoryModal.startup.isPartialData && (
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">Current Stage/Status:</span>
+                          <p className="font-medium text-gray-900 dark:text-white">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
+                              showHistoryModal.startup.status === 'Onboarded' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
+                              showHistoryModal.startup.status === 'Graduated' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' :
+                              showHistoryModal.startup.status === 'Rejected' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' :
+                              showHistoryModal.startup.stage === 'One-on-One' ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300' :
+                              'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                            }`}>
+                              {showHistoryModal.startup.status === 'Active' ? showHistoryModal.startup.stage : showHistoryModal.startup.status}
+                            </span>
+                          </p>
+                        </div>
+                      )}
+                      {showHistoryModal.startup.city && (
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">City:</span>
+                          <p className="font-medium text-gray-900 dark:text-white">
+                            {showHistoryModal.startup.city}
+                          </p>
+                        </div>
+                      )}
+                      {showHistoryModal.startup.sector && (
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">Sector:</span>
+                          <p className="font-medium text-gray-900 dark:text-white">
+                            {showHistoryModal.startup.sector}
+                          </p>
+                        </div>
+                      )}
                     </div>
                     
-                    {/* Status Timeline with Timestamps */}
-                    {(showHistoryModal.startup.status === 'Onboarded' || 
-                      showHistoryModal.startup.status === 'Graduated' || 
-                      showHistoryModal.startup.status === 'Rejected' ||
-                      showHistoryModal.startup.stage === 'One-on-One') && (
+                    {/* Status Timeline with Timestamps - Always show for non-partial data */}
+                    {!showHistoryModal.startup.isPartialData && (
                       <div className="mt-4 pt-4 border-t border-purple-200 dark:border-purple-700">
                         <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                           Status Journey
@@ -1024,6 +1037,30 @@ export default function SMCScheduling({ isGuest = false }) {
                                 {new Date(showHistoryModal.startup.registeredDate).toLocaleDateString('en-US', {
                                   year: 'numeric', month: 'short', day: 'numeric'
                                 })}
+                              </span>
+                            </div>
+                          )}
+                          {showHistoryModal.startup.createdAt && !showHistoryModal.startup.registeredDate && (
+                            <div className="flex items-center space-x-2">
+                              <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                              <span className="text-gray-600 dark:text-gray-400">Created:</span>
+                              <span className="font-medium text-gray-900 dark:text-white">
+                                {new Date(showHistoryModal.startup.createdAt).toLocaleDateString('en-US', {
+                                  year: 'numeric', month: 'short', day: 'numeric'
+                                })}
+                              </span>
+                            </div>
+                          )}
+                          {showHistoryModal.startup.stage === 'One-on-One' && (
+                            <div className="flex items-center space-x-2">
+                              <span className="w-2 h-2 bg-indigo-500 rounded-full"></span>
+                              <span className="text-gray-600 dark:text-gray-400">Moved to One-on-One:</span>
+                              <span className="font-medium text-gray-900 dark:text-white">
+                                {showHistoryModal.startup.stageChangedAt 
+                                  ? new Date(showHistoryModal.startup.stageChangedAt).toLocaleDateString('en-US', {
+                                      year: 'numeric', month: 'short', day: 'numeric'
+                                    })
+                                  : 'Date not recorded'}
                               </span>
                             </div>
                           )}
@@ -1060,7 +1097,7 @@ export default function SMCScheduling({ isGuest = false }) {
                               </span>
                             </div>
                           )}
-                          {showHistoryModal.startup.stageChangedAt && (
+                          {showHistoryModal.startup.stageChangedAt && showHistoryModal.startup.stage !== 'One-on-One' && (
                             <div className="flex items-center space-x-2">
                               <span className="w-2 h-2 bg-indigo-500 rounded-full"></span>
                               <span className="text-gray-600 dark:text-gray-400">Last Stage Change:</span>
@@ -1071,7 +1108,31 @@ export default function SMCScheduling({ isGuest = false }) {
                               </span>
                             </div>
                           )}
+                          {/* Show current status summary */}
+                          <div className="mt-3 pt-3 border-t border-purple-100 dark:border-purple-800">
+                            <div className="flex items-center space-x-2">
+                              <span className={`w-3 h-3 rounded-full ${
+                                showHistoryModal.startup.status === 'Onboarded' ? 'bg-green-500' :
+                                showHistoryModal.startup.status === 'Graduated' ? 'bg-purple-500' :
+                                showHistoryModal.startup.status === 'Rejected' ? 'bg-red-500' :
+                                showHistoryModal.startup.stage === 'One-on-One' ? 'bg-indigo-500' :
+                                'bg-blue-500'
+                              }`}></span>
+                              <span className="font-semibold text-gray-900 dark:text-white">
+                                Current: {showHistoryModal.startup.status === 'Active' ? showHistoryModal.startup.stage : showHistoryModal.startup.status}
+                              </span>
+                            </div>
+                          </div>
                         </div>
+                      </div>
+                    )}
+                    
+                    {/* Partial data notice */}
+                    {showHistoryModal.startup.isPartialData && (
+                      <div className="mt-4 pt-4 border-t border-purple-200 dark:border-purple-700">
+                        <p className="text-sm text-amber-600 dark:text-amber-400 italic">
+                          ⚠️ Limited startup data available. The startup may have been moved to a different status.
+                        </p>
                       </div>
                     )}
                   </div>
