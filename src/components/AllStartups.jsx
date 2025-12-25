@@ -212,7 +212,7 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
     { key: 'stage', options: createStageFilterOptions(), defaultValue: 'all' },
     { key: 'sector', options: createSectorFilterOptions(startups), defaultValue: 'all' },
     { key: 'dateField', options: createDateFieldOptions(), defaultValue: 'createdAt' }
-  ];
+  ], [startups]);
 
   return (
     <div className="max-w-7xl mx-auto">
