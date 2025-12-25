@@ -319,7 +319,9 @@ export default function SMCScheduling({ isGuest = false }) {
   };
 
   const handleViewHistory = (schedule) => {
-    const startup = startups.find(s => s.id === schedule.startupId);
+    // First try to find in eligible startups, then in all startups
+    const startup = startups.find(s => s.id === schedule.startupId) || 
+                    allStartups.find(s => s.id === schedule.startupId);
     setShowHistoryModal({ schedule, startup });
   };
 
@@ -977,9 +979,17 @@ export default function SMCScheduling({ isGuest = false }) {
                         </p>
                       </div>
                       <div>
-                        <span className="text-gray-600 dark:text-gray-400">Current Stage:</span>
+                        <span className="text-gray-600 dark:text-gray-400">Current Stage/Status:</span>
                         <p className="font-medium text-gray-900 dark:text-white">
-                          {showHistoryModal.startup.stage}
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
+                            showHistoryModal.startup.status === 'Onboarded' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
+                            showHistoryModal.startup.status === 'Graduated' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' :
+                            showHistoryModal.startup.status === 'Rejected' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' :
+                            showHistoryModal.startup.stage === 'One-on-One' ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300' :
+                            'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                          }`}>
+                            {showHistoryModal.startup.status === 'Active' ? showHistoryModal.startup.stage : showHistoryModal.startup.status}
+                          </span>
                         </p>
                       </div>
                       <div>
@@ -995,6 +1005,75 @@ export default function SMCScheduling({ isGuest = false }) {
                         </p>
                       </div>
                     </div>
+                    
+                    {/* Status Timeline with Timestamps */}
+                    {(showHistoryModal.startup.status === 'Onboarded' || 
+                      showHistoryModal.startup.status === 'Graduated' || 
+                      showHistoryModal.startup.status === 'Rejected' ||
+                      showHistoryModal.startup.stage === 'One-on-One') && (
+                      <div className="mt-4 pt-4 border-t border-purple-200 dark:border-purple-700">
+                        <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                          Status Journey
+                        </h5>
+                        <div className="space-y-2 text-sm">
+                          {showHistoryModal.startup.registeredDate && (
+                            <div className="flex items-center space-x-2">
+                              <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                              <span className="text-gray-600 dark:text-gray-400">Registered:</span>
+                              <span className="font-medium text-gray-900 dark:text-white">
+                                {new Date(showHistoryModal.startup.registeredDate).toLocaleDateString('en-US', {
+                                  year: 'numeric', month: 'short', day: 'numeric'
+                                })}
+                              </span>
+                            </div>
+                          )}
+                          {showHistoryModal.startup.onboardedDate && (
+                            <div className="flex items-center space-x-2">
+                              <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                              <span className="text-gray-600 dark:text-gray-400">Onboarded:</span>
+                              <span className="font-medium text-gray-900 dark:text-white">
+                                {new Date(showHistoryModal.startup.onboardedDate).toLocaleDateString('en-US', {
+                                  year: 'numeric', month: 'short', day: 'numeric'
+                                })}
+                              </span>
+                            </div>
+                          )}
+                          {showHistoryModal.startup.graduatedDate && (
+                            <div className="flex items-center space-x-2">
+                              <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+                              <span className="text-gray-600 dark:text-gray-400">Graduated:</span>
+                              <span className="font-medium text-gray-900 dark:text-white">
+                                {new Date(showHistoryModal.startup.graduatedDate).toLocaleDateString('en-US', {
+                                  year: 'numeric', month: 'short', day: 'numeric'
+                                })}
+                              </span>
+                            </div>
+                          )}
+                          {showHistoryModal.startup.status === 'Rejected' && showHistoryModal.startup.rejectedDate && (
+                            <div className="flex items-center space-x-2">
+                              <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                              <span className="text-gray-600 dark:text-gray-400">Rejected:</span>
+                              <span className="font-medium text-gray-900 dark:text-white">
+                                {new Date(showHistoryModal.startup.rejectedDate).toLocaleDateString('en-US', {
+                                  year: 'numeric', month: 'short', day: 'numeric'
+                                })}
+                              </span>
+                            </div>
+                          )}
+                          {showHistoryModal.startup.stageChangedAt && (
+                            <div className="flex items-center space-x-2">
+                              <span className="w-2 h-2 bg-indigo-500 rounded-full"></span>
+                              <span className="text-gray-600 dark:text-gray-400">Last Stage Change:</span>
+                              <span className="font-medium text-gray-900 dark:text-white">
+                                {new Date(showHistoryModal.startup.stageChangedAt).toLocaleDateString('en-US', {
+                                  year: 'numeric', month: 'short', day: 'numeric'
+                                })}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* SMC Session Details */}
