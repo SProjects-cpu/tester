@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronDown, ChevronUp, CheckCircle, XCircle, Users, Edit, GraduationCap, Lock, Download, BarChart3 } from 'lucide-react';
+import { X, ChevronDown, ChevronUp, CheckCircle, XCircle, Users, Edit, GraduationCap, Lock, Download, BarChart3, DollarSign } from 'lucide-react';
 import { useState } from 'react';
 import EditStartupProfile from './EditStartupProfile';
 import GuestRestrictedButton from './GuestRestrictedButton';

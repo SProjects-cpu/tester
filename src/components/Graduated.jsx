@@ -170,7 +170,7 @@ export default function Graduated({ isGuest = false }) {
         </div>
         <div className="flex items-center justify-center py-20">
           <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
-          <span className="ml-3 text-gray-600 dark:text-gray-400">Loading startups...</span>
+          <span className="ml-3 text-white">Loading startups...</span>
         </div>
       </div>
     );
