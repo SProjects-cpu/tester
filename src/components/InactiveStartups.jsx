@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { AlertTriangle, Clock, Mail, Phone, Calendar, TrendingDown, RefreshCw, Download, FileJson, FileSpreadsheet, ChevronDown, History, Loader2 } from 'lucide-react';
+import { AlertTriangle, Mail, Phone, TrendingDown, RefreshCw, History } from 'lucide-react';
 import { startupApi } from '../utils/api';
 import { exportStartupsComprehensive, filterByDateRange, generateExportFileName } from '../utils/exportUtils';
 import ExportMenu from './ExportMenu';
@@ -155,7 +155,7 @@ export default function InactiveStartups() {
       {loading && (
         <div className="text-center py-12">
           <RefreshCw className="w-12 h-12 mx-auto text-orange-500 animate-spin mb-4" />
-          <p className="text-gray-600 dark:text-gray-400">Loading inactive startups...</p>
+          <p className="text-white">Loading inactive startups...</p>
         </div>
       )}
 
