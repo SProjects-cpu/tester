@@ -66,6 +66,11 @@ const transformStartup = (startup) => ({
   bhaskarId: startup.bhaskarId,
   onboardedDate: startup.onboardedDate ? startup.onboardedDate.toISOString().split('T')[0] : null,
   graduatedDate: startup.graduatedDate ? startup.graduatedDate.toISOString().split('T')[0] : null,
+  // Onboarding details
+  onboardingDescription: startup.onboardingDescription,
+  agreementDate: startup.agreementDate ? startup.agreementDate.toISOString().split('T')[0] : null,
+  engagementMedium: startup.engagementMedium,
+  agreementCopy: startup.agreementCopy,
   createdAt: startup.createdAt ? startup.createdAt.toISOString().split('T')[0] : null,
   updatedAt: startup.updatedAt,
   // Registration Info fields
@@ -183,6 +188,13 @@ const transformToDb = (body) => {
   if (body.domain !== undefined) data.domain = body.domain;
   if (body.logo !== undefined) data.logo = body.logo;
   if (body.officePhoto !== undefined) data.officePhoto = body.officePhoto;
+  
+  // Onboarding details
+  if (body.onboardingDescription !== undefined) data.onboardingDescription = body.onboardingDescription;
+  if (body.agreementDate !== undefined) 
+    data.agreementDate = body.agreementDate ? new Date(body.agreementDate) : null;
+  if (body.engagementMedium !== undefined) data.engagementMedium = body.engagementMedium;
+  if (body.agreementCopy !== undefined) data.agreementCopy = body.agreementCopy;
   
   return data;
 };

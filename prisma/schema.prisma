@@ -71,6 +71,12 @@ model Startup {
   logo              String?
   officePhoto       String?          @map("office_photo")
   
+  // Onboarding details
+  onboardingDescription String?      @map("onboarding_description")
+  agreementDate         DateTime?    @map("agreement_date")
+  engagementMedium      String?      @map("engagement_medium")
+  agreementCopy         String?      @map("agreement_copy") @db.Text
+  
   achievements     Achievement[]
   agreements       Agreement[]
   documents        Document[]

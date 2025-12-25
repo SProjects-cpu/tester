@@ -66,6 +66,11 @@ const transformStartup = (startup) => ({
   bhaskarId: startup.bhaskarId,
   onboardedDate: startup.onboardedDate ? startup.onboardedDate.toISOString().split('T')[0] : null,
   graduatedDate: startup.graduatedDate ? startup.graduatedDate.toISOString().split('T')[0] : null,
+  // Onboarding details
+  onboardingDescription: startup.onboardingDescription,
+  agreementDate: startup.agreementDate ? startup.agreementDate.toISOString().split('T')[0] : null,
+  engagementMedium: startup.engagementMedium,
+  agreementCopy: startup.agreementCopy,
   createdAt: startup.createdAt ? startup.createdAt.toISOString().split('T')[0] : null,
   updatedAt: startup.updatedAt,
   // Registration Info fields
