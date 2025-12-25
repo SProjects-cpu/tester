@@ -656,7 +656,7 @@ function GraduatedDetailModal({ startup, onClose, onUpdate, isGuest = false }) {
                   <Field label="Engagement Medium" value={startup.engagementMedium || 'N/A'} />
                   <Field label="Onboarded On" value={startup.onboardedDate ? new Date(startup.onboardedDate).toLocaleDateString() : 'N/A'} />
                 </div>
-                {startup.agreementCopy && startup.agreementCopy.length > 0 && (
+                {startup.agreementCopy && typeof startup.agreementCopy === 'string' && startup.agreementCopy.length > 0 && (
                   <div className="mt-4 pt-4 border-t border-green-200 dark:border-green-700">
                     <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-semibold block mb-2">
                       Agreement Copy
@@ -720,7 +720,7 @@ function GraduatedDetailModal({ startup, onClose, onUpdate, isGuest = false }) {
                     )}
                   </div>
                 )}
-                {(!startup.agreementCopy || startup.agreementCopy.length === 0) && (
+                {(!startup.agreementCopy || typeof startup.agreementCopy !== 'string' || startup.agreementCopy.length === 0) && (
                   <div className="mt-4 pt-4 border-t border-green-200 dark:border-green-700">
                     <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-semibold block mb-2">
                       Agreement Copy
