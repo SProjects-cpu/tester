@@ -5,6 +5,9 @@ import { getAuthUser } from '@/lib/auth';
 // Force dynamic rendering to avoid build-time database access
 export const dynamic = 'force-dynamic';
 
+// Increase timeout for file uploads
+export const maxDuration = 60;
+
 // Transform SMC meetings to pitch history format
 const transformSmcToPitchHistory = (smcMeetings) => {
   if (!smcMeetings || smcMeetings.length === 0) return [];
