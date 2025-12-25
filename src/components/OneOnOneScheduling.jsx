@@ -231,6 +231,7 @@ export default function OneOnOneScheduling({ isGuest = false }) {
         onboardingDescription: onboardingData.description,
         agreementDate: onboardingData.agreementDate,
         engagementMedium: onboardingData.engagementMedium,
+        agreementCopy: onboardingData.agreementCopy,
         onboardedDate: onboardingData.onboardedDate
       });
       setShowOnboardingModal(null);

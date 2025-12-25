@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronDown, ChevronUp, CheckCircle, XCircle, Users, Edit, GraduationCap, Lock, Download, TrendingUp, DollarSign, BarChart3 } from 'lucide-react';
+import { X, ChevronDown, ChevronUp, CheckCircle, XCircle, Users, Edit, GraduationCap, Lock, Download, BarChart3 } from 'lucide-react';
 import { useState } from 'react';
 import EditStartupProfile from './EditStartupProfile';
 import GuestRestrictedButton from './GuestRestrictedButton';
@@ -9,6 +9,7 @@ import GenerateReportButton from './GenerateReportButton';
 import ConfirmationModal from './ConfirmationModal';
 import DocumentList from './DocumentList';
 import { getField } from '../utils/startupFieldHelper';
+import { startupApi } from '../utils/api';
 
 export default function StartupDetailModal({ startup, onClose, onUpdate, isGuest = false }) {
   const [expanded, setExpanded] = useState({
@@ -62,32 +63,68 @@ export default function StartupDetailModal({ startup, onClose, onUpdate, isGuest
     setShowOnboardingModal(true);
   };
 
-  const confirmOnboard = (onboardingData) => {
-    onUpdate({ 
-      ...startup, 
-      stage: 'Onboarded',
-      status: 'Onboarded',
-      onboardingDescription: onboardingData.description,
-      agreementDate: onboardingData.agreementDate,
-      engagementMedium: onboardingData.engagementMedium,
-      agreementCopy: onboardingData.agreementCopy,
-      onboardedDate: onboardingData.onboardedDate
-    });
-    setShowOnboardingModal(false);
-    onClose();
+  const confirmOnboard = async (onboardingData) => {
+    try {
+      // Call API directly to save onboarding data to database
+      await startupApi.update(startup.id, {
+        stage: 'Onboarded',
+        status: 'Onboarded',
+        onboardingDescription: onboardingData.description,
+        agreementDate: onboardingData.agreementDate,
+        engagementMedium: onboardingData.engagementMedium,
+        agreementCopy: onboardingData.agreementCopy,
+        onboardedDate: onboardingData.onboardedDate
+      });
+      
+      // Notify parent to refresh data
+      onUpdate({ 
+        ...startup, 
+        stage: 'Onboarded',
+        status: 'Onboarded',
+        onboardingDescription: onboardingData.description,
+        agreementDate: onboardingData.agreementDate,
+        engagementMedium: onboardingData.engagementMedium,
+        agreementCopy: onboardingData.agreementCopy,
+        onboardedDate: onboardingData.onboardedDate
+      });
+      
+      setShowOnboardingModal(false);
+      onClose();
+      alert(`✅ ${getField(startup, 'companyName')} has been onboarded successfully!`);
+    } catch (error) {
+      console.error('Error onboarding startup:', error);
+      alert('❌ Failed to onboard startup: ' + error.message);
+    }
   };
 
-  const handleReject = (rejectionRemark) => {
-    onUpdate({ 
-      ...startup, 
-      stage: 'Rejected',
-      status: 'Rejected',
-      rejectionRemark,
-      rejectedDate: new Date().toISOString(),
-      rejectedFromStage: startup.stage
-    });
-    setShowRejectionModal(false);
-    onClose();
+  const handleReject = async (rejectionRemark) => {
+    try {
+      // Call API directly to save rejection data to database
+      await startupApi.update(startup.id, {
+        stage: 'Rejected',
+        status: 'Rejected',
+        rejectionRemark,
+        rejectedDate: new Date().toISOString(),
+        rejectedFromStage: startup.stage
+      });
+      
+      // Notify parent to refresh data
+      onUpdate({ 
+        ...startup, 
+        stage: 'Rejected',
+        status: 'Rejected',
+        rejectionRemark,
+        rejectedDate: new Date().toISOString(),
+        rejectedFromStage: startup.stage
+      });
+      
+      setShowRejectionModal(false);
+      onClose();
+      alert(`${getField(startup, 'companyName')} has been rejected.`);
+    } catch (error) {
+      console.error('Error rejecting startup:', error);
+      alert('❌ Failed to reject startup: ' + error.message);
+    }
   };
 
   const handleOneOnOne = () => {
@@ -97,9 +134,16 @@ export default function StartupDetailModal({ startup, onClose, onUpdate, isGuest
       title: 'Move to One-on-One?',
       message: `Are you sure you want to move "${companyName}" from ${startup.stage} to One-on-One mentorship stage?`,
       type: 'info',
-      onConfirm: () => {
-        onUpdate({ ...startup, stage: 'One-on-One' });
-        onClose();
+      onConfirm: async () => {
+        try {
+          await startupApi.update(startup.id, { stage: 'One-on-One' });
+          onUpdate({ ...startup, stage: 'One-on-One' });
+          onClose();
+          alert(`✅ ${companyName} has been moved to One-on-One stage!`);
+        } catch (error) {
+          console.error('Error moving to One-on-One:', error);
+          alert('❌ Failed to move startup: ' + error.message);
+        }
       }
     });
   };
@@ -111,16 +155,27 @@ export default function StartupDetailModal({ startup, onClose, onUpdate, isGuest
       title: 'Graduate Startup?',
       message: `Are you sure you want to graduate "${companyName}"? This means they have completed their incubation period and will be marked as Graduated.`,
       type: 'info',
-      onConfirm: () => {
+      onConfirm: async () => {
         const graduationDate = prompt('Enter graduation date (YYYY-MM-DD) or leave empty for today:');
         const dateToUse = graduationDate || new Date().toISOString().split('T')[0];
-        onUpdate({ 
-          ...startup, 
-          stage: 'Graduated',
-          status: 'Graduated',
-          graduatedDate: dateToUse
-        });
-        onClose();
+        try {
+          await startupApi.update(startup.id, {
+            stage: 'Graduated',
+            status: 'Graduated',
+            graduatedDate: dateToUse
+          });
+          onUpdate({ 
+            ...startup, 
+            stage: 'Graduated',
+            status: 'Graduated',
+            graduatedDate: dateToUse
+          });
+          onClose();
+          alert(`✅ ${companyName} has been graduated!`);
+        } catch (error) {
+          console.error('Error graduating startup:', error);
+          alert('❌ Failed to graduate startup: ' + error.message);
+        }
       }
     });
   };
