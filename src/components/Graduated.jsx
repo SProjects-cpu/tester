@@ -353,6 +353,27 @@ export default function Graduated({ isGuest = false }) {
                             <div key={idx} className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-sm">
                               <p className="font-medium text-gray-900 dark:text-white">{ach.title}</p>
                               <p className="text-xs text-gray-600 dark:text-gray-400">{ach.description}</p>
+                              {ach.mediaUrl && (
+                                <div className="mt-2">
+                                  {isImageUrl(ach.mediaUrl) ? (
+                                    <img 
+                                      src={ach.mediaUrl} 
+                                      alt={ach.title}
+                                      className="w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-90"
+                                      onClick={() => handleViewAttachment(ach.mediaUrl, ach.title)}
+                                      onError={(e) => e.target.style.display = 'none'}
+                                    />
+                                  ) : (
+                                    <button 
+                                      onClick={() => handleViewAttachment(ach.mediaUrl, ach.title)}
+                                      className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center space-x-1"
+                                    >
+                                      <Eye className="w-3 h-3" />
+                                      <span>View Attachment</span>
+                                    </button>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           ))}
                         </div>
