@@ -23,24 +23,38 @@ export async function GET(request) {
     });
 
     // Transform to frontend format
-    const transformed = meetings.map(m => ({
-      id: m.id,
-      startupId: m.startupId,
-      date: m.date?.toISOString().split('T')[0],
-      timeSlot: m.agenda?.split('|')[0] || '10:00 AM - 11:00 AM',
-      status: m.status === 'completed' ? 'Completed' : 'Scheduled',
-      completionData: m.status === 'completed' ? {
-        panelistName: m.attendees,
-        feedback: m.decisions,
-        time: m.agenda?.split('|')[1] || ''
-      } : null,
-      startup: m.startup ? {
-        id: m.startup.id,
-        companyName: m.startup.name,
-        founderName: m.startup.founder
-      } : null,
-      createdAt: m.createdAt
-    }));
+    const transformed = meetings.map(m => {
+      // Parse agenda field: timeSlot|completionTime|stageAtCompletion
+      const agendaParts = m.agenda?.split('|') || [];
+      const timeSlot = agendaParts[0] || '10:00 AM - 11:00 AM';
+      const completionTime = agendaParts[1] || '';
+      const stageAtCompletion = agendaParts[2] || '';
+      
+      // Map database status to frontend status
+      let frontendStatus = 'Scheduled';
+      if (m.status === 'completed') frontendStatus = 'Completed';
+      else if (m.status === 'not_done') frontendStatus = 'Not Done';
+      
+      return {
+        id: m.id,
+        startupId: m.startupId,
+        date: m.date?.toISOString().split('T')[0],
+        timeSlot,
+        status: frontendStatus,
+        completionData: (m.status === 'completed' || m.status === 'not_done') ? {
+          panelistName: m.attendees,
+          feedback: m.decisions,
+          time: completionTime,
+          stageAtCompletion: stageAtCompletion || undefined
+        } : null,
+        startup: m.startup ? {
+          id: m.startup.id,
+          companyName: m.startup.name,
+          founderName: m.startup.founder
+        } : null,
+        createdAt: m.createdAt
+      };
+    });
 
     return NextResponse.json(transformed);
   } catch (error) {

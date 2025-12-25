@@ -21,6 +21,7 @@ export default function SMCScheduling({ isGuest = false }) {
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [selectedStartup, setSelectedStartup] = useState(null);
+  const [selectedStage, setSelectedStage] = useState(''); // Stage filter for scheduling
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [showCompletionForm, setShowCompletionForm] = useState(null);
@@ -94,9 +95,9 @@ export default function SMCScheduling({ isGuest = false }) {
       ]);
       // Store all startups for history lookup (including One-on-One, Onboarded, etc.)
       setAllStartups(startupsData);
-      // Filter startups for SMC eligibility (only S0, S1, S2 stages)
+      // Filter startups for SMC eligibility (S0, S1, S2, S3 stages)
       const eligibleStartups = startupsData.filter(
-        s => s.status === 'Active' && ['S0', 'S1', 'S2'].includes(s.stage)
+        s => s.status === 'Active' && ['S0', 'S1', 'S2', 'S3'].includes(s.stage)
       );
       setStartups(eligibleStartups);
       setSchedules(schedulesData);
@@ -197,14 +198,18 @@ export default function SMCScheduling({ isGuest = false }) {
   };
 
   const handleNotDone = async (schedule) => {
-    if (confirm('Mark this meeting as "Not Done"? This will remove the scheduled meeting.')) {
+    if (confirm('Mark this meeting as "Not Done"? The meeting will remain in the schedule with "Not Done" status.')) {
       try {
-        await smcApi.delete(schedule.id);
-        setSchedules(schedules.filter(s => s.id !== schedule.id));
-        alert('Meeting marked as not done and removed from schedule.');
+        await smcApi.update(schedule.id, {
+          ...schedule,
+          status: 'Not Done'
+        });
+        // Reload data to reflect changes
+        await loadData();
+        alert('Meeting marked as "Not Done".');
       } catch (error) {
-        console.error('Error removing schedule:', error);
-        alert('❌ Failed to remove schedule: ' + error.message);
+        console.error('Error updating schedule:', error);
+        alert('❌ Failed to update schedule: ' + error.message);
       }
     }
   };
@@ -236,31 +241,45 @@ export default function SMCScheduling({ isGuest = false }) {
     
     if (!startup) return;
 
-    // Determine new stage
+    // Store the stage at completion time
+    const stageAtCompletion = startup.stage;
+
+    // Determine new stage - S3 stays at S3 (no automatic progression to One-on-One)
     let newStage = startup.stage;
     if (startup.stage === 'S0') newStage = 'S1';
     else if (startup.stage === 'S1') newStage = 'S2';
-    else if (startup.stage === 'S2') newStage = 'One-on-One'; // After S2, move to One-on-One stage
+    else if (startup.stage === 'S2') newStage = 'S3';
+    // S3 stays at S3 - progression to One-on-One is done manually from AllStartups
+
+    const stageChanged = newStage !== startup.stage;
+    const confirmMessage = stageChanged
+      ? `Are you sure you want to move "${startup.companyName}" from ${startup.stage} to ${newStage}? This action will update the startup's stage and add this pitch to their history.`
+      : `Mark SMC session as completed for "${startup.companyName}" at stage ${startup.stage}? The startup will remain at ${startup.stage}.`;
 
     // Show confirmation modal
     setConfirmationModal({
       isOpen: true,
-      title: 'Confirm Stage Change',
-      message: `Are you sure you want to move "${startup.companyName}" from ${startup.stage} to ${newStage}? This action will update the startup's stage and add this pitch to their history.`,
+      title: stageChanged ? 'Confirm Stage Change' : 'Confirm Completion',
+      message: confirmMessage,
       type: 'info',
       onConfirm: async () => {
         try {
           // Close confirmation modal first
           closeConfirmationModal();
           
-          // Update startup stage via API
-          await startupApi.update(startup.id, { stage: newStage });
+          // Update startup stage via API (only if stage changed)
+          if (stageChanged) {
+            await startupApi.update(startup.id, { stage: newStage });
+          }
 
-          // Mark schedule as completed via API
+          // Mark schedule as completed via API with stageAtCompletion
           await smcApi.update(schedule.id, {
             ...schedule,
             status: 'Completed',
-            completionData
+            completionData: {
+              ...completionData,
+              stageAtCompletion
+            }
           });
 
           // Close completion form
@@ -269,7 +288,10 @@ export default function SMCScheduling({ isGuest = false }) {
           // Reload data to refresh the startup list
           await loadData();
           
-          alert('SMC marked as completed and startup stage updated!');
+          const successMessage = stageChanged 
+            ? 'SMC marked as completed and startup stage updated!'
+            : 'SMC marked as completed!';
+          alert(successMessage);
         } catch (error) {
           console.error('Error completing SMC:', error);
           alert('❌ Failed to complete SMC: ' + error.message);
@@ -453,6 +475,26 @@ export default function SMCScheduling({ isGuest = false }) {
 
             <div>
               <label className="block text-xs sm:text-sm text-gray-900 dark:text-gray-100 mb-2">
+                Choose Stage
+              </label>
+              <select
+                value={selectedStage}
+                onChange={(e) => {
+                  setSelectedStage(e.target.value);
+                  setSelectedStartup(null); // Reset startup selection when stage changes
+                }}
+                className="w-full px-3 sm:px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-magic-500 focus:border-magic-500 outline-none transition-all text-sm sm:text-base"
+              >
+                <option value="">All Stages</option>
+                <option value="S0">S0</option>
+                <option value="S1">S1</option>
+                <option value="S2">S2</option>
+                <option value="S3">S3</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs sm:text-sm text-gray-900 dark:text-gray-100 mb-2">
                 Select Startup
               </label>
               <select
@@ -461,7 +503,7 @@ export default function SMCScheduling({ isGuest = false }) {
                 className="w-full px-3 sm:px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-magic-500 focus:border-magic-500 outline-none transition-all text-sm sm:text-base"
               >
                 <option value="">Choose startup...</option>
-                {startups.map(startup => (
+                {(selectedStage ? startups.filter(s => s.stage === selectedStage) : startups).map(startup => (
                   <option key={startup.id} value={startup.id}>
                     {startup.companyName} ({startup.stage})
                   </option>
@@ -556,6 +598,7 @@ export default function SMCScheduling({ isGuest = false }) {
                           const allStartup = allStartups.find(s => s.id === schedule.startupId);
                           const displayStartup = startup || allStartup;
                           const isCompleted = schedule.status === 'Completed';
+                          const isNotDone = schedule.status === 'Not Done';
                           const isUnknown = !displayStartup;
 
                           return (
@@ -568,7 +611,9 @@ export default function SMCScheduling({ isGuest = false }) {
                                   ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20'
                                   : isCompleted
                                     ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-                                    : 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                                    : isNotDone
+                                      ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20'
+                                      : 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
                               } shadow-sm hover:shadow-md transition-all`}
                             >
                               <div className="flex items-center justify-between mb-3">
@@ -577,11 +622,27 @@ export default function SMCScheduling({ isGuest = false }) {
                                   <span className="font-bold text-sm text-gray-900 dark:text-white">
                                     {schedule.timeSlot}
                                   </span>
+                                  {/* Stage Badge */}
+                                  {displayStartup?.stage && (
+                                    <span className={`px-2 py-0.5 text-white text-xs font-bold rounded-full ${
+                                      displayStartup.stage === 'S0' ? 'bg-blue-500' :
+                                      displayStartup.stage === 'S1' ? 'bg-indigo-500' :
+                                      displayStartup.stage === 'S2' ? 'bg-purple-500' :
+                                      displayStartup.stage === 'S3' ? 'bg-pink-500' : 'bg-gray-500'
+                                    }`}>
+                                      {schedule.completionData?.stageAtCompletion || displayStartup.stage}
+                                    </span>
+                                  )}
                                 </div>
                                 <div className="flex items-center space-x-2">
                                   {isCompleted && (
                                     <span className="text-xs font-semibold text-green-600 dark:text-green-400">
                                       ✓ Done
+                                    </span>
+                                  )}
+                                  {isNotDone && (
+                                    <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">
+                                      ✗ Not Done
                                     </span>
                                   )}
                                   {isUnknown && (
@@ -616,6 +677,29 @@ export default function SMCScheduling({ isGuest = false }) {
                                     <Trash2 className="w-3 h-3" />
                                   </GuestRestrictedButton>
                                 </div>
+                              ) : isNotDone ? (
+                                <div className="space-y-2">
+                                  {!isUnknown && (
+                                    <GuestRestrictedButton
+                                      isGuest={isGuest}
+                                      onClick={() => handleComplete(schedule)}
+                                      actionType="feedback"
+                                      className="w-full flex items-center justify-center space-x-1 bg-green-500 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-green-600 transition-colors"
+                                    >
+                                      <Check className="w-3 h-3" />
+                                      <span>Mark Done</span>
+                                    </GuestRestrictedButton>
+                                  )}
+                                  <GuestRestrictedButton
+                                    isGuest={isGuest}
+                                    onClick={() => handleDeleteSchedule(schedule)}
+                                    actionType="delete"
+                                    className="w-full flex items-center justify-center space-x-1 bg-red-500 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-red-600 transition-colors"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                    <span>Delete</span>
+                                  </GuestRestrictedButton>
+                                </div>
                               ) : (
                                 <div className="space-y-2">
                                   {!isUnknown && (
@@ -634,7 +718,7 @@ export default function SMCScheduling({ isGuest = false }) {
                                       isGuest={isGuest}
                                       onClick={() => handleNotDone(schedule)}
                                       actionType="delete"
-                                      className="flex-1 flex items-center justify-center space-x-1 bg-red-500 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-red-600 transition-colors"
+                                      className="flex-1 flex items-center justify-center space-x-1 bg-amber-500 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-amber-600 transition-colors"
                                     >
                                       <X className="w-3 h-3" />
                                       <span>Not Done</span>
@@ -665,6 +749,7 @@ export default function SMCScheduling({ isGuest = false }) {
                           const allStartup = allStartups.find(s => s.id === schedule.startupId);
                           const displayStartup = startup || allStartup;
                           const isCompleted = schedule.status === 'Completed';
+                          const isNotDone = schedule.status === 'Not Done';
                           const isUnknown = !displayStartup;
 
                           return (
@@ -677,7 +762,9 @@ export default function SMCScheduling({ isGuest = false }) {
                                   ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20'
                                   : isCompleted
                                     ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-                                    : 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                                    : isNotDone
+                                      ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20'
+                                      : 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
                               } shadow-sm hover:shadow-md transition-all`}
                             >
                               <div className="flex items-center justify-between gap-4">
@@ -687,6 +774,17 @@ export default function SMCScheduling({ isGuest = false }) {
                                     <span className="font-bold text-base text-gray-900 dark:text-white">
                                       {schedule.timeSlot}
                                     </span>
+                                    {/* Stage Badge */}
+                                    {displayStartup?.stage && (
+                                      <span className={`px-2 py-0.5 text-white text-xs font-bold rounded-full ${
+                                        displayStartup.stage === 'S0' ? 'bg-blue-500' :
+                                        displayStartup.stage === 'S1' ? 'bg-indigo-500' :
+                                        displayStartup.stage === 'S2' ? 'bg-purple-500' :
+                                        displayStartup.stage === 'S3' ? 'bg-pink-500' : 'bg-gray-500'
+                                      }`}>
+                                        {schedule.completionData?.stageAtCompletion || displayStartup.stage}
+                                      </span>
+                                    )}
                                   </div>
                                   <div className="flex-1 min-w-0">
                                     <p className="text-base font-semibold text-gray-900 dark:text-white truncate">
@@ -701,6 +799,11 @@ export default function SMCScheduling({ isGuest = false }) {
                                   {isCompleted && (
                                     <span className="flex-shrink-0 px-3 py-1 bg-green-500 text-white text-xs font-semibold rounded-full">
                                       ✓ Completed
+                                    </span>
+                                  )}
+                                  {isNotDone && (
+                                    <span className="flex-shrink-0 px-3 py-1 bg-amber-500 text-white text-xs font-semibold rounded-full">
+                                      ✗ Not Done
                                     </span>
                                   )}
                                   {isUnknown && (
@@ -731,6 +834,29 @@ export default function SMCScheduling({ isGuest = false }) {
                                         <Trash2 className="w-4 h-4" />
                                       </GuestRestrictedButton>
                                     </>
+                                  ) : isNotDone ? (
+                                    <>
+                                      {!isUnknown && (
+                                        <GuestRestrictedButton
+                                          isGuest={isGuest}
+                                          onClick={() => handleComplete(schedule)}
+                                          actionType="feedback"
+                                          className="flex items-center space-x-1 bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-600 transition-colors"
+                                        >
+                                          <Check className="w-4 h-4" />
+                                          <span>Mark Done</span>
+                                        </GuestRestrictedButton>
+                                      )}
+                                      <GuestRestrictedButton
+                                        isGuest={isGuest}
+                                        onClick={() => handleDeleteSchedule(schedule)}
+                                        actionType="delete"
+                                        className="flex items-center space-x-1 bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-red-600 transition-colors"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                        <span>Delete</span>
+                                      </GuestRestrictedButton>
+                                    </>
                                   ) : (
                                     <>
                                       {!isUnknown && (
@@ -748,7 +874,7 @@ export default function SMCScheduling({ isGuest = false }) {
                                         isGuest={isGuest}
                                         onClick={() => handleNotDone(schedule)}
                                         actionType="delete"
-                                        className="flex items-center space-x-1 bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-red-600 transition-colors"
+                                        className="flex items-center space-x-1 bg-amber-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-amber-600 transition-colors"
                                       >
                                         <X className="w-4 h-4" />
                                         <span>Not Done</span>
@@ -1109,13 +1235,29 @@ export default function SMCScheduling({ isGuest = false }) {
                             </div>
                             <div className="flex items-center space-x-2">
                               {isNowOneOnOne && (
-                                <span className="px-2 py-1 bg-indigo-500 text-white text-xs font-semibold rounded-full">
-                                  Now One-on-One
-                                </span>
+                                <>
+                                  <span className="px-2 py-1 bg-amber-500 text-white text-xs font-semibold rounded-full">
+                                    Leaving
+                                  </span>
+                                  <span className="px-2 py-1 bg-indigo-500 text-white text-xs font-semibold rounded-full">
+                                    Now One-on-One
+                                  </span>
+                                </>
                               )}
                               {isNowOnboarded && (
                                 <span className="px-2 py-1 bg-green-600 text-white text-xs font-semibold rounded-full">
-                                  Now Onboarded
+                                  Onboarded
+                                </span>
+                              )}
+                              {/* Show stage at completion if available */}
+                              {session.completionData?.stageAtCompletion && (
+                                <span className={`px-2 py-1 text-white text-xs font-semibold rounded-full ${
+                                  session.completionData.stageAtCompletion === 'S0' ? 'bg-blue-500' :
+                                  session.completionData.stageAtCompletion === 'S1' ? 'bg-indigo-500' :
+                                  session.completionData.stageAtCompletion === 'S2' ? 'bg-purple-500' :
+                                  session.completionData.stageAtCompletion === 'S3' ? 'bg-pink-500' : 'bg-gray-500'
+                                }`}>
+                                  {session.completionData.stageAtCompletion}
                                 </span>
                               )}
                               <span className="px-3 py-1 bg-green-500 text-white text-xs font-semibold rounded-full">

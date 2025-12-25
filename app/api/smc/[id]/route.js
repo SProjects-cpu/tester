@@ -23,10 +23,15 @@ export async function PUT(request, { params }) {
     
     // Store the stage at which this SMC was completed in the agenda field
     // Format: timeSlot|completionTime|stageAtCompletion
-    const stageAtCompletion = existingMeeting?.startup?.stage || '';
+    const stageAtCompletion = body.completionData?.stageAtCompletion || existingMeeting?.startup?.stage || '';
     const agendaData = body.timeSlot 
       ? `${body.timeSlot}|${body.completionData?.time || ''}|${stageAtCompletion}`
       : undefined;
+    
+    // Map frontend status to database status
+    let dbStatus = 'scheduled';
+    if (body.status === 'Completed') dbStatus = 'completed';
+    else if (body.status === 'Not Done') dbStatus = 'not_done';
     
     const meeting = await prisma.sMCMeeting.update({
       where: { id },
@@ -35,7 +40,7 @@ export async function PUT(request, { params }) {
         agenda: agendaData,
         decisions: body.completionData?.feedback,
         attendees: body.completionData?.panelistName,
-        status: body.status === 'Completed' ? 'completed' : 'scheduled'
+        status: dbStatus
       },
       include: { startup: { select: { id: true, name: true, founder: true } } }
     });
