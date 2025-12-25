@@ -14,13 +14,6 @@ export default function InactiveStartups() {
   const [dateRange, setDateRange] = useState({ fromDate: null, toDate: null });
   const [showHistoryPanel, setShowHistoryPanel] = useState(false);
 
-  const handleExport = useCallback((format) => {
-    // Export the already filtered data (filtered by inline date filter)
-    const fileName = generateExportFileName('Inactive-Startups', dateRange.fromDate, dateRange.toDate);
-    exportStartupsComprehensive(filteredStartups, format, fileName.replace('MAGIC-', ''));
-    alert(`${filteredStartups.length} inactive startup(s) exported as ${format.toUpperCase()}!`);
-  }, [filteredStartups, dateRange]);
-
   const checkInactiveStartups = useCallback(async () => {
     setLoading(true);
     try {
@@ -87,6 +80,13 @@ export default function InactiveStartups() {
     s3: inactiveStartups.filter(s => s.stage === 'S3').length,
     oneOnOne: inactiveStartups.filter(s => s.stage === 'One-on-One').length
   }), [inactiveStartups]);
+
+  // handleExport must be defined after filteredStartups
+  const handleExport = useCallback((format) => {
+    const fileName = generateExportFileName('Inactive-Startups', dateRange.fromDate, dateRange.toDate);
+    exportStartupsComprehensive(filteredStartups, format, fileName.replace('MAGIC-', ''));
+    alert(`${filteredStartups.length} inactive startup(s) exported as ${format.toUpperCase()}!`);
+  }, [filteredStartups, dateRange]);
 
   const getStageColor = (stage) => {
     const colors = {
