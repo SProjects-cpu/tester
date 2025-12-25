@@ -229,7 +229,10 @@ export default function Graduated({ isGuest = false }) {
         <div className="space-y-4">
           <AnimatePresence>
             {filteredStartups.map(startup => {
-              const totalRevenue = startup.totalRevenue || (startup.revenueHistory?.reduce((sum, r) => sum + (r.amount || 0), 0)) || 0;
+              // Check both revenueEntries (new format) and revenueHistory (legacy format)
+              const totalRevenue = startup.totalRevenue || 
+                (startup.revenueEntries?.reduce((sum, r) => sum + (r.amount || 0), 0)) || 
+                (startup.revenueHistory?.reduce((sum, r) => sum + (r.amount || 0), 0)) || 0;
               
               return (
                 <motion.div
@@ -355,19 +358,19 @@ export default function Graduated({ isGuest = false }) {
                       </div>
                     )}
 
-                    {/* Revenue History (View Only) */}
-                    {startup.revenueHistory && startup.revenueHistory.length > 0 && (
+                    {/* Revenue History (View Only) - Check both revenueEntries and revenueHistory */}
+                    {((startup.revenueEntries && startup.revenueEntries.length > 0) || (startup.revenueHistory && startup.revenueHistory.length > 0)) && (
                       <div className="space-y-2">
                         <h4 className="font-semibold text-gray-900 dark:text-white text-sm flex items-center space-x-2">
                           <TrendingUp className="w-4 h-4 text-green-500" />
                           <span>Revenue History</span>
                         </h4>
                         <div className="space-y-2">
-                          {startup.revenueHistory.map((rev, idx) => (
+                          {(startup.revenueEntries || startup.revenueHistory || []).map((rev, idx) => (
                             <div key={idx} className="p-2 bg-green-50 dark:bg-green-900/20 rounded-lg text-sm flex justify-between items-center">
                               <div>
-                                <p className="font-medium text-gray-900 dark:text-white">{rev.source}</p>
-                                <p className="text-xs text-gray-600 dark:text-gray-400">{rev.date}</p>
+                                <p className="font-medium text-gray-900 dark:text-white">{rev.source || 'Revenue'}</p>
+                                <p className="text-xs text-gray-600 dark:text-gray-400">{rev.date ? new Date(rev.date).toLocaleDateString() : 'No date'}</p>
                               </div>
                               <span className="font-bold text-green-600">₹{rev.amount?.toLocaleString()}</span>
                             </div>
@@ -486,7 +489,10 @@ function GraduatedDetailModal({ startup, onClose, onUpdate, isGuest = false }) {
     setExpanded(prev => ({ ...prev, [section]: !prev[section] }));
   };
 
-  const totalRevenue = startup.totalRevenue || (startup.revenueHistory?.reduce((sum, r) => sum + (r.amount || 0), 0)) || 0;
+  // Check both revenueEntries (new format) and revenueHistory (legacy format)
+  const totalRevenue = startup.totalRevenue || 
+    (startup.revenueEntries?.reduce((sum, r) => sum + (r.amount || 0), 0)) || 
+    (startup.revenueHistory?.reduce((sum, r) => sum + (r.amount || 0), 0)) || 0;
 
   const Section = ({ title, section, children, icon: Icon }) => (
     <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
@@ -635,15 +641,15 @@ function GraduatedDetailModal({ startup, onClose, onUpdate, isGuest = false }) {
             />
           </Section>
 
-          {/* Revenue History */}
-          {startup.revenueHistory && startup.revenueHistory.length > 0 && (
+          {/* Revenue History - Check both revenueEntries and revenueHistory */}
+          {((startup.revenueEntries && startup.revenueEntries.length > 0) || (startup.revenueHistory && startup.revenueHistory.length > 0)) && (
             <Section title="Revenue History" section="revenue" icon={TrendingUp}>
               <div className="space-y-3">
-                {startup.revenueHistory.map((rev, idx) => (
+                {(startup.revenueEntries || startup.revenueHistory || []).map((rev, idx) => (
                   <div key={idx} className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg flex justify-between items-center">
                     <div>
-                      <p className="font-semibold text-gray-900 dark:text-white">{rev.source}</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{rev.date}</p>
+                      <p className="font-semibold text-gray-900 dark:text-white">{rev.source || 'Revenue'}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{rev.date ? new Date(rev.date).toLocaleDateString() : 'No date'}</p>
                       {rev.description && <p className="text-xs text-gray-500">{rev.description}</p>}
                     </div>
                     <span className="text-lg font-bold text-green-600">₹{rev.amount?.toLocaleString()}</span>

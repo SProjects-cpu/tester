@@ -184,7 +184,11 @@ export default function Onboarded({ isGuest = false }) {
 
   const getTotalRevenue = (startup) => {
     if (startup.totalRevenue) return startup.totalRevenue;
-    if (startup.revenueHistory) {
+    // Check both revenueEntries (new format) and revenueHistory (legacy format)
+    if (startup.revenueEntries && startup.revenueEntries.length > 0) {
+      return startup.revenueEntries.reduce((sum, r) => sum + (r.amount || 0), 0);
+    }
+    if (startup.revenueHistory && startup.revenueHistory.length > 0) {
       return startup.revenueHistory.reduce((sum, r) => sum + (r.amount || 0), 0);
     }
     return 0;
