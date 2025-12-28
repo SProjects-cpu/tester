@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Download, GraduationCap, Lock, TrendingUp, Award, Eye, X, ChevronDown, ChevronUp, BarChart3, History, CheckCircle, Users, DollarSign, FileText, Loader2 } from 'lucide-react';
+import { Search, Download, GraduationCap, Lock, TrendingUp, Award, Eye, X, ChevronDown, ChevronUp, BarChart3, History, CheckCircle, Users, FileText, Loader2 } from 'lucide-react';
 import { startupApi } from '../utils/api';
 import { exportStartupsComprehensive, filterByDateRange, generateExportFileName } from '../utils/exportUtils';
 import ExportMenu from './ExportMenu';
@@ -864,7 +864,7 @@ function GraduatedDetailModal({ startup, onClose, onUpdate, isGuest = false }) {
                         {hasFunding && (
                           <div>
                             <h5 className="text-sm font-semibold text-green-700 dark:text-green-300 mb-2 flex items-center space-x-1">
-                              <DollarSign className="w-4 h-4" />
+                              <img src="/rupee-icon.png" alt="Rupee" className="w-4 h-4" />
                               <span>3. Funds Raised</span>
                             </h5>
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">

@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronDown, ChevronUp, CheckCircle, XCircle, Users, Edit, GraduationCap, Lock, Download, BarChart3, DollarSign } from 'lucide-react';
+import { X, ChevronDown, ChevronUp, CheckCircle, XCircle, Users, Edit, GraduationCap, Lock, Download, BarChart3 } from 'lucide-react';
 import { useState } from 'react';
 import EditStartupProfile from './EditStartupProfile';
 import GuestRestrictedButton from './GuestRestrictedButton';
@@ -728,7 +728,7 @@ export default function StartupDetailModal({ startup, onClose, onUpdate, isGuest
                       {hasFunding && (
                         <div>
                           <h5 className="text-sm font-semibold text-green-700 dark:text-green-300 mb-2 flex items-center space-x-1">
-                            <DollarSign className="w-4 h-4" />
+                            <img src="/rupee-icon.png" alt="Rupee" className="w-4 h-4" />
                             <span>3. Funds Raised</span>
                           </h5>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">

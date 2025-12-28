@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, X, CheckCircle, Users, DollarSign, Edit2, Trash2, FileText } from 'lucide-react';
+import { TrendingUp, X, CheckCircle, Users, Edit2, Trash2, FileText } from 'lucide-react';
 import { progressApi, startupApi } from '../utils/api';
 
 export default function StartupProgressModal({ startup, onClose, onSave }) {
@@ -217,7 +217,7 @@ export default function StartupProgressModal({ startup, onClose, onSave }) {
             </div>
           </div>
           <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-4 border-2 border-green-200 dark:border-green-700">
-            <h4 className="text-lg font-bold text-green-900 dark:text-green-200 mb-4 flex items-center space-x-2"><DollarSign className="w-5 h-5" /><span>3. Funds Raised</span></h4>
+            <h4 className="text-lg font-bold text-green-900 dark:text-green-200 mb-4 flex items-center space-x-2"><img src="/rupee-icon.png" alt="Rupee" className="w-5 h-5" /><span>3. Funds Raised</span></h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Loans (₹)</label>
