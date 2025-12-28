@@ -65,6 +65,16 @@ const formatDate = (dateString) => {
   });
 };
 
+// Required documents for verification reference
+const REQUIRED_DOCUMENTS = [
+  'Aadhaar',
+  'PAN',
+  'DPIIT Certificate',
+  'CIN',
+  'Electricity Bill',
+  'Bank Passbook'
+];
+
 export default function DocumentList({ startupId, isGuest = false, allowUpload = false }) {
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -205,6 +215,23 @@ export default function DocumentList({ startupId, isGuest = false, allowUpload =
 
   return (
     <div className="space-y-3">
+      {/* Required Documents Reference - Text Only */}
+      {allowUpload && !isGuest && (
+        <div className="mb-4 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border-2 border-amber-200 dark:border-amber-700">
+          <h4 className="font-semibold text-amber-900 dark:text-amber-200 mb-2 text-sm">
+            Required Documents for Verification:
+          </h4>
+          <ul className="grid grid-cols-2 gap-1 text-sm text-amber-800 dark:text-amber-300">
+            {REQUIRED_DOCUMENTS.map((doc, index) => (
+              <li key={index} className="flex items-center space-x-2">
+                <span className="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>
+                <span>{doc}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {/* Upload Button - only show if allowUpload is true */}
       {allowUpload && !isGuest && (
         <div className="mb-4">

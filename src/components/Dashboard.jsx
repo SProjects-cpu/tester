@@ -1,50 +1,79 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Rocket, Users, Star, XCircle, TrendingUp, GraduationCap } from 'lucide-react';
+import { Rocket, Users, Star, XCircle, TrendingUp, GraduationCap, Calendar } from 'lucide-react';
 import { startupApi } from '../utils/api';
 import InactiveStartupNotifications from './InactiveStartupNotifications';
 
 export default function Dashboard({ onNavigate, onNavigateWithSector }) {
   const [stats, setStats] = useState({
     s0: 0, s1: 0, s2: 0, s3: 0,
-    oneOnOne: 0, onboarded: 0, graduated: 0, rejected: 0, total: 0
+    oneOnOne: 0, onboarded: 0, graduated: 0, rejected: 0, quit: 0, total: 0
   });
   const [sectorStats, setSectorStats] = useState({});
   const [loading, setLoading] = useState(true);
+  const [allStartups, setAllStartups] = useState([]);
+  const [yearFilter, setYearFilter] = useState('all');
+
+  // Generate year options
+  const yearOptions = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    const years = [];
+    for (let y = currentYear; y >= currentYear - 5; y--) {
+      years.push(y);
+    }
+    return years;
+  }, []);
 
   const fetchStartups = useCallback(async () => {
     try {
       setLoading(true);
       const startups = await startupApi.getAll();
-      
-      const newStats = {
-        s0: startups.filter(s => s.stage === 'S0').length,
-        s1: startups.filter(s => s.stage === 'S1').length,
-        s2: startups.filter(s => s.stage === 'S2').length,
-        s3: startups.filter(s => s.stage === 'S3').length,
-        oneOnOne: startups.filter(s => s.stage === 'One-on-One').length,
-        onboarded: startups.filter(s => s.status === 'Onboarded').length,
-        graduated: startups.filter(s => s.status === 'Graduated').length,
-        rejected: startups.filter(s => s.status === 'Rejected').length,
-        total: startups.length
-      };
-      
-      // Calculate sector statistics
-      const sectors = {};
-      startups.forEach(startup => {
-        if (startup.sector) {
-          sectors[startup.sector] = (sectors[startup.sector] || 0) + 1;
-        }
-      });
-      
-      setStats(newStats);
-      setSectorStats(sectors);
+      setAllStartups(startups);
     } catch (error) {
       console.error('Error fetching startups:', error);
     } finally {
       setLoading(false);
     }
   }, []);
+
+  // Filter startups by year and calculate stats
+  useEffect(() => {
+    let filteredStartups = allStartups;
+    
+    if (yearFilter !== 'all') {
+      const year = parseInt(yearFilter);
+      filteredStartups = allStartups.filter(s => {
+        const createdYear = s.createdAt ? new Date(s.createdAt).getFullYear() : null;
+        const onboardedYear = s.onboardedDate ? new Date(s.onboardedDate).getFullYear() : null;
+        const registeredYear = s.registeredDate ? new Date(s.registeredDate).getFullYear() : null;
+        return createdYear === year || onboardedYear === year || registeredYear === year;
+      });
+    }
+    
+    const newStats = {
+      s0: filteredStartups.filter(s => s.stage === 'S0').length,
+      s1: filteredStartups.filter(s => s.stage === 'S1').length,
+      s2: filteredStartups.filter(s => s.stage === 'S2').length,
+      s3: filteredStartups.filter(s => s.stage === 'S3').length,
+      oneOnOne: filteredStartups.filter(s => s.stage === 'One-on-One').length,
+      onboarded: filteredStartups.filter(s => s.status === 'Onboarded').length,
+      graduated: filteredStartups.filter(s => s.status === 'Graduated').length,
+      rejected: filteredStartups.filter(s => s.status === 'Rejected').length,
+      quit: filteredStartups.filter(s => s.status === 'Quit' || s.stage === 'Quit').length,
+      total: filteredStartups.length
+    };
+    
+    // Calculate sector statistics
+    const sectors = {};
+    filteredStartups.forEach(startup => {
+      if (startup.sector) {
+        sectors[startup.sector] = (sectors[startup.sector] || 0) + 1;
+      }
+    });
+    
+    setStats(newStats);
+    setSectorStats(sectors);
+  }, [allStartups, yearFilter]);
 
   useEffect(() => {
     fetchStartups();
@@ -97,7 +126,7 @@ export default function Dashboard({ onNavigate, onNavigateWithSector }) {
       borderColor: 'border-indigo-500',
       iconColor: 'text-indigo-500',
       icon: Users,
-      page: 'oneOnOne'
+      page: 'startups'
     },
     { 
       label: 'Onboarded', 
@@ -113,7 +142,7 @@ export default function Dashboard({ onNavigate, onNavigateWithSector }) {
       borderColor: 'border-purple-500',
       iconColor: 'text-purple-500',
       icon: GraduationCap,
-      page: 'graduated'
+      page: 'startups'
     },
     { 
       label: 'Rejected', 
@@ -121,7 +150,15 @@ export default function Dashboard({ onNavigate, onNavigateWithSector }) {
       borderColor: 'border-red-500',
       iconColor: 'text-red-500',
       icon: XCircle,
-      page: 'rejected'
+      page: 'startups'
+    },
+    { 
+      label: 'Quit', 
+      value: stats.quit, 
+      borderColor: 'border-gray-600',
+      iconColor: 'text-gray-600',
+      icon: XCircle,
+      page: 'quit'
     },
     { 
       label: 'Total Startups', 
@@ -148,14 +185,30 @@ export default function Dashboard({ onNavigate, onNavigateWithSector }) {
             Welcome to MAGIC Startup Incubation Management System
           </p>
         </div>
-        <motion.button
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.97 }}
-          onClick={() => onNavigate('startups')}
-          className="magic-gradient text-white px-5 sm:px-6 py-3 rounded-xl shadow-magic hover:shadow-magic-lg transition-all text-sm sm:text-base font-semibold whitespace-nowrap"
-        >
-          Register New Startup
-        </motion.button>
+        <div className="flex items-center gap-3">
+          {/* Global Year Filter */}
+          <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/20">
+            <Calendar className="w-5 h-5 text-white" />
+            <select
+              value={yearFilter}
+              onChange={(e) => setYearFilter(e.target.value)}
+              className="bg-transparent text-white font-semibold outline-none cursor-pointer text-sm sm:text-base"
+            >
+              <option value="all" className="text-gray-900">All Years</option>
+              {yearOptions.map(year => (
+                <option key={year} value={year} className="text-gray-900">{year}</option>
+              ))}
+            </select>
+          </div>
+          <motion.button
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={() => onNavigate('startups')}
+            className="magic-gradient text-white px-5 sm:px-6 py-3 rounded-xl shadow-magic hover:shadow-magic-lg transition-all text-sm sm:text-base font-semibold whitespace-nowrap"
+          >
+            Register New Startup
+          </motion.button>
+        </div>
       </motion.div>
 
       <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">

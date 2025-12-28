@@ -219,13 +219,31 @@ export default function StartupProgressModal({ startup, onClose, onSave }) {
           <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-4 border-2 border-green-200 dark:border-green-700">
             <h4 className="text-lg font-bold text-green-900 dark:text-green-200 mb-4 flex items-center space-x-2"><DollarSign className="w-5 h-5" /><span>3. Funds Raised</span></h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {['loans', 'angelFunding', 'vcFunding', 'quarterlyTurnover', 'quarterlyGST'].map(field => (
-                <div key={field}>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{field.replace(/([A-Z])/g, ' $1').trim()} (INR)</label>
-                  <input type="text" value={progressData[field]} onChange={(e) => handleChange(field, e.target.value)} placeholder="Enter amount"
-                    className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
-                </div>
-              ))}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Loans (₹)</label>
+                <input type="text" value={progressData.loans} onChange={(e) => handleChange('loans', e.target.value)} placeholder="Enter amount"
+                  className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Angel Funding (₹)</label>
+                <input type="text" value={progressData.angelFunding} onChange={(e) => handleChange('angelFunding', e.target.value)} placeholder="Enter amount"
+                  className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">VC Funding (₹)</label>
+                <input type="text" value={progressData.vcFunding} onChange={(e) => handleChange('vcFunding', e.target.value)} placeholder="Enter amount"
+                  className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Quarterly Turnover (₹)</label>
+                <input type="text" value={progressData.quarterlyTurnover} onChange={(e) => handleChange('quarterlyTurnover', e.target.value)} placeholder="Enter amount"
+                  className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Quarterly GST (₹)</label>
+                <input type="text" value={progressData.quarterlyGST} onChange={(e) => handleChange('quarterlyGST', e.target.value)} placeholder="Enter amount"
+                  className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+              </div>
             </div>
           </div>
         </div>
