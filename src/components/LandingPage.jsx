@@ -153,7 +153,7 @@ const LandingPage = ({ onNavigateToLogin }) => {
               whileHover={{ scale: 1.05 }}
             >
               <img 
-                src="/magic_icon.png" 
+                src="/magic_logo.png" 
                 alt="MAGIC Logo" 
                 className="h-12 w-12 object-contain"
               />
@@ -668,7 +668,7 @@ const LandingPage = ({ onNavigateToLogin }) => {
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center space-x-3 mb-4 md:mb-0">
               <img 
-                src="/magic_icon.png" 
+                src="/magic_logo.png" 
                 alt="MAGIC Logo" 
                 className="h-10 w-10 object-contain"
               />

@@ -32,7 +32,7 @@ export default function Sidebar({ currentPage, onNavigate, onLogout, darkMode, t
       <div className="p-4 sm:p-6 border-b border-blue-200/30">
         <div className="flex flex-col items-center space-y-3">
           <img 
-            src="/magic_icon.png" 
+            src="/magic_logo.png" 
             alt="MAGIC" 
             className="w-32 h-32 sm:w-40 sm:h-40 object-contain"
           />

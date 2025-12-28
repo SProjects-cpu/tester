@@ -57,7 +57,7 @@ export default function Login({ onLogin, onBack }) {
             className="inline-block mb-6"
           >
             <img 
-              src="/magic_icon.png" 
+              src="/magic_logo.png" 
               alt="MAGIC Logo" 
               className="w-24 h-24 sm:w-28 sm:h-28 mx-auto object-contain drop-shadow-lg"
             />
