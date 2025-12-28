@@ -1,8 +1,155 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Rocket, Users, Star, XCircle, TrendingUp, GraduationCap, Calendar } from 'lucide-react';
+import { Rocket, Users, Star, XCircle, TrendingUp, GraduationCap, Calendar, PieChart } from 'lucide-react';
 import { startupApi } from '../utils/api';
 import InactiveStartupNotifications from './InactiveStartupNotifications';
+
+// Interactive Pie Chart Component
+function SectorPieChart({ sectorStats, onSectorClick, total }) {
+  const [hoveredSector, setHoveredSector] = useState(null);
+  
+  // Color palette for sectors
+  const colors = [
+    '#3B82F6', '#8B5CF6', '#EC4899', '#F59E0B', '#10B981', 
+    '#06B6D4', '#EF4444', '#84CC16', '#F97316', '#6366F1',
+    '#14B8A6', '#A855F7', '#F43F5E', '#22C55E', '#0EA5E9'
+  ];
+
+  const sortedSectors = Object.entries(sectorStats)
+    .sort((a, b) => b[1] - a[1]);
+
+  // Calculate pie chart segments
+  const segments = useMemo(() => {
+    let currentAngle = 0;
+    return sortedSectors.map(([sector, count], index) => {
+      const percentage = (count / total) * 100;
+      const angle = (count / total) * 360;
+      const startAngle = currentAngle;
+      const endAngle = currentAngle + angle;
+      currentAngle = endAngle;
+      
+      return {
+        sector,
+        count,
+        percentage,
+        startAngle,
+        endAngle,
+        color: colors[index % colors.length]
+      };
+    });
+  }, [sortedSectors, total]);
+
+  // Convert polar to cartesian coordinates
+  const polarToCartesian = (cx, cy, r, angle) => {
+    const rad = (angle - 90) * Math.PI / 180;
+    return {
+      x: cx + r * Math.cos(rad),
+      y: cy + r * Math.sin(rad)
+    };
+  };
+
+  // Create SVG arc path
+  const createArcPath = (cx, cy, r, startAngle, endAngle, isHovered) => {
+    const radius = isHovered ? r + 8 : r;
+    const start = polarToCartesian(cx, cy, radius, endAngle);
+    const end = polarToCartesian(cx, cy, radius, startAngle);
+    const largeArcFlag = endAngle - startAngle <= 180 ? 0 : 1;
+    
+    return `M ${cx} ${cy} L ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 0 ${end.x} ${end.y} Z`;
+  };
+
+  const cx = 150;
+  const cy = 150;
+  const radius = 120;
+
+  return (
+    <div className="flex flex-col lg:flex-row items-center gap-6">
+      {/* Pie Chart */}
+      <div className="relative">
+        <svg width="300" height="300" className="transform -rotate-90">
+          {segments.map((segment, index) => (
+            <motion.path
+              key={segment.sector}
+              d={createArcPath(cx, cy, radius, segment.startAngle, segment.endAngle, hoveredSector === segment.sector)}
+              fill={segment.color}
+              stroke="white"
+              strokeWidth="2"
+              className="cursor-pointer transition-all duration-200"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ 
+                opacity: 1, 
+                scale: hoveredSector === segment.sector ? 1.05 : 1,
+                filter: hoveredSector && hoveredSector !== segment.sector ? 'brightness(0.7)' : 'brightness(1)'
+              }}
+              transition={{ delay: index * 0.05, duration: 0.3 }}
+              onMouseEnter={() => setHoveredSector(segment.sector)}
+              onMouseLeave={() => setHoveredSector(null)}
+              onClick={() => onSectorClick(segment.sector)}
+            />
+          ))}
+          {/* Center circle for donut effect */}
+          <circle cx={cx} cy={cy} r={50} fill="white" className="dark:fill-gray-800" />
+        </svg>
+        
+        {/* Center text */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="text-center">
+            {hoveredSector ? (
+              <>
+                <div className="text-2xl font-bold text-gray-800 dark:text-white">
+                  {sectorStats[hoveredSector]}
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-300 max-w-[80px] truncate">
+                  {hoveredSector}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="text-2xl font-bold text-gray-800 dark:text-white">{total}</div>
+                <div className="text-xs text-gray-600 dark:text-gray-300">Total</div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Legend */}
+      <div className="flex-1 max-h-[300px] overflow-y-auto scrollbar-thin">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {segments.map((segment, index) => (
+            <motion.div
+              key={segment.sector}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.5 + index * 0.05 }}
+              className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-all ${
+                hoveredSector === segment.sector 
+                  ? 'bg-gray-100 dark:bg-gray-700 scale-105' 
+                  : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
+              }`}
+              onMouseEnter={() => setHoveredSector(segment.sector)}
+              onMouseLeave={() => setHoveredSector(null)}
+              onClick={() => onSectorClick(segment.sector)}
+            >
+              <div 
+                className="w-4 h-4 rounded-full flex-shrink-0"
+                style={{ backgroundColor: segment.color }}
+              />
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium text-gray-800 dark:text-white truncate">
+                  {segment.sector}
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">
+                  {segment.count} ({segment.percentage.toFixed(1)}%)
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function Dashboard({ onNavigate, onNavigateWithSector }) {
   const [stats, setStats] = useState({
@@ -244,7 +391,7 @@ export default function Dashboard({ onNavigate, onNavigateWithSector }) {
         })}
       </div>
 
-      {/* Sector Statistics */}
+      {/* Sector Statistics with Interactive Pie Chart */}
       {Object.keys(sectorStats).length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -252,33 +399,18 @@ export default function Dashboard({ onNavigate, onNavigateWithSector }) {
           transition={{ delay: 0.9 }}
           className="mt-8 sm:mt-12"
         >
-          <h2 className="text-2xl sm:text-3xl font-bold magic-text-gradient mb-6">
-            Startups by Sector
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
-            {Object.entries(sectorStats)
-              .sort((a, b) => b[1] - a[1]) // Sort by count descending
-              .map(([sector, count], index) => (
-                <motion.div
-                  key={sector}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.9 + index * 0.05 }}
-                  whileHover={{ scale: 1.05, y: -3 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => onNavigateWithSector ? onNavigateWithSector('startups', sector) : onNavigate('startups')}
-                  className="cursor-pointer bg-gradient-to-br from-cyan-50 to-blue-50 dark:from-cyan-900/20 dark:to-blue-900/20 rounded-xl p-4 shadow-md hover:shadow-xl transition-all border-2 border-cyan-200 dark:border-cyan-700"
-                >
-                  <div className="text-center">
-                    <div className="text-2xl sm:text-3xl font-bold text-cyan-600 dark:text-cyan-400 mb-1">
-                      {count}
-                    </div>
-                    <div className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 font-medium line-clamp-2">
-                      {sector}
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
+          <div className="flex items-center gap-3 mb-6">
+            <PieChart className="w-8 h-8 text-cyan-500" />
+            <h2 className="text-2xl sm:text-3xl font-bold magic-text-gradient">
+              Startups by Sector
+            </h2>
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl border border-gray-200 dark:border-gray-600">
+            <SectorPieChart 
+              sectorStats={sectorStats} 
+              onSectorClick={(sector) => onNavigateWithSector ? onNavigateWithSector('startups', sector) : onNavigate('startups')}
+              total={stats.total}
+            />
           </div>
         </motion.div>
       )}
