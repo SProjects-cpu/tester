@@ -12,6 +12,7 @@ import OneOnOneScheduling from './components/OneOnOneScheduling';
 import Onboarded from './components/Onboarded';
 import Graduated from './components/Graduated';
 import Rejected from './components/Rejected';
+import Quit from './components/Quit';
 import Settings from './components/Settings';
 import LandingPageEditor from './components/LandingPageEditor';
 import { useAuth } from './hooks/useAuth';
@@ -124,6 +125,8 @@ function App() {
         return <Graduated key={`graduated-${refreshKey}`} isGuest={isGuest} />;
       case 'rejected':
         return <Rejected key={`rejected-${refreshKey}`} isGuest={isGuest} />;
+      case 'quit':
+        return <Quit key={`quit-${refreshKey}`} isGuest={isGuest} />;
       case 'settings':
         return <Settings darkMode={darkMode} toggleDarkMode={toggleDarkMode} isGuest={isGuest} />;
       case 'landingEditor':

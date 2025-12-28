@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Home, Rocket, Calendar, Users, Star, XCircle, 
-  Settings, LogOut, Moon, Sun, Menu, X, Edit3, AlertTriangle 
+  Settings, LogOut, Moon, Sun, Menu, X, Edit3, DoorOpen 
 } from 'lucide-react';
 
 export default function Sidebar({ currentPage, onNavigate, onLogout, darkMode, toggleDarkMode, isGuest = false }) {
@@ -11,12 +11,9 @@ export default function Sidebar({ currentPage, onNavigate, onLogout, darkMode, t
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'startups', label: 'All Startups', icon: Rocket },
-    { id: 'inactive', label: 'Inactive Startups', icon: AlertTriangle },
     { id: 'smc', label: 'SMC', icon: Calendar },
-    { id: 'oneOnOne', label: 'One-on-One', icon: Users },
     { id: 'onboarded', label: 'Onboarded', icon: Star },
-    { id: 'graduated', label: 'Graduated', icon: Star },
-    { id: 'rejected', label: 'Rejected', icon: XCircle },
+    { id: 'quit', label: 'Quit Startups', icon: DoorOpen },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 

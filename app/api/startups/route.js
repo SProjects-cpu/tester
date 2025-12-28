@@ -57,7 +57,8 @@ const transformStartup = (startup) => ({
   status: startup.stage === 'Graduated' ? 'Graduated' : 
           startup.stage === 'Rejected' ? 'Rejected' : 
           startup.stage === 'Inactive' ? 'Inactive' :
-          startup.stage === 'Onboarded' ? 'Onboarded' : 'Active',
+          startup.stage === 'Onboarded' ? 'Onboarded' :
+          startup.stage === 'Quit' ? 'Quit' : 'Active',
   description: startup.description,
   problemSolving: startup.description,
   website: startup.website,
@@ -69,6 +70,10 @@ const transformStartup = (startup) => ({
   bhaskarId: startup.bhaskarId,
   onboardedDate: startup.onboardedDate ? startup.onboardedDate.toISOString().split('T')[0] : null,
   graduatedDate: startup.graduatedDate ? startup.graduatedDate.toISOString().split('T')[0] : null,
+  // Quit metadata
+  quitReason: startup.quitReason,
+  quitDate: startup.quitDate ? startup.quitDate.toISOString().split('T')[0] : null,
+  quitYear: startup.quitYear,
   // Onboarding details
   onboardingDescription: startup.onboardingDescription,
   agreementDate: startup.agreementDate ? startup.agreementDate.toISOString().split('T')[0] : null,
@@ -131,6 +136,10 @@ const transformToDb = (body) => ({
   dpiitNo: body.dpiitNo,
   recognitionDate: body.recognitionDate ? new Date(body.recognitionDate) : null,
   bhaskarId: body.bhaskarId,
+  // Quit metadata
+  quitReason: body.quitReason,
+  quitDate: body.quitDate ? new Date(body.quitDate) : null,
+  quitYear: body.quitYear ? parseInt(body.quitYear) : null,
   // Registration Info fields
   magicCode: body.magicCode,
   city: body.city,
@@ -181,9 +190,10 @@ export async function GET(request) {
       else if (status === 'Rejected') where.stage = 'Rejected';
       else if (status === 'Inactive') where.stage = 'Inactive';
       else if (status === 'Onboarded') where.stage = 'Onboarded';
+      else if (status === 'Quit') where.stage = 'Quit';
       else if (status === 'Active') {
-        // Active means any stage that's not Graduated, Rejected, Inactive, or Onboarded
-        where.stage = { notIn: ['Graduated', 'Rejected', 'Inactive', 'Onboarded'] };
+        // Active means any stage that's not Graduated, Rejected, Inactive, Onboarded, or Quit
+        where.stage = { notIn: ['Graduated', 'Rejected', 'Inactive', 'Onboarded', 'Quit'] };
       }
     }
     if (search) {

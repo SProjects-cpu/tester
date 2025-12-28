@@ -46,6 +46,11 @@ model Startup {
   stageChangedAt    DateTime?        @map("stage_changed_at")
   stageChangeReason String?          @map("stage_change_reason")
   
+  // Quit metadata
+  quitReason        String?          @map("quit_reason")
+  quitDate          DateTime?        @map("quit_date")
+  quitYear          Int?             @map("quit_year")
+  
   // Registration Info fields
   magicCode         String?          @unique @map("magic_code")
   city              String?

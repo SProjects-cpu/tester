@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingUp, Award, GraduationCap, IndianRupee, BarChart3, X, Eye, History, Loader2 } from 'lucide-react';
+import { TrendingUp, Award, GraduationCap, IndianRupee, BarChart3, X, Eye, History, Loader2, DoorOpen } from 'lucide-react';
 import { startupApi } from '../utils/api';
 import { exportStartupsComprehensive, filterByDateRange, generateExportFileName } from '../utils/exportUtils';
 import ExportMenu from './ExportMenu';
@@ -171,6 +171,33 @@ export default function Onboarded({ isGuest = false }) {
         } catch (error) {
           console.error('Error graduating startup:', error);
           alert('Failed to graduate startup: ' + error.message);
+        }
+      }
+    });
+  }, [loadStartups]);
+
+  const handleQuit = useCallback((startup) => {
+    const reason = prompt('Please enter the reason for quitting (optional):');
+    setAdminAuthModal({
+      isOpen: true,
+      title: 'Mark Startup as Quit',
+      message: `You are about to mark "${startup.companyName}" as quit. This startup will be moved to the Quit section. Please authenticate to proceed.`,
+      actionType: 'warning',
+      onConfirm: async () => {
+        try {
+          const quitDate = new Date();
+          await startupApi.update(startup.id, { 
+            stage: 'Quit',
+            status: 'Quit',
+            quitReason: reason || null,
+            quitDate: quitDate.toISOString(),
+            quitYear: quitDate.getFullYear()
+          });
+          await loadStartups();
+          alert(`${startup.companyName} has been marked as quit.`);
+        } catch (error) {
+          console.error('Error marking startup as quit:', error);
+          alert('Failed to mark startup as quit: ' + error.message);
         }
       }
     });
@@ -466,6 +493,15 @@ export default function Onboarded({ isGuest = false }) {
                     >
                       <GraduationCap className="w-4 h-4" />
                       <span>Graduate</span>
+                    </GuestRestrictedButton>
+                    <GuestRestrictedButton
+                      isGuest={isGuest}
+                      onClick={() => handleQuit(startup)}
+                      actionType="edit"
+                      className="flex items-center space-x-2 px-3 py-2 bg-gray-500 text-white rounded-lg font-semibold text-sm shadow-md hover:shadow-lg transition-all"
+                    >
+                      <DoorOpen className="w-4 h-4" />
+                      <span>Quit</span>
                     </GuestRestrictedButton>
                     <button
                       onClick={() => setSelectedStartup(startup)}
