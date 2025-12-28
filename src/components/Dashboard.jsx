@@ -126,7 +126,7 @@ export default function Dashboard({ onNavigate, onNavigateWithSector }) {
       borderColor: 'border-indigo-500',
       iconColor: 'text-indigo-500',
       icon: Users,
-      page: 'startups'
+      page: 'oneOnOne'
     },
     { 
       label: 'Onboarded', 
@@ -142,7 +142,7 @@ export default function Dashboard({ onNavigate, onNavigateWithSector }) {
       borderColor: 'border-purple-500',
       iconColor: 'text-purple-500',
       icon: GraduationCap,
-      page: 'startups'
+      page: 'graduated'
     },
     { 
       label: 'Rejected', 
@@ -150,7 +150,7 @@ export default function Dashboard({ onNavigate, onNavigateWithSector }) {
       borderColor: 'border-red-500',
       iconColor: 'text-red-500',
       icon: XCircle,
-      page: 'startups'
+      page: 'rejected'
     },
     { 
       label: 'Quit', 
