@@ -335,11 +335,11 @@ export default function Dashboard({ onNavigate, onNavigateWithSector }) {
         <div className="flex items-center gap-3">
           {/* Global Year Filter */}
           <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/20">
-            <Calendar className="w-5 h-5 text-white" />
+            <Calendar className="w-5 h-5 text-green-400" />
             <select
               value={yearFilter}
               onChange={(e) => setYearFilter(e.target.value)}
-              className="bg-transparent text-white font-semibold outline-none cursor-pointer text-sm sm:text-base"
+              className="bg-transparent text-green-400 font-semibold outline-none cursor-pointer text-sm sm:text-base"
             >
               <option value="all" className="text-gray-900">All Years</option>
               {yearOptions.map(year => (

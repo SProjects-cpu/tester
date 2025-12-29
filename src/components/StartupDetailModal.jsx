@@ -190,7 +190,7 @@ export default function StartupDetailModal({ startup, onClose, onUpdate, isGuest
     });
   };
 
-  const isLocked = startup.status === 'Rejected' || startup.status === 'Graduated';
+  const isLocked = startup.status === 'Rejected' || startup.status === 'Graduated' || startup.status === 'Quit';
   const canGraduate = startup.status === 'Onboarded';
   const isS0 = startup.stage === 'S0' && startup.status === 'Active';
   const isOneOnOne = startup.stage === 'One-on-One' && startup.status === 'Active';
@@ -795,6 +795,37 @@ export default function StartupDetailModal({ startup, onClose, onUpdate, isGuest
                       </div>
                       <div>
                         <span className="font-semibold">Date:</span> {startup.rejectedDate ? new Date(startup.rejectedDate).toLocaleDateString() : 'N/A'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Section>
+          )}
+
+          {/* Quit Details Section */}
+          {startup.status === 'Quit' && (
+            <Section title="Quit Details" section="rejection">
+              <div className="p-4 rounded-lg bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900/20 dark:to-gray-800/20 border-2 border-gray-200 dark:border-gray-700">
+                <div className="flex items-start space-x-3">
+                  <div className="p-2 bg-gray-500 rounded-lg">
+                    <Lock className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-gray-900 dark:text-gray-200 mb-2">
+                      Quit Information
+                    </h4>
+                    {startup.quitReason && (
+                      <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                        <span className="font-semibold">Reason:</span> {startup.quitReason}
+                      </p>
+                    )}
+                    <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 dark:text-gray-400 mt-3">
+                      <div>
+                        <span className="font-semibold">Quit Date:</span> {startup.quitDate ? new Date(startup.quitDate).toLocaleDateString() : 'N/A'}
+                      </div>
+                      <div>
+                        <span className="font-semibold">Year:</span> {startup.quitYear || (startup.quitDate ? new Date(startup.quitDate).getFullYear() : 'N/A')}
                       </div>
                     </div>
                   </div>

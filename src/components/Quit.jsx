@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DoorOpen, Search, Calendar, History, Loader2 } from 'lucide-react';
+import { DoorOpen, Search, History, Loader2, Eye } from 'lucide-react';
 import { startupApi } from '../utils/api';
 import { exportStartupsComprehensive, filterByDateRange, generateExportFileName } from '../utils/exportUtils';
 import ExportMenu from './ExportMenu';
@@ -9,7 +9,8 @@ import StartupGridCard from './StartupGridCard';
 import ViewToggle from './ViewToggle';
 import HistoryPanel from './HistoryPanel';
 import AdminAuthModal from './AdminAuthModal';
-import { PageHeader, PAGE_GRADIENTS } from './shared/PageHeader';
+import StartupDetailModal from './StartupDetailModal';
+import { PageHeader } from './shared/PageHeader';
 
 export default function Quit({ isGuest = false }) {
   const [startups, setStartups] = useState([]);
@@ -17,6 +18,7 @@ export default function Quit({ isGuest = false }) {
   const [dateRange, setDateRange] = useState({ fromDate: null, toDate: null });
   const [yearFilter, setYearFilter] = useState('all');
   const [viewMode, setViewMode] = useState('list');
+  const [selectedStartup, setSelectedStartup] = useState(null);
   const [showHistoryPanel, setShowHistoryPanel] = useState(false);
   const [loading, setLoading] = useState(true);
   const [adminAuthModal, setAdminAuthModal] = useState({
@@ -116,7 +118,7 @@ export default function Quit({ isGuest = false }) {
     <div className="max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8 pl-16 lg:pl-0">
         <div>
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-gray-600 to-gray-800 bg-clip-text text-transparent">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white">
             Quit Startups
           </h1>
           <p className="text-white mt-2 text-sm sm:text-base">
@@ -178,6 +180,7 @@ export default function Quit({ isGuest = false }) {
               startup={startup}
               onUpdate={() => loadStartups()}
               onDelete={() => {}}
+              onClick={() => setSelectedStartup(startup)}
               isGuest={isGuest}
             />
           ))}
@@ -237,6 +240,17 @@ export default function Quit({ isGuest = false }) {
                       <p className="font-medium text-gray-900 dark:text-white">{startup.quitReason}</p>
                     </div>
                   )}
+
+                  {/* View Details Button */}
+                  <div className="flex justify-end pt-3 border-t border-gray-200 dark:border-gray-700">
+                    <button
+                      onClick={() => setSelectedStartup(startup)}
+                      className="flex items-center space-x-2 px-4 py-2 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-semibold text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
+                    >
+                      <Eye className="w-4 h-4" />
+                      <span>View Details</span>
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             ))}
@@ -258,6 +272,15 @@ export default function Quit({ isGuest = false }) {
       )}
 
       <AnimatePresence>
+        {selectedStartup && (
+          <StartupDetailModal
+            startup={selectedStartup}
+            onClose={() => setSelectedStartup(null)}
+            onUpdate={() => loadStartups()}
+            isGuest={isGuest}
+          />
+        )}
+
         <AdminAuthModal
           isOpen={adminAuthModal.isOpen}
           onClose={() => setAdminAuthModal({ ...adminAuthModal, isOpen: false })}
