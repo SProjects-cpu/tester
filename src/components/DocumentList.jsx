@@ -319,36 +319,39 @@ export default function DocumentList({ startupId, isGuest = false, allowUpload =
                   )}
                 </motion.button>
 
-                {confirmDelete === doc.id ? (
-                  <div className="flex items-center space-x-1">
+                {/* Only show delete button when allowUpload is true (not for Quit startups) */}
+                {allowUpload && (
+                  confirmDelete === doc.id ? (
+                    <div className="flex items-center space-x-1">
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => handleDelete(doc)}
+                        disabled={isDeleting}
+                        className="px-2 py-1 text-xs bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50"
+                      >
+                        {isDeleting ? 'Deleting...' : 'Confirm'}
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setConfirmDelete(null)}
+                        className="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
+                      >
+                        Cancel
+                      </motion.button>
+                    </div>
+                  ) : (
                     <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => handleDelete(doc)}
-                      disabled={isDeleting}
-                      className="px-2 py-1 text-xs bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => setConfirmDelete(doc.id)}
+                      className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                      title="Delete"
                     >
-                      {isDeleting ? 'Deleting...' : 'Confirm'}
+                      <Trash2 className="w-5 h-5" />
                     </motion.button>
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setConfirmDelete(null)}
-                      className="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
-                    >
-                      Cancel
-                    </motion.button>
-                  </div>
-                ) : (
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => setConfirmDelete(doc.id)}
-                    className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                    title="Delete"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </motion.button>
+                  )
                 )}
               </div>
             </motion.div>

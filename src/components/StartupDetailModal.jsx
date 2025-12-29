@@ -475,10 +475,10 @@ export default function StartupDetailModal({ startup, onClose, onUpdate, isGuest
             <Field label="Follow-Up Remark" value={startup.followUpRemark} />
           </Section>
 
-          {/* Documents Section - Admin Only */}
+          {/* Documents Section - Admin Only (View-only for Quit startups) */}
           {!isGuest && (
             <Section title="Documents" section="documents">
-              <DocumentList startupId={startup.id} isGuest={isGuest} allowUpload={true} />
+              <DocumentList startupId={startup.id} isGuest={isGuest} allowUpload={startup.status !== 'Quit'} />
             </Section>
           )}
 
