@@ -1,18 +1,20 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { motion } from 'framer-motion';
-import { AlertTriangle, Mail, Phone, TrendingDown, RefreshCw, History } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { AlertTriangle, Mail, Phone, TrendingDown, RefreshCw, History, Eye } from 'lucide-react';
 import { startupApi } from '../utils/api';
 import { exportStartupsComprehensive, filterByDateRange, generateExportFileName } from '../utils/exportUtils';
 import ExportMenu from './ExportMenu';
 import DateRangeFilter from './DateRangeFilter';
 import HistoryPanel from './HistoryPanel';
+import StartupDetailModal from './StartupDetailModal';
 
-export default function InactiveStartups() {
+export default function InactiveStartups({ isGuest = false }) {
   const [inactiveStartups, setInactiveStartups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [dateRange, setDateRange] = useState({ fromDate: null, toDate: null });
   const [showHistoryPanel, setShowHistoryPanel] = useState(false);
+  const [selectedStartup, setSelectedStartup] = useState(null);
 
   const checkInactiveStartups = useCallback(async () => {
     setLoading(true);
@@ -199,6 +201,14 @@ export default function InactiveStartups() {
                     </div>
                   </div>
                   <div className="flex flex-col space-y-2 sm:min-w-[200px]">
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setSelectedStartup(startup)}
+                      className="flex items-center justify-center space-x-2 bg-gray-500 text-white px-4 py-2 rounded-lg text-xs font-semibold hover:bg-gray-600 transition-colors"
+                    >
+                      <Eye className="w-4 h-4" /><span>View Details</span>
+                    </motion.button>
                     <motion.a whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} href={`mailto:${startup.founderEmail}`}
                       className="flex items-center justify-center space-x-2 bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-semibold hover:bg-blue-600 transition-colors">
                       <Mail className="w-4 h-4" /><span>Send Email</span>
@@ -221,6 +231,17 @@ export default function InactiveStartups() {
         sectionType="inactive"
         title="Inactive Section History"
       />
+
+      <AnimatePresence>
+        {selectedStartup && (
+          <StartupDetailModal
+            startup={selectedStartup}
+            onClose={() => setSelectedStartup(null)}
+            onUpdate={() => checkInactiveStartups()}
+            isGuest={isGuest}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
