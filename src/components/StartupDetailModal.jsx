@@ -478,7 +478,7 @@ export default function StartupDetailModal({ startup, onClose, onUpdate, isGuest
           {/* Documents Section - Admin Only (View-only for Quit startups) */}
           {!isGuest && (
             <Section title="Documents" section="documents">
-              <DocumentList startupId={startup.id} isGuest={isGuest} allowUpload={startup.status !== 'Quit'} />
+              <DocumentList startupId={startup.id} isGuest={isGuest} allowUpload={startup.status !== 'Quit' && startup.status !== 'Rejected'} />
             </Section>
           )}
 
