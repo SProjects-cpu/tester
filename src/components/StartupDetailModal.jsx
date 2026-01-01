@@ -19,6 +19,7 @@ export default function StartupDetailModal({ startup, onClose, onUpdate, isGuest
     documents: true,
     revenue: true,
     pitchHistory: true,
+    fmcHistory: true,
     oneOnOne: true,
     onboarding: true,
     rejection: true,
@@ -736,6 +737,30 @@ export default function StartupDetailModal({ startup, onClose, onUpdate, isGuest
                       <Field label="Panelist" value={pitch.panelistName} />
                     </div>
                     <Field label="Feedback" value={pitch.feedback} />
+                  </div>
+                ))}
+              </div>
+            </Section>
+          )}
+
+          {startup.fmcHistory && startup.fmcHistory.length > 0 && (
+            <Section title="FMC History" section="fmcHistory">
+              <div className="space-y-4">
+                {startup.fmcHistory.map((session, index) => (
+                  <div key={index} className={`p-4 rounded-lg bg-gradient-to-r ${
+                    session.stage === 'S1' ? 'from-teal-50 to-green-100 dark:from-teal-900/20 dark:to-green-800/20' :
+                    session.stage === 'S2' ? 'from-emerald-50 to-teal-100 dark:from-emerald-900/20 dark:to-teal-800/20' :
+                    'from-green-50 to-emerald-100 dark:from-green-900/20 dark:to-emerald-800/20'
+                  }`}>
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                      FMC Session {index + 1} - {session.stage}
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                      <Field label="Date" value={session.date} />
+                      <Field label="Time" value={session.time} />
+                      <Field label="Panelist" value={session.panelistName} />
+                    </div>
+                    <Field label="Feedback" value={session.feedback} />
                   </div>
                 ))}
               </div>
