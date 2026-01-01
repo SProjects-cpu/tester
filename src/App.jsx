@@ -8,6 +8,7 @@ import Dashboard from './components/Dashboard';
 import AllStartups from './components/AllStartups';
 import InactiveStartups from './components/InactiveStartups';
 import SMCScheduling from './components/SMCScheduling';
+import FMCScheduling from './components/FMCScheduling';
 import OneOnOneScheduling from './components/OneOnOneScheduling';
 import Onboarded from './components/Onboarded';
 import Graduated from './components/Graduated';
@@ -117,6 +118,8 @@ function App() {
         return <InactiveStartups key={`inactive-${refreshKey}`} isGuest={isGuest} />;
       case 'smc':
         return <SMCScheduling key={`smc-${refreshKey}`} isGuest={isGuest} />;
+      case 'fmc':
+        return <FMCScheduling key={`fmc-${refreshKey}`} isGuest={isGuest} />;
       case 'oneOnOne':
         return <OneOnOneScheduling key={`oneOnOne-${refreshKey}`} isGuest={isGuest} />;
       case 'onboarded':

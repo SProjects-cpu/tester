@@ -205,6 +205,35 @@ export const smcApi = {
   },
 };
 
+// FMC Meeting API methods (Friday Mentorship Clinic)
+export const fmcApi = {
+  getAll: async (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    const endpoint = queryString ? `/fmc?${queryString}` : '/fmc';
+    return apiRequest(endpoint);
+  },
+
+  create: async (data) => {
+    return apiRequest('/fmc', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  update: async (id, data) => {
+    return apiRequest(`/fmc/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  delete: async (id) => {
+    return apiRequest(`/fmc/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
 // One-on-One Meeting API methods
 export const oneOnOneApi = {
   getAll: async (params = {}) => {
@@ -433,4 +462,4 @@ export const stageHistoryApi = {
   },
 };
 
-export default { startupApi, authApi, smcApi, oneOnOneApi, guestApi, documentApi, achievementApi, progressApi, magicCodeApi, revenueApi, stageHistoryApi };
+export default { startupApi, authApi, smcApi, fmcApi, oneOnOneApi, guestApi, documentApi, achievementApi, progressApi, magicCodeApi, revenueApi, stageHistoryApi };

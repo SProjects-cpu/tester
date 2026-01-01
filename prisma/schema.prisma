@@ -88,6 +88,7 @@ model Startup {
   oneOnOneMeetings OneOnOneMeeting[]
   progressHistory  ProgressHistory[]
   smcMeetings      SMCMeeting[]
+  fmcMeetings      FMCMeeting[]
   revenueEntries   RevenueEntry[]
   stageHistory     StageTransitionHistory[]
 
@@ -156,6 +157,22 @@ model SMCMeeting {
 
   @@index([startupId])
   @@map("smc_meetings")
+}
+
+model FMCMeeting {
+  id        String   @id @default(uuid())
+  startupId String   @map("startup_id")
+  date      DateTime
+  agenda    String?
+  decisions String?
+  attendees String?
+  status    String   @default("scheduled")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  startup   Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+
+  @@index([startupId])
+  @@map("fmc_meetings")
 }
 
 model Agreement {

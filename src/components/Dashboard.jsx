@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Rocket, Users, Star, XCircle, TrendingUp, GraduationCap, Calendar, PieChart } from 'lucide-react';
+import { Rocket, Users, XCircle, TrendingUp, Calendar, PieChart } from 'lucide-react';
 import { startupApi } from '../utils/api';
 import InactiveStartupNotifications from './InactiveStartupNotifications';
 
@@ -159,16 +159,24 @@ export default function Dashboard({ onNavigate, onNavigateWithSector }) {
   const [sectorStats, setSectorStats] = useState({});
   const [loading, setLoading] = useState(true);
   const [allStartups, setAllStartups] = useState([]);
-  const [yearFilter, setYearFilter] = useState('all');
+  const [fyFilter, setFyFilter] = useState('all');
 
-  // Generate year options
-  const yearOptions = useMemo(() => {
+  // Generate Financial Year options (April to March)
+  const fyOptions = useMemo(() => {
     const currentYear = new Date().getFullYear();
-    const years = [];
-    for (let y = currentYear; y >= currentYear - 5; y--) {
-      years.push(y);
+    const currentMonth = new Date().getMonth();
+    // If we're in Jan-Mar, current FY started last year
+    const currentFYStart = currentMonth < 3 ? currentYear - 1 : currentYear;
+    const options = [];
+    for (let y = currentFYStart; y >= currentFYStart - 5; y--) {
+      options.push({
+        value: `${y}-${y + 1}`,
+        label: `FY ${y}-${String(y + 1).slice(-2)}`,
+        startDate: new Date(y, 3, 1), // April 1
+        endDate: new Date(y + 1, 2, 31, 23, 59, 59) // March 31
+      });
     }
-    return years;
+    return options;
   }, []);
 
   const fetchStartups = useCallback(async () => {
@@ -183,18 +191,22 @@ export default function Dashboard({ onNavigate, onNavigateWithSector }) {
     }
   }, []);
 
-  // Filter startups by year and calculate stats
+  // Filter startups by financial year and calculate stats
   useEffect(() => {
     let filteredStartups = allStartups;
     
-    if (yearFilter !== 'all') {
-      const year = parseInt(yearFilter);
-      filteredStartups = allStartups.filter(s => {
-        const createdYear = s.createdAt ? new Date(s.createdAt).getFullYear() : null;
-        const onboardedYear = s.onboardedDate ? new Date(s.onboardedDate).getFullYear() : null;
-        const registeredYear = s.registeredDate ? new Date(s.registeredDate).getFullYear() : null;
-        return createdYear === year || onboardedYear === year || registeredYear === year;
-      });
+    if (fyFilter !== 'all') {
+      const selectedFY = fyOptions.find(fy => fy.value === fyFilter);
+      if (selectedFY) {
+        filteredStartups = allStartups.filter(s => {
+          const createdDate = s.createdAt ? new Date(s.createdAt) : null;
+          const onboardedDate = s.onboardedDate ? new Date(s.onboardedDate) : null;
+          const registeredDate = s.registeredDate ? new Date(s.registeredDate) : null;
+          
+          const isInFY = (date) => date && date >= selectedFY.startDate && date <= selectedFY.endDate;
+          return isInFY(createdDate) || isInFY(onboardedDate) || isInFY(registeredDate);
+        });
+      }
     }
     
     const newStats = {
@@ -220,7 +232,7 @@ export default function Dashboard({ onNavigate, onNavigateWithSector }) {
     
     setStats(newStats);
     setSectorStats(sectors);
-  }, [allStartups, yearFilter]);
+  }, [allStartups, fyFilter, fyOptions]);
 
   useEffect(() => {
     fetchStartups();
@@ -276,36 +288,12 @@ export default function Dashboard({ onNavigate, onNavigateWithSector }) {
       page: 'oneOnOne'
     },
     { 
-      label: 'Onboarded', 
-      value: stats.onboarded, 
-      borderColor: 'border-green-500',
-      iconColor: 'text-green-500',
-      icon: Star,
-      page: 'onboarded'
-    },
-    { 
-      label: 'Graduated', 
-      value: stats.graduated, 
-      borderColor: 'border-purple-500',
-      iconColor: 'text-purple-500',
-      icon: GraduationCap,
-      page: 'graduated'
-    },
-    { 
       label: 'Rejected', 
       value: stats.rejected, 
       borderColor: 'border-red-500',
       iconColor: 'text-red-500',
       icon: XCircle,
       page: 'rejected'
-    },
-    { 
-      label: 'Quit', 
-      value: stats.quit, 
-      borderColor: 'border-gray-600',
-      iconColor: 'text-gray-600',
-      icon: XCircle,
-      page: 'quit'
     },
     { 
       label: 'Total Startups', 
@@ -333,17 +321,17 @@ export default function Dashboard({ onNavigate, onNavigateWithSector }) {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {/* Global Year Filter */}
+          {/* Financial Year Filter */}
           <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/20">
             <Calendar className="w-5 h-5 text-green-400" />
             <select
-              value={yearFilter}
-              onChange={(e) => setYearFilter(e.target.value)}
+              value={fyFilter}
+              onChange={(e) => setFyFilter(e.target.value)}
               className="bg-transparent text-green-400 font-semibold outline-none cursor-pointer text-sm sm:text-base"
             >
               <option value="all" className="text-gray-900">All Years</option>
-              {yearOptions.map(year => (
-                <option key={year} value={year} className="text-gray-900">{year}</option>
+              {fyOptions.map(fy => (
+                <option key={fy.value} value={fy.value} className="text-gray-900">{fy.label}</option>
               ))}
             </select>
           </div>
@@ -414,145 +402,6 @@ export default function Dashboard({ onNavigate, onNavigateWithSector }) {
           </div>
         </motion.div>
       )}
-
-      {/* Real-Time Analytics Graphs */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1 }}
-        className="mt-8 sm:mt-12"
-      >
-        <h2 className="text-2xl sm:text-3xl font-bold magic-text-gradient mb-6 text-center">
-          Real-Time Analytics
-        </h2>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Total Startups Registered */}
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl border border-gray-200 dark:border-gray-600"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-white">Total Registered</h3>
-              <Rocket className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-4">{stats.total}</div>
-            <div className="relative h-32">
-              <div className="absolute bottom-0 left-0 right-0 flex items-end justify-between space-x-1">
-                {[stats.s0, stats.s1, stats.s2, stats.s3, stats.oneOnOne].map((value, idx) => {
-                  const maxValue = Math.max(stats.s0, stats.s1, stats.s2, stats.s3, stats.oneOnOne, 1);
-                  const height = (value / maxValue) * 100;
-                  return (
-                    <motion.div
-                      key={idx}
-                      initial={{ height: 0 }}
-                      animate={{ height: `${height}%` }}
-                      transition={{ delay: 1.2 + idx * 0.1, duration: 0.5 }}
-                      className="flex-1 bg-gradient-to-t from-blue-600 to-blue-400 rounded-t-lg relative group"
-                    >
-                      <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
-                        {['S0', 'S1', 'S2', 'S3', '1-on-1'][idx]}: {value}
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </div>
-            <div className="flex justify-between text-xs font-medium text-gray-600 dark:text-gray-300 mt-2">
-              <span>S0</span>
-              <span>S1</span>
-              <span>S2</span>
-              <span>S3</span>
-              <span>1:1</span>
-            </div>
-          </motion.div>
-
-          {/* Total Onboarded */}
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl border border-gray-200 dark:border-gray-600"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-white">Total Onboarded</h3>
-              <Star className="w-6 h-6 text-green-600 dark:text-green-400" />
-            </div>
-            <div className="text-4xl font-bold text-green-600 dark:text-green-400 mb-4">{stats.onboarded}</div>
-            <div className="relative h-32 flex items-center justify-center">
-              <svg className="w-32 h-32 transform -rotate-90">
-                <circle
-                  cx="64"
-                  cy="64"
-                  r="56"
-                  stroke="currentColor"
-                  strokeWidth="12"
-                  fill="none"
-                  className="text-gray-200 dark:text-gray-700"
-                />
-                <motion.circle
-                  cx="64"
-                  cy="64"
-                  r="56"
-                  stroke="currentColor"
-                  strokeWidth="12"
-                  fill="none"
-                  strokeLinecap="round"
-                  className="text-green-500"
-                  initial={{ strokeDasharray: "0 352" }}
-                  animate={{ 
-                    strokeDasharray: `${(stats.onboarded / (stats.total || 1)) * 352} 352` 
-                  }}
-                  transition={{ delay: 1.2, duration: 1 }}
-                />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-800 dark:text-white">
-                    {stats.total > 0 ? Math.round((stats.onboarded / stats.total) * 100) : 0}%
-                  </div>
-                  <div className="text-xs font-medium text-gray-600 dark:text-gray-300">Success Rate</div>
-                </div>
-              </div>
-            </div>
-            <div className="text-center text-sm font-medium text-gray-700 dark:text-gray-300 mt-4">
-              {stats.onboarded} out of {stats.total} startups
-            </div>
-          </motion.div>
-
-          {/* Total Mentored */}
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl border border-gray-200 dark:border-gray-600"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-white">Total Mentored</h3>
-              <Users className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-            </div>
-            <div className="text-4xl font-bold text-purple-600 dark:text-purple-400 mb-4">{stats.oneOnOne}</div>
-            <div className="space-y-3">
-              {[
-                { label: 'One-on-One', value: stats.oneOnOne, color: 'bg-purple-500', max: stats.total },
-                { label: 'Onboarded', value: stats.onboarded, color: 'bg-green-500', max: stats.total },
-                { label: 'Graduated', value: stats.graduated, color: 'bg-pink-500', max: stats.total }
-              ].map((item, idx) => (
-                <div key={idx}>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="font-medium text-gray-700 dark:text-gray-300">{item.label}</span>
-                    <span className="font-bold text-gray-800 dark:text-white">{item.value}</span>
-                  </div>
-                  <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${(item.value / (item.max || 1)) * 100}%` }}
-                      transition={{ delay: 1.2 + idx * 0.2, duration: 0.8 }}
-                      className={`h-full ${item.color} rounded-full`}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        </div>
-      </motion.div>
 
       {/* Inactive Startup Notifications */}
       <div className="mt-8">

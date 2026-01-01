@@ -496,6 +496,77 @@ export const exportSMCSchedulesToPDF = (schedules = null, startups = null, fromD
   }
 };
 
+export const exportFMCSchedulesToPDF = (schedules = null, startups = null, fromDate = null, toDate = null) => {
+  // Try to get data from parameters first, then fallback to localStorage
+  const fmcData = schedules || storage.get('fmcSchedules', []);
+  const startupsData = startups || storage.get('startups', []);
+  
+  if (fmcData.length === 0) {
+    alert('No FMC schedules to export');
+    return;
+  }
+  
+  try {
+    const doc = new jsPDF('l', 'mm', 'a4');
+    
+    doc.setFontSize(18);
+    doc.setTextColor(40);
+    doc.text('FMC Schedules Report (Friday Mentorship Clinic)', 14, 15);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Generated: ${formatDate(new Date())}`, 14, 22);
+    
+    // Count completed vs scheduled
+    const completedCount = fmcData.filter(s => s.status === 'Completed').length;
+    const scheduledCount = fmcData.filter(s => s.status === 'Scheduled').length;
+    doc.text(`Total: ${fmcData.length} | Completed: ${completedCount} | Scheduled: ${scheduledCount}`, 14, 27);
+    
+    // Add date range if specified
+    const dateRangeText = formatDateRangeDisplay(fromDate, toDate);
+    let tableStartY = 32;
+    if (dateRangeText) {
+      doc.text(`Date Range: ${dateRangeText}`, 14, 32);
+      tableStartY = 37;
+    }
+    
+    const tableData = fmcData.map(schedule => {
+      const startup = startupsData.find(s => s.id === schedule.startupId);
+      const stageProgression = startup?.stage || 'N/A';
+      return [
+        formatDate(schedule.date),
+        schedule.timeSlot || schedule.time || '',
+        startup?.name || startup?.companyName || 'Unknown',
+        startup?.magicCode || '',
+        stageProgression,
+        schedule.status || '',
+        schedule.completionData?.panelistName || schedule.attendees || '',
+        (schedule.completionData?.feedback || schedule.agenda || '').substring(0, 80)
+      ];
+    });
+    
+    autoTable(doc, {
+      startY: tableStartY,
+      head: [['Date', 'Time', 'Company', 'Magic Code', 'Stage', 'Status', 'Panelist', 'Feedback']],
+      body: tableData,
+      theme: 'striped',
+      headStyles: { fillColor: [16, 185, 129] }, // Green color for FMC
+      styles: { fontSize: 8, cellPadding: 2 },
+      columnStyles: {
+        7: { cellWidth: 60 } // Wider column for feedback
+      }
+    });
+    
+    const fileName = generateExportFileName('FMC-Schedules', fromDate, toDate);
+    doc.save(`${fileName}.pdf`);
+    return true;
+  } catch (error) {
+    console.error('Error exporting FMC PDF:', error);
+    alert('Error exporting PDF. Please try again.');
+    return false;
+  }
+};
+
 export const exportOneOnOneSessionsToPDF = (sessions = null, startups = null, fromDate = null, toDate = null) => {
   // Try to get data from parameters first, then fallback to localStorage
   const sessionsData = sessions || storage.get('oneOnOneSchedules', []);

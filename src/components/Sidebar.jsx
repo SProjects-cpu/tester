@@ -26,6 +26,7 @@ export default function Sidebar({ currentPage, onNavigate, onLogout, darkMode, t
     icon: Calendar,
     items: [
       { id: 'smc', label: 'SMC Scheduling', icon: Calendar },
+      { id: 'fmc', label: 'FMC Scheduling', icon: Calendar },
       { id: 'oneOnOne', label: 'One on One', icon: Users },
     ]
   };
