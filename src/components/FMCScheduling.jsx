@@ -1015,6 +1015,40 @@ export default function FMCScheduling({ isGuest = false }) {
                       )}
                     </div>
                   </div>
+
+                  {/* Pitch History */}
+                  {showHistoryModal.startup.pitchHistory && showHistoryModal.startup.pitchHistory.length > 0 && (
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4">
+                      <h4 className="font-semibold text-gray-900 dark:text-white mb-3 text-lg">
+                        All Pitch History
+                      </h4>
+                      <div className="space-y-3">
+                        {showHistoryModal.startup.pitchHistory.map((pitch, index) => (
+                          <div key={index} className="bg-white dark:bg-gray-700 rounded-lg p-3 text-sm">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-semibold text-gray-900 dark:text-white">
+                                Pitch {index + 1} - {pitch.stage}
+                              </span>
+                              <span className="text-xs text-gray-600 dark:text-gray-400">
+                                {new Date(pitch.date).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <div className="space-y-1">
+                              <p className="text-gray-600 dark:text-gray-400">
+                                <span className="font-medium">Panelist:</span> {pitch.panelistName}
+                              </p>
+                              <p className="text-gray-600 dark:text-gray-400">
+                                <span className="font-medium">Time:</span> {pitch.time}
+                              </p>
+                              <p className="text-gray-600 dark:text-gray-400">
+                                <span className="font-medium">Feedback:</span> {pitch.feedback}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <p className="text-gray-500 dark:text-gray-400 text-center py-8">
