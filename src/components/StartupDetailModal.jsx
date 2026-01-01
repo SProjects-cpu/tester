@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronDown, ChevronUp, CheckCircle, XCircle, Users, Edit, GraduationCap, Lock, Download, BarChart3 } from 'lucide-react';
-import { useState } from 'react';
+import { X, ChevronDown, ChevronUp, CheckCircle, XCircle, Users, Edit, GraduationCap, Lock, Download, BarChart3, TrendingUp, IndianRupee, FileText, Paperclip } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import EditStartupProfile from './EditStartupProfile';
 import GuestRestrictedButton from './GuestRestrictedButton';
 import RejectionModal from './RejectionModal';
@@ -9,7 +9,7 @@ import GenerateReportButton from './GenerateReportButton';
 import ConfirmationModal from './ConfirmationModal';
 import DocumentList from './DocumentList';
 import { getField } from '../utils/startupFieldHelper';
-import { startupApi } from '../utils/api';
+import { startupApi, revenueApi, documentApi } from '../utils/api';
 
 export default function StartupDetailModal({ startup, onClose, onUpdate, isGuest = false }) {
   const [expanded, setExpanded] = useState({
@@ -17,6 +17,7 @@ export default function StartupDetailModal({ startup, onClose, onUpdate, isGuest
     founder: true,
     registration: true,
     documents: true,
+    revenue: true,
     pitchHistory: true,
     oneOnOne: true,
     onboarding: true,
@@ -27,6 +28,9 @@ export default function StartupDetailModal({ startup, onClose, onUpdate, isGuest
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showRejectionModal, setShowRejectionModal] = useState(false);
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
+  const [revenueData, setRevenueData] = useState({ entries: [], total: 0 });
+  const [loadingRevenue, setLoadingRevenue] = useState(false);
+  const [downloadingDocId, setDownloadingDocId] = useState(null);
   const [confirmationModal, setConfirmationModal] = useState({
     isOpen: false,
     title: '',
@@ -34,6 +38,48 @@ export default function StartupDetailModal({ startup, onClose, onUpdate, isGuest
     onConfirm: null,
     type: 'warning'
   });
+
+  // Load revenue data when modal opens
+  useEffect(() => {
+    if (startup?.id) {
+      loadRevenueData();
+    }
+  }, [startup?.id]);
+
+  const loadRevenueData = async () => {
+    try {
+      setLoadingRevenue(true);
+      const data = await revenueApi.getByStartupId(startup.id);
+      setRevenueData(data);
+    } catch (error) {
+      console.error('Error loading revenue:', error);
+      // Fallback to startup data
+      const entries = startup.revenueEntries || startup.revenueHistory || [];
+      const total = entries.reduce((sum, r) => sum + (r.amount || 0), 0);
+      setRevenueData({ entries, total });
+    } finally {
+      setLoadingRevenue(false);
+    }
+  };
+
+  const handleDocumentDownload = async (doc) => {
+    try {
+      setDownloadingDocId(doc.id);
+      const { url, filename } = await documentApi.getDownloadUrl(doc.id);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename || doc.filename;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Error downloading document:', error);
+      alert('Failed to download document: ' + error.message);
+    } finally {
+      setDownloadingDocId(null);
+    }
+  };
 
   if (!startup) return null;
 
@@ -481,6 +527,103 @@ export default function StartupDetailModal({ startup, onClose, onUpdate, isGuest
               <DocumentList startupId={startup.id} isGuest={isGuest} allowUpload={startup.status !== 'Quit' && startup.status !== 'Rejected'} />
             </Section>
           )}
+
+          {/* Revenue Section - Show for ALL sections with revenue data */}
+          <Section title="Revenue Details" section="revenue">
+            {loadingRevenue ? (
+              <div className="flex items-center justify-center py-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-500"></div>
+                <span className="ml-2 text-gray-600 dark:text-gray-400">Loading revenue...</span>
+              </div>
+            ) : revenueData.entries.length === 0 ? (
+              <div className="text-center py-4 text-gray-500 dark:text-gray-400">
+                <IndianRupee className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p>No revenue entries recorded</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* Total Revenue Summary */}
+                <div className="bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl p-4 text-white">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 bg-white/20 rounded-lg">
+                        <IndianRupee className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-white/80">Total Revenue</p>
+                        <p className="text-xl font-bold">₹{revenueData.total.toLocaleString()}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-white/80">{revenueData.entries.length} entries</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Revenue Entries */}
+                <div className="space-y-3 max-h-64 overflow-y-auto">
+                  {revenueData.entries.map((entry) => (
+                    <div key={entry.id} className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2">
+                            <span className="font-bold text-green-600 dark:text-green-400">
+                              ₹{entry.amount?.toLocaleString()}
+                            </span>
+                            {entry.source && (
+                              <span className="text-xs px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full">
+                                {entry.source}
+                              </span>
+                            )}
+                          </div>
+                          {entry.description && (
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{entry.description}</p>
+                          )}
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            {entry.date ? new Date(entry.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'No date'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Documents attached to this revenue entry */}
+                      {entry.documents && entry.documents.length > 0 && (
+                        <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
+                          <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 flex items-center space-x-1">
+                            <Paperclip className="w-3 h-3" />
+                            <span>Attached Documents ({entry.documents.length})</span>
+                          </p>
+                          <div className="space-y-1">
+                            {entry.documents.map((doc) => (
+                              <div key={doc.id} className="flex items-center justify-between p-1.5 bg-white dark:bg-gray-800 rounded text-xs">
+                                <div className="flex items-center space-x-2 min-w-0 flex-1">
+                                  <FileText className="w-3.5 h-3.5 text-purple-500 flex-shrink-0" />
+                                  <span className="truncate text-gray-700 dark:text-gray-300" title={doc.filename}>
+                                    {doc.filename}
+                                  </span>
+                                </div>
+                                <button
+                                  onClick={() => handleDocumentDownload(doc)}
+                                  disabled={downloadingDocId === doc.id}
+                                  className="p-1 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded transition-colors ml-2"
+                                  title="Download"
+                                >
+                                  {downloadingDocId === doc.id ? (
+                                    <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-blue-500"></div>
+                                  ) : (
+                                    <Download className="w-3.5 h-3.5 text-blue-500" />
+                                  )}
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </Section>
 
           {/* Onboard Details - Show for Onboarded and Graduated */}
           {(startup.status === 'Onboarded' || startup.status === 'Graduated') && (

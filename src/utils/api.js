@@ -301,17 +301,25 @@ export const documentApi = {
     return apiRequest(`/documents?startupId=${startupId}`);
   },
 
+  // Get documents for a specific revenue entry
+  getByRevenueEntryId: async (revenueEntryId) => {
+    return apiRequest(`/documents?revenueEntryId=${revenueEntryId}`);
+  },
+
   // Get download URL for a document
   getDownloadUrl: async (id) => {
     return apiRequest(`/documents/download/${id}`);
   },
 
   // Upload a document (uses FormData, not JSON)
-  upload: async (file, startupId) => {
+  upload: async (file, startupId, revenueEntryId = null) => {
     const token = getToken();
     const formData = new FormData();
     formData.append('file', file);
     formData.append('startupId', startupId);
+    if (revenueEntryId) {
+      formData.append('revenueEntryId', revenueEntryId);
+    }
 
     const response = await fetch(`${API_URL}/documents`, {
       method: 'POST',

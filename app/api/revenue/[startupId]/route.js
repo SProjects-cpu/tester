@@ -16,6 +16,9 @@ export async function GET(request, { params }) {
 
     const entries = await prisma.revenueEntry.findMany({
       where: { startupId },
+      include: {
+        documents: true
+      },
       orderBy: { date: 'desc' }
     });
 

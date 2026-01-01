@@ -36,7 +36,7 @@ function generateStoragePath(startupId, filename) {
   return `${startupId}/${timestamp}_${sanitizedFilename}`;
 }
 
-// GET - Fetch documents for a startup
+// GET - Fetch documents for a startup or revenue entry
 export async function GET(request) {
   try {
     const user = getAuthUser(request);
@@ -46,13 +46,21 @@ export async function GET(request) {
 
     const { searchParams } = new URL(request.url);
     const startupId = searchParams.get('startupId');
+    const revenueEntryId = searchParams.get('revenueEntryId');
 
-    if (!startupId) {
-      return NextResponse.json({ message: 'startupId is required' }, { status: 400 });
+    // Build where clause based on provided parameters
+    const whereClause = {};
+    
+    if (revenueEntryId) {
+      whereClause.revenueEntryId = revenueEntryId;
+    } else if (startupId) {
+      whereClause.startupId = startupId;
+    } else {
+      return NextResponse.json({ message: 'startupId or revenueEntryId is required' }, { status: 400 });
     }
 
     const documents = await prisma.document.findMany({
-      where: { startupId },
+      where: whereClause,
       orderBy: { uploadedAt: 'desc' }
     });
 
@@ -82,6 +90,7 @@ export async function POST(request) {
     const formData = await request.formData();
     const file = formData.get('file');
     const startupId = formData.get('startupId');
+    const revenueEntryId = formData.get('revenueEntryId');
 
     if (!file || !startupId) {
       return NextResponse.json(
@@ -115,6 +124,16 @@ export async function POST(request) {
       return NextResponse.json({ message: 'Startup not found' }, { status: 404 });
     }
 
+    // Verify revenue entry exists if provided
+    if (revenueEntryId) {
+      const revenueEntry = await prisma.revenueEntry.findUnique({
+        where: { id: revenueEntryId }
+      });
+      if (!revenueEntry) {
+        return NextResponse.json({ message: 'Revenue entry not found' }, { status: 404 });
+      }
+    }
+
     // Generate storage path
     const storagePath = generateStoragePath(startupId, file.name);
 
@@ -142,6 +161,7 @@ export async function POST(request) {
     const document = await prisma.document.create({
       data: {
         startupId,
+        revenueEntryId: revenueEntryId || null,
         filename: file.name,
         fileType: getFileExtension(file.name),
         fileSize: file.size,

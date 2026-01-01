@@ -1,7 +1,30 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingUp, Plus, Edit2, Trash2, IndianRupee, Calendar, FileText, Loader2 } from 'lucide-react';
-import { revenueApi } from '../utils/api';
+import { TrendingUp, Plus, Edit2, Trash2, IndianRupee, Calendar, FileText, Loader2, Upload, Download, Eye, X, Paperclip } from 'lucide-react';
+import { revenueApi, documentApi } from '../utils/api';
+
+// Allowed file extensions
+const ALLOWED_EXTENSIONS = ['pdf', 'pptx', 'ppt', 'doc', 'docx', 'xls', 'xlsx', 'csv', 'txt', 'jpg', 'jpeg', 'png', 'gif'];
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+const getFileExtension = (filename) => {
+  if (!filename) return '';
+  const parts = filename.split('.');
+  return parts.length > 1 ? parts[parts.length - 1].toLowerCase() : '';
+};
+
+const isValidFileType = (filename) => {
+  const ext = getFileExtension(filename);
+  return ALLOWED_EXTENSIONS.includes(ext);
+};
+
+const formatFileSize = (bytes) => {
+  if (!bytes || bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
 
 export default function RevenueManager({ startup, onUpdate, isGuest = false }) {
   const [entries, setEntries] = useState([]);
@@ -10,6 +33,9 @@ export default function RevenueManager({ startup, onUpdate, isGuest = false }) {
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingEntry, setEditingEntry] = useState(null);
+  const [uploadingDocId, setUploadingDocId] = useState(null);
+  const [downloadingDocId, setDownloadingDocId] = useState(null);
+  const fileInputRef = useRef(null);
   const [formData, setFormData] = useState({
     amount: '',
     date: new Date().toISOString().split('T')[0],
@@ -30,7 +56,6 @@ export default function RevenueManager({ startup, onUpdate, isGuest = false }) {
       return data;
     } catch (error) {
       console.error('Error loading revenue:', error);
-      // Fallback to startup data if API fails
       setEntries(startup.revenueHistory || []);
       setTotalRevenue(startup.totalRevenue || 0);
       return { entries: startup.revenueHistory || [], total: startup.totalRevenue || 0 };
@@ -56,7 +81,6 @@ export default function RevenueManager({ startup, onUpdate, isGuest = false }) {
       const revenueData = await loadRevenue();
       resetForm();
       if (onUpdate) {
-        // Pass updated startup with new revenue entries and total
         onUpdate({ 
           ...startup, 
           totalRevenue: revenueData?.total || totalRevenue,
@@ -113,6 +137,67 @@ export default function RevenueManager({ startup, onUpdate, isGuest = false }) {
       description: ''
     });
     setShowForm(false);
+  };
+
+  // Document handling functions
+  const handleDocumentUpload = async (entryId, file) => {
+    if (!file) return;
+
+    if (!isValidFileType(file.name)) {
+      alert(`File type not supported. Allowed: ${ALLOWED_EXTENSIONS.join(', ').toUpperCase()}`);
+      return;
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      alert('File size exceeds maximum limit of 10MB');
+      return;
+    }
+
+    try {
+      setUploadingDocId(entryId);
+      await documentApi.upload(file, startup.id, entryId);
+      await loadRevenue();
+      alert('✅ Document uploaded successfully!');
+    } catch (error) {
+      console.error('Error uploading document:', error);
+      alert('❌ Failed to upload document: ' + error.message);
+    } finally {
+      setUploadingDocId(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleDocumentDownload = async (doc) => {
+    try {
+      setDownloadingDocId(doc.id);
+      const { url, filename } = await documentApi.getDownloadUrl(doc.id);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename || doc.filename;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Error downloading document:', error);
+      alert('Failed to download document: ' + error.message);
+    } finally {
+      setDownloadingDocId(null);
+    }
+  };
+
+  const handleDocumentDelete = async (docId) => {
+    if (!confirm('Are you sure you want to delete this document?')) return;
+    
+    try {
+      await documentApi.delete(docId);
+      await loadRevenue();
+    } catch (error) {
+      console.error('Error deleting document:', error);
+      alert('Failed to delete document: ' + error.message);
+    }
   };
 
   if (loading) {
@@ -267,7 +352,7 @@ export default function RevenueManager({ startup, onUpdate, isGuest = false }) {
             No revenue entries yet
           </p>
         ) : (
-          <div className="space-y-2 max-h-60 overflow-y-auto">
+          <div className="space-y-3 max-h-96 overflow-y-auto">
             {entries.map((entry) => (
               <motion.div
                 key={entry.id}
@@ -321,6 +406,89 @@ export default function RevenueManager({ startup, onUpdate, isGuest = false }) {
                       >
                         <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" />
                       </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Documents Section for this Revenue Entry */}
+                <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-medium text-gray-600 dark:text-gray-400 flex items-center space-x-1">
+                      <Paperclip className="w-3 h-3" />
+                      <span>Documents ({entry.documents?.length || 0})</span>
+                    </span>
+                    {!isGuest && (
+                      <label className="cursor-pointer">
+                        <input
+                          type="file"
+                          className="hidden"
+                          accept={ALLOWED_EXTENSIONS.map(ext => `.${ext}`).join(',')}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleDocumentUpload(entry.id, file);
+                            e.target.value = '';
+                          }}
+                          disabled={uploadingDocId === entry.id}
+                        />
+                        <span className="flex items-center space-x-1 text-xs text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300">
+                          {uploadingDocId === entry.id ? (
+                            <>
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                              <span>Uploading...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="w-3 h-3" />
+                              <span>Add Document</span>
+                            </>
+                          )}
+                        </span>
+                      </label>
+                    )}
+                  </div>
+
+                  {/* Document List */}
+                  {entry.documents && entry.documents.length > 0 && (
+                    <div className="space-y-1">
+                      {entry.documents.map((doc) => (
+                        <div
+                          key={doc.id}
+                          className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-xs"
+                        >
+                          <div className="flex items-center space-x-2 min-w-0 flex-1">
+                            <FileText className="w-4 h-4 text-purple-500 flex-shrink-0" />
+                            <span className="truncate text-gray-700 dark:text-gray-300" title={doc.filename}>
+                              {doc.filename}
+                            </span>
+                            <span className="text-gray-400 flex-shrink-0">
+                              ({formatFileSize(doc.fileSize)})
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-1 ml-2">
+                            <button
+                              onClick={() => handleDocumentDownload(doc)}
+                              disabled={downloadingDocId === doc.id}
+                              className="p-1 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded transition-colors"
+                              title="Download"
+                            >
+                              {downloadingDocId === doc.id ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500" />
+                              ) : (
+                                <Download className="w-3.5 h-3.5 text-blue-500" />
+                              )}
+                            </button>
+                            {!isGuest && (
+                              <button
+                                onClick={() => handleDocumentDelete(doc.id)}
+                                className="p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-colors"
+                                title="Delete"
+                              >
+                                <X className="w-3.5 h-3.5 text-red-500" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>

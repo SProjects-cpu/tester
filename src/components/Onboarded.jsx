@@ -474,7 +474,7 @@ export default function Onboarded({ isGuest = false }) {
                       className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg font-semibold text-sm shadow-md hover:shadow-lg transition-all"
                     >
                       <IndianRupee className="w-4 h-4" />
-                      <span>Manage Revenue</span>
+                      <span>Revenue</span>
                     </GuestRestrictedButton>
                     <GuestRestrictedButton
                       isGuest={isGuest}
@@ -678,7 +678,7 @@ function RevenueModalWrapper({ startup, onClose, onUpdate, isGuest }) {
             <div className="flex items-center space-x-3">
               <IndianRupee className="w-10 h-10" />
               <div>
-                <h2 className="text-2xl sm:text-3xl font-bold">Manage Revenue</h2>
+                <h2 className="text-2xl sm:text-3xl font-bold">Revenue</h2>
                 <p className="text-white/90">{startup.companyName}</p>
               </div>
             </div>
