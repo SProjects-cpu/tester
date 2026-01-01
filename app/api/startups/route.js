@@ -43,6 +43,26 @@ const transformOneOnOneToHistory = (oneOnOneMeetings) => {
     }));
 };
 
+// Transform FMC meetings to history format
+const transformFmcToHistory = (fmcMeetings) => {
+  if (!fmcMeetings || fmcMeetings.length === 0) return [];
+  
+  return fmcMeetings
+    .filter(m => m.status === 'completed')
+    .map((meeting) => {
+      const agendaParts = meeting.agenda?.split('|') || [];
+      // Format: timeSlot|completionTime|stageAtCompletion
+      const stage = agendaParts[2] || 'S0'; // Default to S0 if not stored
+      return {
+        stage: stage,
+        date: meeting.date ? meeting.date.toISOString().split('T')[0] : null,
+        time: agendaParts[1] || agendaParts[0] || '',
+        panelistName: meeting.attendees || '',
+        feedback: meeting.decisions || ''
+      };
+    });
+};
+
 // Transform database startup to frontend format
 const transformStartup = (startup) => ({
   id: startup.id,
@@ -112,6 +132,8 @@ const transformStartup = (startup) => ({
   revenueEntries: startup.revenueEntries || [],
   // Transform SMC meetings to pitch history format
   pitchHistory: transformSmcToPitchHistory(startup.smcMeetings),
+  // Transform FMC meetings to history format
+  fmcHistory: transformFmcToHistory(startup.fmcMeetings),
   // Transform One-on-One meetings to history format
   oneOnOneHistory: transformOneOnOneToHistory(startup.oneOnOneMeetings),
   // Include counts if available (for list view optimization)
@@ -231,12 +253,19 @@ export async function GET(request) {
             smcMeetings: {
               orderBy: { date: 'desc' }
             },
+            fmcMeetings: {
+              orderBy: { date: 'desc' }
+            },
             oneOnOneMeetings: {
               orderBy: { date: 'desc' }
             }
           } : {
-            // Include SMC and One-on-One meetings for pitch history even in list view
+            // Include SMC, FMC and One-on-One meetings for pitch history even in list view
             smcMeetings: {
+              where: { status: 'completed' },
+              orderBy: { date: 'asc' }
+            },
+            fmcMeetings: {
               where: { status: 'completed' },
               orderBy: { date: 'asc' }
             },
