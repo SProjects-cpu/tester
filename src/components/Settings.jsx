@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Moon, Sun, Download, Upload, Trash2, Bell, Check, X, FileJson, FileSpreadsheet, FileText, ChevronDown, Award, TrendingUp, BarChart3, Lock, Key } from 'lucide-react';
+import { Moon, Sun, Download, Upload, Trash2, Bell, Check, X, FileSpreadsheet, FileText, ChevronDown, Award, TrendingUp, BarChart3, Lock, Key } from 'lucide-react';
 import { api, startupApi } from '../utils/api';
 import { 
   storage, 
   exportData, 
-  exportStartupsJSON,
   exportStartupsCSV,
   exportSMCSchedules,
   exportOneOnOneSessions,
@@ -104,25 +103,21 @@ export default function Settings({ darkMode, toggleDarkMode, isGuest = false }) 
         exportData();
         alert('Full data exported successfully!');
         break;
-      case 'startups-json':
-        exportStartupsJSON();
-        alert('Startups exported as JSON!');
-        break;
       case 'startups-csv':
         exportStartupsCSV();
         alert('Startups exported as CSV!');
         break;
-      case 'smc':
+      case 'smc-csv':
         exportSMCSchedules();
-        alert('SMC schedules exported as JSON!');
+        alert('SMC schedules exported as CSV!');
         break;
       case 'smc-pdf':
         exportSMCSchedulesToPDF();
         alert('SMC schedules exported as PDF!');
         break;
-      case 'oneOnOne':
+      case 'oneOnOne-csv':
         exportOneOnOneSessions();
-        alert('One-on-One sessions exported as JSON!');
+        alert('One-on-One sessions exported as CSV!');
         break;
       case 'oneOnOne-pdf':
         exportOneOnOneSessionsToPDF();
@@ -152,17 +147,17 @@ export default function Settings({ darkMode, toggleDarkMode, isGuest = false }) 
         exportByStatusCSV('Graduated');
         alert('Graduated startups exported as CSV!');
         break;
-      case 'achievements':
+      case 'achievements-csv':
         exportAchievementsReport();
-        alert('Achievements report exported as JSON!');
+        alert('Achievements report exported as CSV!');
         break;
       case 'achievements-pdf':
         exportAchievementsToPDF();
         alert('Achievements report exported as PDF!');
         break;
-      case 'revenue':
+      case 'revenue-csv':
         exportRevenueReport();
-        alert('Revenue report exported as JSON!');
+        alert('Revenue report exported as CSV!');
         break;
       case 'revenue-pdf':
         exportRevenueToPDF();
@@ -421,24 +416,10 @@ export default function Settings({ darkMode, toggleDarkMode, isGuest = false }) 
                       onClick={() => handleExport('all')}
                       className="flex items-center space-x-3 p-3 bg-white dark:bg-gray-700 rounded-lg hover:shadow-md transition-all text-left"
                     >
-                      <FileJson className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                      <FileSpreadsheet className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
                       <div>
-                        <p className="font-semibold text-sm text-gray-900 dark:text-white">Full Export (JSON)</p>
+                        <p className="font-semibold text-sm text-gray-900 dark:text-white">Full Export (CSV)</p>
                         <p className="text-xs text-gray-600 dark:text-gray-400">All data including settings</p>
-                      </div>
-                    </motion.button>
-
-                    {/* Startups JSON */}
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => handleExport('startups-json')}
-                      className="flex items-center space-x-3 p-3 bg-white dark:bg-gray-700 rounded-lg hover:shadow-md transition-all text-left"
-                    >
-                      <FileJson className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
-                      <div>
-                        <p className="font-semibold text-sm text-gray-900 dark:text-white">Startups (JSON)</p>
-                        <p className="text-xs text-gray-600 dark:text-gray-400">All startups data</p>
                       </div>
                     </motion.button>
 
@@ -449,23 +430,23 @@ export default function Settings({ darkMode, toggleDarkMode, isGuest = false }) 
                       onClick={() => handleExport('startups-csv')}
                       className="flex items-center space-x-3 p-3 bg-white dark:bg-gray-700 rounded-lg hover:shadow-md transition-all text-left"
                     >
-                      <FileSpreadsheet className="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                      <FileSpreadsheet className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
                       <div>
                         <p className="font-semibold text-sm text-gray-900 dark:text-white">Startups (CSV)</p>
-                        <p className="text-xs text-gray-600 dark:text-gray-400">Excel-compatible format</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">All startups data</p>
                       </div>
                     </motion.button>
 
-                    {/* SMC Schedules JSON */}
+                    {/* SMC Schedules CSV */}
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      onClick={() => handleExport('smc')}
+                      onClick={() => handleExport('smc-csv')}
                       className="flex items-center space-x-3 p-3 bg-white dark:bg-gray-700 rounded-lg hover:shadow-md transition-all text-left"
                     >
-                      <FileJson className="w-5 h-5 text-purple-600 dark:text-purple-400 flex-shrink-0" />
+                      <FileSpreadsheet className="w-5 h-5 text-purple-600 dark:text-purple-400 flex-shrink-0" />
                       <div>
-                        <p className="font-semibold text-sm text-gray-900 dark:text-white">SMC Schedules (JSON)</p>
+                        <p className="font-semibold text-sm text-gray-900 dark:text-white">SMC Schedules (CSV)</p>
                         <p className="text-xs text-gray-600 dark:text-gray-400">All SMC meetings</p>
                       </div>
                     </motion.button>
@@ -484,16 +465,16 @@ export default function Settings({ darkMode, toggleDarkMode, isGuest = false }) 
                       </div>
                     </motion.button>
 
-                    {/* One-on-One Sessions JSON */}
+                    {/* One-on-One Sessions CSV */}
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      onClick={() => handleExport('oneOnOne')}
+                      onClick={() => handleExport('oneOnOne-csv')}
                       className="flex items-center space-x-3 p-3 bg-white dark:bg-gray-700 rounded-lg hover:shadow-md transition-all text-left"
                     >
-                      <FileJson className="w-5 h-5 text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
+                      <FileSpreadsheet className="w-5 h-5 text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
                       <div>
-                        <p className="font-semibold text-sm text-gray-900 dark:text-white">One-on-One (JSON)</p>
+                        <p className="font-semibold text-sm text-gray-900 dark:text-white">One-on-One (CSV)</p>
                         <p className="text-xs text-gray-600 dark:text-gray-400">All mentorship sessions</p>
                       </div>
                     </motion.button>
@@ -596,16 +577,16 @@ export default function Settings({ darkMode, toggleDarkMode, isGuest = false }) 
                       </div>
                     </motion.button>
 
-                    {/* Achievements Report JSON */}
+                    {/* Achievements Report CSV */}
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      onClick={() => handleExport('achievements')}
+                      onClick={() => handleExport('achievements-csv')}
                       className="flex items-center space-x-3 p-3 bg-white dark:bg-gray-700 rounded-lg hover:shadow-md transition-all text-left"
                     >
-                      <Award className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
+                      <FileSpreadsheet className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
                       <div>
-                        <p className="font-semibold text-sm text-gray-900 dark:text-white">Achievements (JSON)</p>
+                        <p className="font-semibold text-sm text-gray-900 dark:text-white">Achievements (CSV)</p>
                         <p className="text-xs text-gray-600 dark:text-gray-400">All achievements data</p>
                       </div>
                     </motion.button>
@@ -624,16 +605,16 @@ export default function Settings({ darkMode, toggleDarkMode, isGuest = false }) 
                       </div>
                     </motion.button>
 
-                    {/* Revenue Report JSON */}
+                    {/* Revenue Report CSV */}
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      onClick={() => handleExport('revenue')}
+                      onClick={() => handleExport('revenue-csv')}
                       className="flex items-center space-x-3 p-3 bg-white dark:bg-gray-700 rounded-lg hover:shadow-md transition-all text-left"
                     >
-                      <TrendingUp className="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                      <FileSpreadsheet className="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
                       <div>
-                        <p className="font-semibold text-sm text-gray-900 dark:text-white">Revenue (JSON)</p>
+                        <p className="font-semibold text-sm text-gray-900 dark:text-white">Revenue (CSV)</p>
                         <p className="text-xs text-gray-600 dark:text-gray-400">All revenue entries</p>
                       </div>
                     </motion.button>

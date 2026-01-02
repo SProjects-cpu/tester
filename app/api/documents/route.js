@@ -91,6 +91,7 @@ export async function POST(request) {
     const file = formData.get('file');
     const startupId = formData.get('startupId');
     const revenueEntryId = formData.get('revenueEntryId');
+    const documentType = formData.get('documentType');
 
     if (!file || !startupId) {
       return NextResponse.json(
@@ -157,12 +158,17 @@ export async function POST(request) {
       );
     }
 
+    // Generate filename with document type prefix if provided
+    const finalFilename = documentType && documentType !== 'Other' 
+      ? `${documentType}_${file.name}` 
+      : file.name;
+
     // Create document record in database
     const document = await prisma.document.create({
       data: {
         startupId,
         revenueEntryId: revenueEntryId || null,
-        filename: file.name,
+        filename: finalFilename,
         fileType: getFileExtension(file.name),
         fileSize: file.size,
         storagePath

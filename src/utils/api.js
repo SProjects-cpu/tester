@@ -312,11 +312,14 @@ export const documentApi = {
   },
 
   // Upload a document (uses FormData, not JSON)
-  upload: async (file, startupId, revenueEntryId = null) => {
+  upload: async (file, startupId, documentType = null, revenueEntryId = null) => {
     const token = getToken();
     const formData = new FormData();
     formData.append('file', file);
     formData.append('startupId', startupId);
+    if (documentType) {
+      formData.append('documentType', documentType);
+    }
     if (revenueEntryId) {
       formData.append('revenueEntryId', revenueEntryId);
     }
