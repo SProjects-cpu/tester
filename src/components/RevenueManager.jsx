@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingUp, Plus, Edit2, Trash2, IndianRupee, Calendar, FileText, Loader2, Upload, Download, Eye, X, Paperclip, Filter } from 'lucide-react';
+import { TrendingUp, Plus, Edit2, Trash2, IndianRupee, Calendar, FileText, Loader2, Upload, Download, X, Paperclip, Filter } from 'lucide-react';
 import { revenueApi, documentApi } from '../utils/api';
 
 // Allowed file extensions
