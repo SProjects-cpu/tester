@@ -783,11 +783,11 @@ export default function Settings({ darkMode, toggleDarkMode, isGuest = false }) 
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600 dark:text-gray-400">Organization:</span>
-              <span className="text-gray-900 dark:text-white font-medium">CMIA Marathwada Industries</span>
+              <span className="text-gray-900 dark:text-white font-medium">Marathwada Accelerator for Growth Incubation Council</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600 dark:text-gray-400">Location:</span>
-              <span className="text-gray-900 dark:text-white font-medium">Aurangabad</span>
+              <span className="text-gray-900 dark:text-white font-medium">Chh. Sambhajinagar</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600 dark:text-gray-400">Storage:</span>

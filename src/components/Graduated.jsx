@@ -190,7 +190,7 @@ export default function Graduated({ isGuest = false }) {
         <ExportMenu 
           onExport={handleExport}
           title="Export"
-          formats={['pdf', 'json', 'csv', 'excel']}
+          formats={['pdf', 'csv', 'excel']}
         />
       </div>
 

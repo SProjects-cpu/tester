@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { motion } from 'framer-motion';
-import { Rocket, Users, XCircle, TrendingUp, Calendar, PieChart } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Rocket, Users, XCircle, TrendingUp, Calendar, PieChart, ChevronDown, X } from 'lucide-react';
 import { startupApi } from '../utils/api';
 import InactiveStartupNotifications from './InactiveStartupNotifications';
 
@@ -160,6 +160,20 @@ export default function Dashboard({ onNavigate, onNavigateWithSector }) {
   const [loading, setLoading] = useState(true);
   const [allStartups, setAllStartups] = useState([]);
   const [fyFilter, setFyFilter] = useState('all');
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [customFromDate, setCustomFromDate] = useState('');
+  const [customToDate, setCustomToDate] = useState('');
+  const [dateFilterMode, setDateFilterMode] = useState('fy'); // 'fy' | 'custom'
+
+  // Format date to DD-MM-YYYY for display
+  const formatDateDisplay = (isoDate) => {
+    if (!isoDate) return '';
+    const date = new Date(isoDate);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  };
 
   // Generate Financial Year options (April to March)
   const fyOptions = useMemo(() => {
@@ -179,6 +193,43 @@ export default function Dashboard({ onNavigate, onNavigateWithSector }) {
     return options;
   }, []);
 
+  // Get effective date range based on filter mode
+  const getEffectiveDateRange = useCallback(() => {
+    if (dateFilterMode === 'custom' && (customFromDate || customToDate)) {
+      return {
+        startDate: customFromDate ? new Date(customFromDate) : null,
+        endDate: customToDate ? new Date(customToDate + 'T23:59:59') : null
+      };
+    }
+    if (dateFilterMode === 'fy' && fyFilter !== 'all') {
+      const selectedFY = fyOptions.find(fy => fy.value === fyFilter);
+      return selectedFY ? { startDate: selectedFY.startDate, endDate: selectedFY.endDate } : null;
+    }
+    return null;
+  }, [dateFilterMode, customFromDate, customToDate, fyFilter, fyOptions]);
+
+  const clearCustomDates = () => {
+    setCustomFromDate('');
+    setCustomToDate('');
+    setDateFilterMode('fy');
+    setFyFilter('all');
+  };
+
+  const applyCustomDateFilter = () => {
+    if (customFromDate || customToDate) {
+      setDateFilterMode('custom');
+      setFyFilter('all');
+    }
+    setShowDatePicker(false);
+  };
+
+  const handleFYChange = (value) => {
+    setFyFilter(value);
+    setDateFilterMode('fy');
+    setCustomFromDate('');
+    setCustomToDate('');
+  };
+
   const fetchStartups = useCallback(async () => {
     try {
       setLoading(true);
@@ -191,22 +242,25 @@ export default function Dashboard({ onNavigate, onNavigateWithSector }) {
     }
   }, []);
 
-  // Filter startups by financial year and calculate stats
+  // Filter startups by financial year or custom date range and calculate stats
   useEffect(() => {
     let filteredStartups = allStartups;
+    const dateRange = getEffectiveDateRange();
     
-    if (fyFilter !== 'all') {
-      const selectedFY = fyOptions.find(fy => fy.value === fyFilter);
-      if (selectedFY) {
-        filteredStartups = allStartups.filter(s => {
-          const createdDate = s.createdAt ? new Date(s.createdAt) : null;
-          const onboardedDate = s.onboardedDate ? new Date(s.onboardedDate) : null;
-          const registeredDate = s.registeredDate ? new Date(s.registeredDate) : null;
-          
-          const isInFY = (date) => date && date >= selectedFY.startDate && date <= selectedFY.endDate;
-          return isInFY(createdDate) || isInFY(onboardedDate) || isInFY(registeredDate);
-        });
-      }
+    if (dateRange) {
+      filteredStartups = allStartups.filter(s => {
+        const createdDate = s.createdAt ? new Date(s.createdAt) : null;
+        const onboardedDate = s.onboardedDate ? new Date(s.onboardedDate) : null;
+        const registeredDate = s.registeredDate ? new Date(s.registeredDate) : null;
+        
+        const isInRange = (date) => {
+          if (!date) return false;
+          const afterStart = !dateRange.startDate || date >= dateRange.startDate;
+          const beforeEnd = !dateRange.endDate || date <= dateRange.endDate;
+          return afterStart && beforeEnd;
+        };
+        return isInRange(createdDate) || isInRange(onboardedDate) || isInRange(registeredDate);
+      });
     }
     
     const newStats = {
@@ -232,7 +286,7 @@ export default function Dashboard({ onNavigate, onNavigateWithSector }) {
     
     setStats(newStats);
     setSectorStats(sectors);
-  }, [allStartups, fyFilter, fyOptions]);
+  }, [allStartups, getEffectiveDateRange]);
 
   useEffect(() => {
     fetchStartups();
@@ -321,19 +375,106 @@ export default function Dashboard({ onNavigate, onNavigateWithSector }) {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {/* Financial Year Filter */}
-          <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/20">
-            <Calendar className="w-5 h-5 text-green-400" />
-            <select
-              value={fyFilter}
-              onChange={(e) => setFyFilter(e.target.value)}
-              className="bg-transparent text-green-400 font-semibold outline-none cursor-pointer text-sm sm:text-base"
+          {/* Enhanced Date Filter with FY and Custom Range */}
+          <div className="relative">
+            <button
+              onClick={() => setShowDatePicker(!showDatePicker)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl border-2 transition-all ${
+                dateFilterMode === 'custom' || fyFilter !== 'all'
+                  ? 'bg-green-500/20 border-green-400 text-green-400'
+                  : 'bg-white/10 border-white/20 text-white'
+              }`}
             >
-              <option value="all" className="text-gray-900">All Years</option>
-              {fyOptions.map(fy => (
-                <option key={fy.value} value={fy.value} className="text-gray-900">{fy.label}</option>
-              ))}
-            </select>
+              <Calendar className="w-5 h-5" />
+              <span className="text-sm font-semibold">
+                {dateFilterMode === 'custom' && (customFromDate || customToDate)
+                  ? `${formatDateDisplay(customFromDate) || 'Start'} - ${formatDateDisplay(customToDate) || 'End'}`
+                  : fyFilter !== 'all'
+                    ? fyOptions.find(fy => fy.value === fyFilter)?.label
+                    : 'All Years'
+                }
+              </span>
+              <ChevronDown className={`w-4 h-4 transition-transform ${showDatePicker ? 'rotate-180' : ''}`} />
+            </button>
+
+            <AnimatePresence>
+              {showDatePicker && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowDatePicker(false)} />
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="absolute top-full right-0 mt-2 p-4 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 min-w-[320px]"
+                  >
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Filter by Date</span>
+                      {(customFromDate || customToDate || fyFilter !== 'all') && (
+                        <button onClick={clearCustomDates} className="flex items-center gap-1 text-xs text-red-500 hover:text-red-600">
+                          <X className="w-3 h-3" />
+                          <span>Clear</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Financial Year Selection */}
+                    <div className="mb-4">
+                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-2">Financial Year (April - March)</label>
+                      <select
+                        value={dateFilterMode === 'fy' ? fyFilter : 'all'}
+                        onChange={(e) => handleFYChange(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-green-500 outline-none"
+                      >
+                        <option value="all">All Years</option>
+                        {fyOptions.map(fy => (
+                          <option key={fy.value} value={fy.value}>{fy.label}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="relative flex items-center my-3">
+                      <div className="flex-1 border-t border-gray-300 dark:border-gray-600"></div>
+                      <span className="px-3 text-xs text-gray-500 dark:text-gray-400">OR</span>
+                      <div className="flex-1 border-t border-gray-300 dark:border-gray-600"></div>
+                    </div>
+
+                    {/* Custom Date Range */}
+                    <div className="space-y-3">
+                      <label className="block text-xs text-gray-500 dark:text-gray-400">Custom Date Range (DD-MM-YYYY)</label>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">From</label>
+                          <input
+                            type="date"
+                            value={customFromDate}
+                            onChange={(e) => setCustomFromDate(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-green-500 outline-none"
+                          />
+                          {customFromDate && <span className="text-xs text-green-600 dark:text-green-400 mt-1 block">{formatDateDisplay(customFromDate)}</span>}
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">To</label>
+                          <input
+                            type="date"
+                            value={customToDate}
+                            onChange={(e) => setCustomToDate(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-green-500 outline-none"
+                          />
+                          {customToDate && <span className="text-xs text-green-600 dark:text-green-400 mt-1 block">{formatDateDisplay(customToDate)}</span>}
+                        </div>
+                      </div>
+                      <button
+                        onClick={applyCustomDateFilter}
+                        disabled={!customFromDate && !customToDate}
+                        className="w-full mt-2 px-4 py-2 bg-green-500 text-white rounded-lg text-sm font-semibold hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        Apply Custom Range
+                      </button>
+                    </div>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
           </div>
           <motion.button
             whileHover={{ scale: 1.03 }}

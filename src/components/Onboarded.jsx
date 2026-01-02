@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingUp, Award, GraduationCap, IndianRupee, BarChart3, X, Eye, History, Loader2, DoorOpen } from 'lucide-react';
+import { TrendingUp, Award, GraduationCap, IndianRupee, BarChart3, X, Eye, History, Loader2, DoorOpen, FileText } from 'lucide-react';
 import { startupApi } from '../utils/api';
 import { exportStartupsComprehensive, filterByDateRange, generateExportFileName } from '../utils/exportUtils';
 import ExportMenu from './ExportMenu';
@@ -254,7 +254,7 @@ export default function Onboarded({ isGuest = false }) {
           <ExportMenu 
             onExport={handleExport}
             title="Export"
-            formats={['pdf', 'json', 'csv', 'excel']}
+            formats={['pdf', 'csv', 'excel']}
           />
         }
       />
@@ -484,6 +484,15 @@ export default function Onboarded({ isGuest = false }) {
                     >
                       <Award className="w-4 h-4" />
                       <span>Add Achievement</span>
+                    </GuestRestrictedButton>
+                    <GuestRestrictedButton
+                      isGuest={isGuest}
+                      onClick={() => setSelectedStartup(startup)}
+                      actionType="edit"
+                      className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-lg font-semibold text-sm shadow-md hover:shadow-lg transition-all"
+                    >
+                      <FileText className="w-4 h-4" />
+                      <span>Add Document</span>
                     </GuestRestrictedButton>
                     <GuestRestrictedButton
                       isGuest={isGuest}

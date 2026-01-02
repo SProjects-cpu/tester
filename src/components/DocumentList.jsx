@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { Download, Trash2, FileText, Image, Table, File, Loader2, AlertCircle, FolderOpen, Plus } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Download, Trash2, FileText, Image, Table, File, Loader2, AlertCircle, FolderOpen, Plus, X, CheckCircle } from 'lucide-react';
 import { documentApi } from '../utils/api';
 
 // Allowed file extensions
@@ -83,7 +83,30 @@ export default function DocumentList({ startupId, isGuest = false, allowUpload =
   const [deletingId, setDeletingId] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [showUploadPopup, setShowUploadPopup] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedDocType, setSelectedDocType] = useState('');
   const fileInputRef = useRef(null);
+
+  // Check which required documents are already uploaded
+  const getUploadedDocTypes = () => {
+    const uploadedTypes = new Set();
+    documents.forEach(doc => {
+      const filename = doc.filename?.toLowerCase() || '';
+      REQUIRED_DOCUMENTS.forEach(reqDoc => {
+        if (filename.includes(reqDoc.toLowerCase())) {
+          uploadedTypes.add(reqDoc);
+        }
+      });
+      // Also check document type field if available
+      if (doc.documentType) {
+        uploadedTypes.add(doc.documentType);
+      }
+    });
+    return uploadedTypes;
+  };
+
+  const uploadedDocTypes = getUploadedDocTypes();
 
   useEffect(() => {
     if (startupId) {
@@ -114,6 +137,59 @@ export default function DocumentList({ startupId, isGuest = false, allowUpload =
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!isValidFileType(file.name)) {
+      alert(`File type not supported. Allowed: ${ALLOWED_EXTENSIONS.join(', ').toUpperCase()}`);
+      return;
+    }
+
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      alert('File size exceeds maximum limit of 10MB');
+      return;
+    }
+
+    // Show popup for document type selection
+    setSelectedFile(file);
+    setSelectedDocType('');
+    setShowUploadPopup(true);
+    
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleUploadConfirm = async () => {
+    if (!selectedFile) return;
+
+    try {
+      setUploading(true);
+      // Pass document type to upload API
+      const newDoc = await documentApi.upload(selectedFile, startupId, selectedDocType || null);
+      setDocuments([newDoc, ...documents]);
+      setShowUploadPopup(false);
+      setSelectedFile(null);
+      setSelectedDocType('');
+      alert('✅ Document uploaded successfully!');
+    } catch (err) {
+      console.error('Error uploading document:', err);
+      alert('❌ Failed to upload document: ' + err.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleUploadCancel = () => {
+    setShowUploadPopup(false);
+    setSelectedFile(null);
+    setSelectedDocType('');
   };
 
   const handleUpload = async (e) => {
@@ -215,19 +291,33 @@ export default function DocumentList({ startupId, isGuest = false, allowUpload =
 
   return (
     <div className="space-y-3">
-      {/* Required Documents Reference - Text Only */}
+      {/* Required Documents Reference with Status Indicators */}
       {allowUpload && !isGuest && (
         <div className="mb-4 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border-2 border-amber-200 dark:border-amber-700">
           <h4 className="font-semibold text-amber-900 dark:text-amber-200 mb-2 text-sm">
             Required Documents for Verification:
           </h4>
-          <ul className="grid grid-cols-2 gap-1 text-sm text-amber-800 dark:text-amber-300">
-            {REQUIRED_DOCUMENTS.map((doc, index) => (
-              <li key={index} className="flex items-center space-x-2">
-                <span className="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>
-                <span>{doc}</span>
-              </li>
-            ))}
+          <ul className="grid grid-cols-2 gap-2 text-sm">
+            {REQUIRED_DOCUMENTS.map((doc, index) => {
+              const isUploaded = uploadedDocTypes.has(doc);
+              return (
+                <li key={index} className={`flex items-center space-x-2 p-1.5 rounded-lg ${
+                  isUploaded 
+                    ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300' 
+                    : 'text-amber-800 dark:text-amber-300'
+                }`}>
+                  {isUploaded ? (
+                    <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" />
+                  ) : (
+                    <span className="w-4 h-4 flex items-center justify-center">
+                      <span className="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>
+                    </span>
+                  )}
+                  <span className={isUploaded ? 'font-medium' : ''}>{doc}</span>
+                  {isUploaded && <span className="text-xs text-green-600 dark:text-green-400">(Uploaded)</span>}
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}
@@ -238,7 +328,7 @@ export default function DocumentList({ startupId, isGuest = false, allowUpload =
           <input
             ref={fileInputRef}
             type="file"
-            onChange={handleUpload}
+            onChange={handleFileSelect}
             accept={ALLOWED_EXTENSIONS.map(ext => `.${ext}`).join(',')}
             className="hidden"
           />
@@ -264,6 +354,140 @@ export default function DocumentList({ startupId, isGuest = false, allowUpload =
           </motion.button>
         </div>
       )}
+
+      {/* Upload Popup Modal */}
+      <AnimatePresence>
+        {showUploadPopup && selectedFile && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            onClick={handleUploadCancel}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-6"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                  Select Document Type
+                </h3>
+                <button
+                  onClick={handleUploadCancel}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+
+              {/* Selected File Info */}
+              <div className="mb-4 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-700">
+                <div className="flex items-center space-x-3">
+                  <FileText className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                      {selectedFile.name}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {formatFileSize(selectedFile.size)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Document Type Selection */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Document Type (Required)
+                </label>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {REQUIRED_DOCUMENTS.map((docType, index) => {
+                    const isUploaded = uploadedDocTypes.has(docType);
+                    return (
+                      <label
+                        key={index}
+                        className={`flex items-center space-x-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                          selectedDocType === docType
+                            ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                            : isUploaded
+                              ? 'border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/10'
+                              : 'border-gray-200 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-500'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="docType"
+                          value={docType}
+                          checked={selectedDocType === docType}
+                          onChange={(e) => setSelectedDocType(e.target.value)}
+                          className="w-4 h-4 text-purple-600 focus:ring-purple-500"
+                        />
+                        <span className="flex-1 text-sm text-gray-900 dark:text-white">{docType}</span>
+                        {isUploaded && (
+                          <span className="flex items-center space-x-1 text-xs text-green-600 dark:text-green-400">
+                            <CheckCircle className="w-3 h-3" />
+                            <span>Uploaded</span>
+                          </span>
+                        )}
+                      </label>
+                    );
+                  })}
+                  {/* Other option */}
+                  <label
+                    className={`flex items-center space-x-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                      selectedDocType === 'Other'
+                        ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                        : 'border-gray-200 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-500'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="docType"
+                      value="Other"
+                      checked={selectedDocType === 'Other'}
+                      onChange={(e) => setSelectedDocType(e.target.value)}
+                      className="w-4 h-4 text-purple-600 focus:ring-purple-500"
+                    />
+                    <span className="flex-1 text-sm text-gray-900 dark:text-white">Other Document</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex space-x-3">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={handleUploadCancel}
+                  className="flex-1 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-300 font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  Cancel
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={handleUploadConfirm}
+                  disabled={!selectedDocType || uploading}
+                  className="flex-1 px-4 py-2.5 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
+                >
+                  {uploading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Uploading...</span>
+                    </>
+                  ) : (
+                    <span>Upload Document</span>
+                  )}
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {documents.length === 0 ? (
         <div className="text-center py-8 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-600">

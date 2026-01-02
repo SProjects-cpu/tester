@@ -226,7 +226,7 @@ export default function AllStartups({ isGuest = false, initialSectorFilter = nul
             <ExportMenu 
               onExport={handleExport}
               title="Export"
-              formats={['pdf', 'json', 'csv', 'excel']}
+              formats={['pdf', 'csv', 'excel']}
             />
             <GuestRestrictedButton
               isGuest={isGuest}

@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, Clock, Plus, Check, X, Grid, List, History, Trash2 } from 'lucide-react';
+import { Calendar, Clock, Plus, Check, X, Grid, List, History, Trash2, Search } from 'lucide-react';
 import { startupApi, fmcApi } from '../utils/api';
 import { exportFMCSchedulesToPDF, filterByDateRange, generateExportFileName } from '../utils/exportUtils';
 import ExportMenu from './ExportMenu';
@@ -27,6 +27,9 @@ export default function FMCScheduling({ isGuest = false }) {
   const [showHistoryModal, setShowHistoryModal] = useState(null);
   const [showCompletedHistory, setShowCompletedHistory] = useState(false);
   const [viewMode, setViewMode] = useState('grid');
+  const [startupSearchTerm, setStartupSearchTerm] = useState('');
+  const [showStartupDropdown, setShowStartupDropdown] = useState(false);
+  const startupSearchRef = useRef(null);
   const [completionData, setCompletionData] = useState({
     panelistName: '',
     time: '',
@@ -46,6 +49,38 @@ export default function FMCScheduling({ isGuest = false }) {
     }
     return schedules;
   }, [schedules, dateRange]);
+
+  // Filtered startups for search
+  const filteredStartupsForSearch = useMemo(() => {
+    let filtered = selectedStage ? startups.filter(s => s.stage === selectedStage) : startups;
+    if (startupSearchTerm) {
+      const searchLower = startupSearchTerm.toLowerCase();
+      filtered = filtered.filter(s => 
+        s.companyName?.toLowerCase().includes(searchLower) ||
+        s.founderName?.toLowerCase().includes(searchLower) ||
+        s.magicCode?.toLowerCase().includes(searchLower)
+      );
+    }
+    return filtered;
+  }, [startups, selectedStage, startupSearchTerm]);
+
+  // Handle startup selection
+  const handleStartupSelect = (startup) => {
+    setSelectedStartup(startup.id);
+    setStartupSearchTerm(startup.companyName);
+    setShowStartupDropdown(false);
+  };
+
+  // Handle click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (startupSearchRef.current && !startupSearchRef.current.contains(event.target)) {
+        setShowStartupDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleExport = useCallback((format) => {
     const fileName = generateExportFileName('FMC-Schedules', dateRange.fromDate, dateRange.toDate);
@@ -356,7 +391,7 @@ export default function FMCScheduling({ isGuest = false }) {
           <ExportMenu 
             onExport={handleExport}
             title="Export"
-            formats={['pdf', 'json', 'csv']}
+            formats={['pdf', 'csv']}
           />
         </div>
       </div>
@@ -473,18 +508,67 @@ export default function FMCScheduling({ isGuest = false }) {
               <label className="block text-xs sm:text-sm text-gray-900 dark:text-gray-100 mb-2">
                 Select Startup
               </label>
-              <select
-                value={selectedStartup || ''}
-                onChange={(e) => setSelectedStartup(e.target.value)}
-                className="w-full px-3 sm:px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-magic-500 focus:border-magic-500 outline-none transition-all text-sm sm:text-base"
-              >
-                <option value="">Choose startup...</option>
-                {(selectedStage ? startups.filter(s => s.stage === selectedStage) : startups).map(startup => (
-                  <option key={startup.id} value={startup.id}>
-                    {startup.companyName} ({startup.stage})
-                  </option>
-                ))}
-              </select>
+              <div className="relative" ref={startupSearchRef}>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    value={startupSearchTerm}
+                    onChange={(e) => {
+                      setStartupSearchTerm(e.target.value);
+                      setShowStartupDropdown(true);
+                      if (!e.target.value) setSelectedStartup(null);
+                    }}
+                    onFocus={() => setShowStartupDropdown(true)}
+                    placeholder="Search by name, founder, or code..."
+                    className="w-full pl-10 pr-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-magic-500 focus:border-magic-500 outline-none transition-all text-sm sm:text-base"
+                  />
+                  {selectedStartup && (
+                    <button
+                      onClick={() => {
+                        setSelectedStartup(null);
+                        setStartupSearchTerm('');
+                      }}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                {showStartupDropdown && filteredStartupsForSearch.length > 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-600 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                    {filteredStartupsForSearch.map(startup => (
+                      <button
+                        key={startup.id}
+                        onClick={() => handleStartupSelect(startup)}
+                        className={`w-full px-4 py-2 text-left hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors ${
+                          selectedStartup === startup.id ? 'bg-green-100 dark:bg-green-900/30' : ''
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium text-gray-900 dark:text-white text-sm">{startup.companyName}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{startup.founderName} • {startup.magicCode}</p>
+                          </div>
+                          <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${
+                            startup.stage === 'S0' ? 'bg-gray-100 text-gray-700' :
+                            startup.stage === 'S1' ? 'bg-blue-100 text-blue-700' :
+                            startup.stage === 'S2' ? 'bg-purple-100 text-purple-700' :
+                            'bg-orange-100 text-orange-700'
+                          }`}>
+                            {startup.stage}
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {showStartupDropdown && startupSearchTerm && filteredStartupsForSearch.length === 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-600 rounded-xl shadow-lg p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
+                    No startups found
+                  </div>
+                )}
+              </div>
             </div>
 
             <GuestRestrictedButton

@@ -14,7 +14,7 @@ const defaultLandingData = {
   },
   hero: {
     title: "Transform Your Startup Journey",
-    description: "Join CMIA Marathwada's premier incubation program and accelerate your path to success",
+    description: "Join Marathwada Accelerator for Growth Incubation Council's premier incubation program and accelerate your path to success",
     cta: "Get Started"
   },
   stats: {
@@ -44,12 +44,12 @@ const defaultLandingData = {
   contact: {
     email: "info@magic.com",
     phone: "+91-1234567890",
-    address: "CMIA Marathwada, India"
+    address: "Marathwada Accelerator for Growth Incubation Council, Chh. Sambhajinagar"
   },
   footer: {
     title: "MAGIC",
     tagline: "Empowering Startups",
-    copyright: "© 2024 CMIA Marathwada. All rights reserved."
+    copyright: "© 2024 Marathwada Accelerator for Growth Incubation Council. All rights reserved."
   }
 };
 

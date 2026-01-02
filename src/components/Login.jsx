@@ -70,7 +70,7 @@ export default function Login({ onLogin, onBack }) {
           >
             MAGIC
           </motion.h1>
-          <p className="text-gray-900 text-base sm:text-lg">CMIA Marathwada Industries</p>
+          <p className="text-gray-900 text-base sm:text-lg">Marathwada Accelerator for Growth Incubation Council</p>
           <p className="text-sm sm:text-base text-gray-800 mt-1">Startup Incubation System</p>
         </div>
 

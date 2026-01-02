@@ -126,7 +126,7 @@ export default function InactiveStartups({ isGuest = false }) {
               <History className="w-5 h-5" />
               <span className="hidden sm:inline font-medium">History</span>
             </button>
-            <ExportMenu onExport={handleExport} title="Export" formats={['pdf', 'json', 'csv', 'excel']} />
+            <ExportMenu onExport={handleExport} title="Export" formats={['pdf', 'csv', 'excel']} />
             <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={checkInactiveStartups}
               className="flex items-center space-x-2 bg-gradient-to-r from-orange-500 to-red-500 text-white px-5 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all text-sm font-semibold">
               <RefreshCw className="w-5 h-5" />

@@ -301,7 +301,7 @@ export default function OneOnOneScheduling({ isGuest = false }) {
           <ExportMenu 
             onExport={handleExport}
             title="Export"
-            formats={['pdf', 'json', 'csv']}
+            formats={['pdf', 'csv']}
           />
         </div>
       </div>
