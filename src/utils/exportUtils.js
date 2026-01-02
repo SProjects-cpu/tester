@@ -1,6 +1,48 @@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { storage } from './storage';
+import { startupApi, smcApi, oneOnOneApi, fmcApi } from './api';
+
+// Helper to fetch data from API with fallback to localStorage
+const fetchStartupsFromAPI = async () => {
+  try {
+    const data = await startupApi.getAll();
+    return data.startups || data || [];
+  } catch (error) {
+    console.error('Error fetching startups from API:', error);
+    return storage.get('startups', []);
+  }
+};
+
+const fetchSMCFromAPI = async () => {
+  try {
+    const data = await smcApi.getAll();
+    return data.meetings || data || [];
+  } catch (error) {
+    console.error('Error fetching SMC from API:', error);
+    return storage.get('smcSchedules', []);
+  }
+};
+
+const fetchFMCFromAPI = async () => {
+  try {
+    const data = await fmcApi.getAll();
+    return data.meetings || data || [];
+  } catch (error) {
+    console.error('Error fetching FMC from API:', error);
+    return storage.get('fmcSchedules', []);
+  }
+};
+
+const fetchOneOnOneFromAPI = async () => {
+  try {
+    const data = await oneOnOneApi.getAll();
+    return data.meetings || data || [];
+  } catch (error) {
+    console.error('Error fetching One-on-One from API:', error);
+    return storage.get('oneOnOneSchedules', []);
+  }
+};
 
 // ==================== DATE FILTERING UTILITIES ====================
 
@@ -425,17 +467,17 @@ export const exportDetailedStartupPDF = (startup) => {
   }
 };
 
-export const exportSMCSchedulesToPDF = (schedules = null, startups = null, fromDate = null, toDate = null) => {
-  // Try to get data from parameters first, then fallback to localStorage
-  const smcData = schedules || storage.get('smcSchedules', []);
-  const startupsData = startups || storage.get('startups', []);
-  
-  if (smcData.length === 0) {
-    alert('No SMC schedules to export');
-    return;
-  }
-  
+export const exportSMCSchedulesToPDF = async (schedules = null, startups = null, fromDate = null, toDate = null) => {
   try {
+    // Fetch from API if not provided
+    const smcData = schedules || await fetchSMCFromAPI();
+    const startupsData = startups || await fetchStartupsFromAPI();
+    
+    if (smcData.length === 0) {
+      alert('No SMC schedules to export');
+      return;
+    }
+    
     const doc = new jsPDF('l', 'mm', 'a4');
     
     doc.setFontSize(18);
@@ -496,17 +538,17 @@ export const exportSMCSchedulesToPDF = (schedules = null, startups = null, fromD
   }
 };
 
-export const exportFMCSchedulesToPDF = (schedules = null, startups = null, fromDate = null, toDate = null) => {
-  // Try to get data from parameters first, then fallback to localStorage
-  const fmcData = schedules || storage.get('fmcSchedules', []);
-  const startupsData = startups || storage.get('startups', []);
-  
-  if (fmcData.length === 0) {
-    alert('No FMC schedules to export');
-    return;
-  }
-  
+export const exportFMCSchedulesToPDF = async (schedules = null, startups = null, fromDate = null, toDate = null) => {
   try {
+    // Fetch from API if not provided
+    const fmcData = schedules || await fetchFMCFromAPI();
+    const startupsData = startups || await fetchStartupsFromAPI();
+    
+    if (fmcData.length === 0) {
+      alert('No FMC schedules to export');
+      return;
+    }
+    
     const doc = new jsPDF('l', 'mm', 'a4');
     
     doc.setFontSize(18);
@@ -567,17 +609,17 @@ export const exportFMCSchedulesToPDF = (schedules = null, startups = null, fromD
   }
 };
 
-export const exportOneOnOneSessionsToPDF = (sessions = null, startups = null, fromDate = null, toDate = null) => {
-  // Try to get data from parameters first, then fallback to localStorage
-  const sessionsData = sessions || storage.get('oneOnOneSchedules', []);
-  const startupsData = startups || storage.get('startups', []);
-  
-  if (sessionsData.length === 0) {
-    alert('No One-on-One sessions to export');
-    return;
-  }
-  
+export const exportOneOnOneSessionsToPDF = async (sessions = null, startups = null, fromDate = null, toDate = null) => {
   try {
+    // Fetch from API if not provided
+    const sessionsData = sessions || await fetchOneOnOneFromAPI();
+    const startupsData = startups || await fetchStartupsFromAPI();
+    
+    if (sessionsData.length === 0) {
+      alert('No One-on-One sessions to export');
+      return;
+    }
+  
     const doc = new jsPDF('l', 'mm', 'a4');
     
     doc.setFontSize(18);
@@ -638,32 +680,32 @@ export const exportOneOnOneSessionsToPDF = (sessions = null, startups = null, fr
   }
 };
 
-export const exportAchievementsToPDF = (startups = null) => {
-  // Try to get data from parameters first, then fallback to localStorage
-  const startupsData = startups || storage.get('startups', []);
-  const achievementsData = [];
-  
-  startupsData.forEach(startup => {
-    if (startup.achievements && startup.achievements.length > 0) {
-      startup.achievements.forEach(ach => {
-        achievementsData.push({
-          company: startup.name || startup.companyName,
-          magicCode: startup.magicCode,
-          title: ach.title,
-          description: ach.description,
-          date: ach.date,
-          type: ach.type || 'General'
-        });
-      });
-    }
-  });
-  
-  if (achievementsData.length === 0) {
-    alert('No achievements to export');
-    return;
-  }
-  
+export const exportAchievementsToPDF = async (startups = null) => {
   try {
+    // Fetch from API if not provided
+    const startupsData = startups || await fetchStartupsFromAPI();
+    const achievementsData = [];
+    
+    startupsData.forEach(startup => {
+      if (startup.achievements && startup.achievements.length > 0) {
+        startup.achievements.forEach(ach => {
+          achievementsData.push({
+            company: startup.name || startup.companyName,
+            magicCode: startup.magicCode,
+            title: ach.title,
+            description: ach.description,
+            date: ach.date,
+            type: ach.type || 'General'
+          });
+        });
+      }
+    });
+    
+    if (achievementsData.length === 0) {
+      alert('No achievements to export');
+      return;
+    }
+    
     const doc = new jsPDF('l', 'mm', 'a4');
     
     doc.setFontSize(18);
@@ -702,46 +744,60 @@ export const exportAchievementsToPDF = (startups = null) => {
   }
 };
 
-export const exportRevenueToPDF = (startups = null) => {
-  // Try to get data from parameters first, then fallback to localStorage
-  const startupsData = startups || storage.get('startups', []);
-  const revenueData = [];
-  
-  startupsData.forEach(startup => {
-    // Check for revenueGenerated field (database) or revenueHistory (localStorage)
-    const revenue = startup.revenueGenerated || 0;
-    if (revenue > 0) {
-      revenueData.push({
-        company: startup.name || startup.companyName,
-        magicCode: startup.magicCode,
-        sector: startup.sector,
-        amount: revenue,
-        source: 'Total Revenue',
-        date: startup.onboardedDate || new Date()
-      });
-    }
+export const exportRevenueToPDF = async (startups = null) => {
+  try {
+    // Fetch from API if not provided
+    const startupsData = startups || await fetchStartupsFromAPI();
+    const revenueData = [];
     
-    // Also check revenueHistory if it exists
-    if (startup.revenueHistory && startup.revenueHistory.length > 0) {
-      startup.revenueHistory.forEach(rev => {
+    startupsData.forEach(startup => {
+      // Check for revenueGenerated field (database) or revenueHistory (localStorage)
+      const revenue = startup.revenueGenerated || 0;
+      if (revenue > 0) {
         revenueData.push({
           company: startup.name || startup.companyName,
           magicCode: startup.magicCode,
           sector: startup.sector,
-          amount: rev.amount,
-          source: rev.source,
-          date: rev.date
+          amount: revenue,
+          source: 'Total Revenue',
+          date: startup.onboardedDate || new Date()
         });
-      });
+      }
+      
+      // Also check revenueHistory if it exists
+      if (startup.revenueHistory && startup.revenueHistory.length > 0) {
+        startup.revenueHistory.forEach(rev => {
+          revenueData.push({
+            company: startup.name || startup.companyName,
+            magicCode: startup.magicCode,
+            sector: startup.sector,
+            amount: rev.amount,
+            source: rev.source,
+            date: rev.date
+          });
+        });
+      }
+      
+      // Check revenueEntries from API
+      if (startup.revenueEntries && startup.revenueEntries.length > 0) {
+        startup.revenueEntries.forEach(rev => {
+          revenueData.push({
+            company: startup.name || startup.companyName,
+            magicCode: startup.magicCode,
+            sector: startup.sector,
+            amount: rev.amount,
+            source: rev.source,
+            date: rev.date
+          });
+        });
+      }
+    });
+    
+    if (revenueData.length === 0) {
+      alert('No revenue data to export');
+      return;
     }
-  });
-  
-  if (revenueData.length === 0) {
-    alert('No revenue data to export');
-    return;
-  }
-  
-  try {
+    
     const totalRevenue = revenueData.reduce((sum, r) => sum + (r.amount || 0), 0);
     
     const doc = new jsPDF('l', 'mm', 'a4');

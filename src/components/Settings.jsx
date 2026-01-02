@@ -97,82 +97,69 @@ export default function Settings({ darkMode, toggleDarkMode, isGuest = false }) 
     });
   };
 
-  const performExport = (type) => {
-    switch(type) {
-      case 'all':
-        exportData();
-        alert('Full data exported successfully!');
-        break;
-      case 'startups-csv':
-        exportStartupsCSV();
-        alert('Startups exported as CSV!');
-        break;
-      case 'smc-csv':
-        exportSMCSchedules();
-        alert('SMC schedules exported as CSV!');
-        break;
-      case 'smc-pdf':
-        exportSMCSchedulesToPDF();
-        alert('SMC schedules exported as PDF!');
-        break;
-      case 'oneOnOne-csv':
-        exportOneOnOneSessions();
-        alert('One-on-One sessions exported as CSV!');
-        break;
-      case 'oneOnOne-pdf':
-        exportOneOnOneSessionsToPDF();
-        alert('One-on-One sessions exported as PDF!');
-        break;
-      case 'active':
-        exportByStatus('Active');
-        alert('Active startups exported!');
-        break;
-      case 'active-csv':
-        exportByStatusCSV('Active');
-        alert('Active startups exported as CSV!');
-        break;
-      case 'onboarded':
-        exportByStatus('Onboarded');
-        alert('Onboarded startups exported!');
-        break;
-      case 'onboarded-csv':
-        exportByStatusCSV('Onboarded');
-        alert('Onboarded startups exported as CSV!');
-        break;
-      case 'graduated':
-        exportByStatus('Graduated');
-        alert('Graduated startups exported!');
-        break;
-      case 'graduated-csv':
-        exportByStatusCSV('Graduated');
-        alert('Graduated startups exported as CSV!');
-        break;
-      case 'achievements-csv':
-        exportAchievementsReport();
-        alert('Achievements report exported as CSV!');
-        break;
-      case 'achievements-pdf':
-        exportAchievementsToPDF();
-        alert('Achievements report exported as PDF!');
-        break;
-      case 'revenue-csv':
-        exportRevenueReport();
-        alert('Revenue report exported as CSV!');
-        break;
-      case 'revenue-pdf':
-        exportRevenueToPDF();
-        alert('Revenue report exported as PDF!');
-        break;
-      case 'progress':
-        exportProgressReport();
-        alert('Progress tracking report exported!');
-        break;
-      case 'summary':
-        exportSummaryReport();
-        alert('Summary report exported!');
-        break;
-      default:
-        exportData();
+  const performExport = async (type) => {
+    try {
+      switch(type) {
+        case 'all':
+          await exportData();
+          break;
+        case 'startups-csv':
+          await exportStartupsCSV();
+          break;
+        case 'smc-csv':
+          await exportSMCSchedules();
+          break;
+        case 'smc-pdf':
+          exportSMCSchedulesToPDF();
+          break;
+        case 'oneOnOne-csv':
+          await exportOneOnOneSessions();
+          break;
+        case 'oneOnOne-pdf':
+          exportOneOnOneSessionsToPDF();
+          break;
+        case 'active':
+          await exportByStatus('Active');
+          break;
+        case 'active-csv':
+          await exportByStatusCSV('Active');
+          break;
+        case 'onboarded':
+          await exportByStatus('Onboarded');
+          break;
+        case 'onboarded-csv':
+          await exportByStatusCSV('Onboarded');
+          break;
+        case 'graduated':
+          await exportByStatus('Graduated');
+          break;
+        case 'graduated-csv':
+          await exportByStatusCSV('Graduated');
+          break;
+        case 'achievements-csv':
+          await exportAchievementsReport();
+          break;
+        case 'achievements-pdf':
+          exportAchievementsToPDF();
+          break;
+        case 'revenue-csv':
+          await exportRevenueReport();
+          break;
+        case 'revenue-pdf':
+          exportRevenueToPDF();
+          break;
+        case 'progress':
+          await exportProgressReport();
+          break;
+        case 'summary':
+          await exportSummaryReport();
+          break;
+        default:
+          await exportData();
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      alert('Error exporting data. Please try again.');
     }
     setShowExportMenu(false);
   };
