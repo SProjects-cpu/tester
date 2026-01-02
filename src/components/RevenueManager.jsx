@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingUp, Plus, Edit2, Trash2, IndianRupee, Calendar, FileText, Loader2, Upload, Download, Eye, X, Paperclip } from 'lucide-react';
+import { TrendingUp, Plus, Edit2, Trash2, IndianRupee, Calendar, FileText, Loader2, Upload, Download, Eye, X, Paperclip, Filter } from 'lucide-react';
 import { revenueApi, documentApi } from '../utils/api';
 
 // Allowed file extensions
@@ -35,6 +35,7 @@ export default function RevenueManager({ startup, onUpdate, isGuest = false }) {
   const [editingEntry, setEditingEntry] = useState(null);
   const [uploadingDocId, setUploadingDocId] = useState(null);
   const [downloadingDocId, setDownloadingDocId] = useState(null);
+  const [selectedYear, setSelectedYear] = useState('all');
   const fileInputRef = useRef(null);
   const [formData, setFormData] = useState({
     amount: '',
@@ -42,6 +43,33 @@ export default function RevenueManager({ startup, onUpdate, isGuest = false }) {
     source: '',
     description: ''
   });
+
+  // Get unique years from entries for the filter dropdown
+  const availableYears = useMemo(() => {
+    const years = new Set();
+    entries.forEach(entry => {
+      if (entry.date) {
+        const year = new Date(entry.date).getFullYear();
+        if (!isNaN(year)) years.add(year);
+      }
+    });
+    return Array.from(years).sort((a, b) => b - a); // Sort descending (newest first)
+  }, [entries]);
+
+  // Filter entries by selected year
+  const filteredEntries = useMemo(() => {
+    if (selectedYear === 'all') return entries;
+    return entries.filter(entry => {
+      if (!entry.date) return false;
+      const entryYear = new Date(entry.date).getFullYear();
+      return entryYear === parseInt(selectedYear);
+    });
+  }, [entries, selectedYear]);
+
+  // Calculate filtered total revenue
+  const filteredTotalRevenue = useMemo(() => {
+    return filteredEntries.reduce((sum, entry) => sum + (entry.amount || 0), 0);
+  }, [filteredEntries]);
 
   useEffect(() => {
     loadRevenue();
@@ -342,18 +370,46 @@ export default function RevenueManager({ startup, onUpdate, isGuest = false }) {
 
       {/* Revenue Entries List */}
       <div className="space-y-2">
-        <h4 className="font-semibold text-gray-900 dark:text-white text-sm flex items-center space-x-2">
-          <FileText className="w-4 h-4 text-green-500" />
-          <span>Revenue History</span>
-        </h4>
+        <div className="flex items-center justify-between">
+          <h4 className="font-semibold text-gray-900 dark:text-white text-sm flex items-center space-x-2">
+            <FileText className="w-4 h-4 text-green-500" />
+            <span>Revenue History</span>
+          </h4>
+          
+          {/* Year Filter Dropdown */}
+          {entries.length > 0 && availableYears.length > 0 && (
+            <div className="flex items-center space-x-2">
+              <Filter className="w-4 h-4 text-gray-500" />
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(e.target.value)}
+                className="text-sm px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              >
+                <option value="all">All Years</option>
+                {availableYears.map(year => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
 
-        {entries.length === 0 ? (
+        {/* Filtered Summary */}
+        {selectedYear !== 'all' && (
+          <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-2 text-sm">
+            <span className="text-green-700 dark:text-green-300">
+              {selectedYear} Total: <strong>₹{filteredTotalRevenue.toLocaleString()}</strong> ({filteredEntries.length} entries)
+            </span>
+          </div>
+        )}
+
+        {filteredEntries.length === 0 ? (
           <p className="text-gray-500 dark:text-gray-400 text-sm text-center py-4">
-            No revenue entries yet
+            {selectedYear === 'all' ? 'No revenue entries yet' : `No revenue entries for ${selectedYear}`}
           </p>
         ) : (
           <div className="space-y-3 max-h-96 overflow-y-auto">
-            {entries.map((entry) => (
+            {filteredEntries.map((entry) => (
               <motion.div
                 key={entry.id}
                 initial={{ opacity: 0, y: 10 }}
