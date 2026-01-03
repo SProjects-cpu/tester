@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Rocket, Users, XCircle, TrendingUp, Calendar, PieChart, ChevronDown, X } from 'lucide-react';
-import { startupApi } from '../utils/api';
+import { Rocket, Users, XCircle, TrendingUp, Calendar, PieChart, ChevronDown, X, CalendarCheck, UserCheck, GraduationCap, UserX, LogOut, AlertTriangle } from 'lucide-react';
+import { startupApi, smcApi, fmcApi, oneOnOneApi } from '../utils/api';
 import InactiveStartupNotifications from './InactiveStartupNotifications';
 
 // Interactive Pie Chart Component
@@ -154,7 +154,10 @@ function SectorPieChart({ sectorStats, onSectorClick, total }) {
 export default function Dashboard({ onNavigate, onNavigateWithSector }) {
   const [stats, setStats] = useState({
     s0: 0, s1: 0, s2: 0, s3: 0,
-    oneOnOne: 0, onboarded: 0, graduated: 0, rejected: 0, quit: 0, total: 0
+    oneOnOne: 0, onboarded: 0, graduated: 0, rejected: 0, quit: 0, inactive: 0, total: 0
+  });
+  const [meetingStats, setMeetingStats] = useState({
+    smc: 0, fmc: 0, oneOnOne: 0, total: 0
   });
   const [sectorStats, setSectorStats] = useState({});
   const [loading, setLoading] = useState(true);
@@ -235,6 +238,22 @@ export default function Dashboard({ onNavigate, onNavigateWithSector }) {
       setLoading(true);
       const startups = await startupApi.getAll();
       setAllStartups(startups);
+      
+      // Fetch meeting counts
+      const [smcMeetings, fmcMeetings, oneOnOneMeetings] = await Promise.all([
+        smcApi.getAll().catch(() => []),
+        fmcApi.getAll().catch(() => []),
+        oneOnOneApi.getAll().catch(() => [])
+      ]);
+      
+      setMeetingStats({
+        smc: Array.isArray(smcMeetings) ? smcMeetings.length : 0,
+        fmc: Array.isArray(fmcMeetings) ? fmcMeetings.length : 0,
+        oneOnOne: Array.isArray(oneOnOneMeetings) ? oneOnOneMeetings.length : 0,
+        total: (Array.isArray(smcMeetings) ? smcMeetings.length : 0) + 
+               (Array.isArray(fmcMeetings) ? fmcMeetings.length : 0) + 
+               (Array.isArray(oneOnOneMeetings) ? oneOnOneMeetings.length : 0)
+      });
     } catch (error) {
       console.error('Error fetching startups:', error);
     } finally {
@@ -273,6 +292,7 @@ export default function Dashboard({ onNavigate, onNavigateWithSector }) {
       graduated: filteredStartups.filter(s => s.status === 'Graduated').length,
       rejected: filteredStartups.filter(s => s.status === 'Rejected').length,
       quit: filteredStartups.filter(s => s.status === 'Quit' || s.stage === 'Quit').length,
+      inactive: filteredStartups.filter(s => s.status === 'Inactive').length,
       total: filteredStartups.length
     };
     
@@ -358,6 +378,36 @@ export default function Dashboard({ onNavigate, onNavigateWithSector }) {
       page: 'startups'
     },
   ];
+
+  // SMC Card with sub-cards (Meetings Overview)
+  const smcCard = {
+    label: 'SMC',
+    value: meetingStats.total,
+    borderColor: 'border-cyan-500',
+    iconColor: 'text-cyan-500',
+    icon: CalendarCheck,
+    subCards: [
+      { label: 'SMC', value: meetingStats.smc, page: 'smcScheduling' },
+      { label: 'FMC', value: meetingStats.fmc, page: 'fmcScheduling' },
+      { label: 'One on One', value: meetingStats.oneOnOne, page: 'oneOnOneScheduling' }
+    ]
+  };
+
+  // Onboard Card with sub-cards (Startup Lifecycle Overview)
+  const onboardCard = {
+    label: 'Onboard',
+    value: stats.onboarded + stats.graduated + stats.inactive + stats.rejected + stats.quit,
+    borderColor: 'border-emerald-500',
+    iconColor: 'text-emerald-500',
+    icon: UserCheck,
+    subCards: [
+      { label: 'Onboarded', value: stats.onboarded, icon: UserCheck, page: 'onboarded' },
+      { label: 'Graduated', value: stats.graduated, icon: GraduationCap, page: 'graduated' },
+      { label: 'Inactive', value: stats.inactive, icon: AlertTriangle, page: 'inactive' },
+      { label: 'Rejected', value: stats.rejected, icon: UserX, page: 'rejected' },
+      { label: 'Quit', value: stats.quit, icon: LogOut, page: 'quit' }
+    ]
+  };
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -518,6 +568,97 @@ export default function Dashboard({ onNavigate, onNavigateWithSector }) {
             </motion.div>
           );
         })}
+      </div>
+
+      {/* SMC and Onboard Cards with Sub-cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mt-6">
+        {/* SMC Card - Meetings Overview */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
+        >
+          <div className={`bg-white dark:bg-gray-800 rounded-2xl p-5 sm:p-6 shadow-lg border border-gray-200 dark:border-gray-600 border-b-4 ${smcCard.borderColor}`}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <smcCard.icon className={`w-8 h-8 ${smcCard.iconColor}`} />
+                <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100">{smcCard.label}</h3>
+              </div>
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.9, type: 'spring' }}
+                className={`text-3xl font-bold ${smcCard.iconColor}`}
+              >
+                {smcCard.value}
+              </motion.div>
+            </div>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Total Meetings</p>
+            <div className="grid grid-cols-3 gap-3">
+              {smcCard.subCards.map((subCard, idx) => (
+                <motion.div
+                  key={subCard.label}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.8 + idx * 0.1 }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => onNavigate(subCard.page)}
+                  className="cursor-pointer bg-gray-50 dark:bg-gray-700/50 rounded-xl p-3 text-center hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
+                >
+                  <div className={`text-2xl font-bold ${smcCard.iconColor}`}>{subCard.value}</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-300 mt-1">{subCard.label}</div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Onboard Card - Startup Lifecycle Overview */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8 }}
+        >
+          <div className={`bg-white dark:bg-gray-800 rounded-2xl p-5 sm:p-6 shadow-lg border border-gray-200 dark:border-gray-600 border-b-4 ${onboardCard.borderColor}`}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <onboardCard.icon className={`w-8 h-8 ${onboardCard.iconColor}`} />
+                <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100">{onboardCard.label}</h3>
+              </div>
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 1.0, type: 'spring' }}
+                className={`text-3xl font-bold ${onboardCard.iconColor}`}
+              >
+                {onboardCard.value}
+              </motion.div>
+            </div>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Total Startups</p>
+            <div className="grid grid-cols-5 gap-2">
+              {onboardCard.subCards.map((subCard, idx) => {
+                const SubIcon = subCard.icon;
+                return (
+                  <motion.div
+                    key={subCard.label}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.9 + idx * 0.1 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => onNavigate(subCard.page)}
+                    className="cursor-pointer bg-gray-50 dark:bg-gray-700/50 rounded-xl p-2 sm:p-3 text-center hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
+                  >
+                    <SubIcon className={`w-4 h-4 mx-auto mb-1 ${onboardCard.iconColor}`} />
+                    <div className={`text-lg sm:text-xl font-bold ${onboardCard.iconColor}`}>{subCard.value}</div>
+                    <div className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-300 mt-1 truncate">{subCard.label}</div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
+        </motion.div>
       </div>
 
       {/* Sector Statistics with Interactive Pie Chart */}
