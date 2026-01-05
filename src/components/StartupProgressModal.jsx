@@ -3,6 +3,16 @@ import { motion } from 'framer-motion';
 import { TrendingUp, X, CheckCircle, Users, Edit2, Trash2, FileText } from 'lucide-react';
 import { progressApi, startupApi } from '../utils/api';
 
+// Convert camelCase to Title Case (Upper Camel Case for display)
+const toTitleCase = (str) => {
+  return str
+    .replace(/([A-Z])/g, ' $1')
+    .trim()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
+
 export default function StartupProgressModal({ startup, onClose, onSave }) {
   const [progressData, setProgressData] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -188,11 +198,11 @@ export default function StartupProgressModal({ startup, onClose, onSave }) {
             </div>
           )}
           <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border-2 border-blue-200 dark:border-blue-700">
-            <h4 className="text-lg font-bold text-blue-900 dark:text-blue-200 mb-4 flex items-center space-x-2"><CheckCircle className="w-5 h-5" /><span>1. Progress of Startup</span></h4>
+            <h4 className="text-lg font-bold text-blue-900 dark:text-blue-200 mb-4 flex items-center space-x-2"><CheckCircle className="w-5 h-5" /><span>1. Progress Of Startup</span></h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {['proofOfConcept', 'prototypeDevelopment', 'productDevelopment', 'fieldTrials', 'marketLaunch'].map(field => (
                 <div key={field}>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{field.replace(/([A-Z])/g, ' $1').trim()}</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{toTitleCase(field)}</label>
                   <input type="text" value={progressData[field]} onChange={(e) => handleChange(field, e.target.value)} placeholder="e.g., Not started, In progress, Completed"
                     className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
                 </div>
@@ -204,7 +214,7 @@ export default function StartupProgressModal({ startup, onClose, onSave }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {['numberOfEmployees', 'ipRegistrations', 'gemPortalProducts'].map(field => (
                 <div key={field}>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{field.replace(/([A-Z])/g, ' $1').trim()}</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{toTitleCase(field)}</label>
                   <input type="text" value={progressData[field]} onChange={(e) => handleChange(field, e.target.value)} placeholder="Enter value"
                     className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
                 </div>
