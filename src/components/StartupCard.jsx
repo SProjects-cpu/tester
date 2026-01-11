@@ -267,15 +267,6 @@ export default function StartupCard({ startup, onUpdate, onDelete, isGuest = fal
               >
                 <Edit className="w-5 h-5" />
               </GuestRestrictedButton>
-              <GuestRestrictedButton
-                isGuest={isGuest}
-                onClick={() => onDelete(startup.id)}
-                actionType="delete"
-                className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors"
-                title="Delete Startup"
-              >
-                <Trash2 className="w-5 h-5" />
-              </GuestRestrictedButton>
             </div>
           )}
         </div>

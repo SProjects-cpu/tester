@@ -1,6 +1,5 @@
 import { motion } from 'framer-motion';
-import { MapPin, User, Briefcase, Calendar, Trash2 } from 'lucide-react';
-import GuestRestrictedButton from './GuestRestrictedButton';
+import { MapPin, User, Briefcase, Calendar } from 'lucide-react';
 import { getField } from '../utils/startupFieldHelper';
 
 export default function StartupGridCard({ startup, onUpdate, onDelete, onClick, isGuest = false, isCompact = false }) {
@@ -54,21 +53,6 @@ export default function StartupGridCard({ startup, onUpdate, onDelete, onClick, 
               <p className={`${isCompact ? 'text-xs' : 'text-xs sm:text-sm'} text-white/90 truncate`}>{getField(startup, 'magicCode')}</p>
             </div>
           </div>
-          {!isLocked && (
-            <div onClick={(e) => e.stopPropagation()}>
-              <GuestRestrictedButton
-                isGuest={isGuest}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(startup.id);
-                }}
-                actionType="delete"
-                className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors ml-2"
-              >
-                <Trash2 className="w-4 h-4" />
-              </GuestRestrictedButton>
-            </div>
-          )}
         </div>
         <div className="flex flex-wrap gap-2">
           <span className={`${isCompact ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-1 text-xs'} rounded-full font-medium ${getStatusColor(startup.status)}`}>

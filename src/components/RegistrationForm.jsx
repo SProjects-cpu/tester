@@ -275,8 +275,31 @@ export default function RegistrationForm({ onClose, onSubmit, initialData = null
   const validateForm = () => {
     const newErrors = {};
     
-    // Only require company name - all other fields are optional
+    // Required: Company Name
     if (!formData.companyName) newErrors.companyName = 'Company Name is required';
+    
+    // Required: Founder Details (Phase 3 requirement)
+    if (!formData.founderName || !formData.founderName.trim()) {
+      newErrors.founderName = 'Founder Name is required';
+    }
+    
+    if (!formData.founderEmail || !formData.founderEmail.trim()) {
+      newErrors.founderEmail = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.founderEmail)) {
+      newErrors.founderEmail = 'Please enter a valid email address';
+    }
+    
+    if (!formData.founderAge) {
+      newErrors.founderAge = 'Age is required';
+    } else if (isNaN(formData.founderAge) || formData.founderAge < 18 || formData.founderAge > 100) {
+      newErrors.founderAge = 'Please enter a valid age (18-100)';
+    }
+    
+    if (!formData.founderMobile || !formData.founderMobile.trim()) {
+      newErrors.founderMobile = 'Mobile Number is required';
+    } else if (!/^[\d\s+\-()]{10,15}$/.test(formData.founderMobile.replace(/\s/g, ''))) {
+      newErrors.founderMobile = 'Please enter a valid mobile number (10-15 digits)';
+    }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -534,14 +557,18 @@ export default function RegistrationForm({ onClose, onSubmit, initialData = null
                 label="Founder Name" 
                 name="founderName" 
                 value={formData.founderName} 
-                onChange={handleChange} 
+                onChange={handleChange}
+                error={errors.founderName}
+                required
               />
               <Input 
                 label="Age" 
                 name="founderAge" 
                 type="number" 
                 value={formData.founderAge} 
-                onChange={handleChange} 
+                onChange={handleChange}
+                error={errors.founderAge}
+                required
                 min="18"
                 max="100"
               />
@@ -557,7 +584,9 @@ export default function RegistrationForm({ onClose, onSubmit, initialData = null
                 name="founderEmail" 
                 type="email" 
                 value={formData.founderEmail} 
-                onChange={handleChange} 
+                onChange={handleChange}
+                error={errors.founderEmail}
+                required
                 placeholder="founder@example.com"
               />
               <Input 
@@ -565,7 +594,9 @@ export default function RegistrationForm({ onClose, onSubmit, initialData = null
                 name="founderMobile" 
                 type="tel" 
                 value={formData.founderMobile} 
-                onChange={handleChange} 
+                onChange={handleChange}
+                error={errors.founderMobile}
+                required
                 placeholder="+91 XXXXXXXXXX"
               />
               <Input 
