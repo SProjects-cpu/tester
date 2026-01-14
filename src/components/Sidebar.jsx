@@ -82,7 +82,7 @@ export default function Sidebar({ currentPage, onNavigate, onLogout, darkMode, t
         className={`w-full flex items-center space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all text-sm sm:text-base ${
           isActive 
             ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg font-semibold' 
-            : 'hover:bg-blue-100 dark:hover:bg-blue-800/40 text-gray-800 dark:text-gray-100 font-medium'
+            : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-100 font-medium'
         }`}
       >
         <Icon className="w-5 h-5 flex-shrink-0" />
@@ -104,8 +104,8 @@ export default function Sidebar({ currentPage, onNavigate, onLogout, darkMode, t
           onClick={() => toggleGroup(groupKey)}
           className={`w-full flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all text-sm sm:text-base ${
             hasActiveItem 
-              ? 'bg-gradient-to-r from-blue-400/50 to-purple-400/50 text-gray-900 dark:text-white shadow-md font-semibold border border-blue-300 dark:border-blue-600' 
-              : 'hover:bg-blue-100 dark:hover:bg-blue-800/40 text-gray-800 dark:text-gray-100 font-medium'
+              ? 'bg-gradient-to-r from-blue-400/30 to-purple-400/30 text-gray-900 dark:text-white shadow-sm font-semibold border border-blue-200 dark:border-blue-600' 
+              : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-100 font-medium'
           }`}
         >
           <div className="flex items-center space-x-3">
@@ -127,7 +127,7 @@ export default function Sidebar({ currentPage, onNavigate, onLogout, darkMode, t
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.2 }}
-              className="ml-4 pl-3 border-l-2 border-blue-200 dark:border-blue-700 space-y-1"
+              className="ml-4 pl-3 border-l-2 border-gray-200 dark:border-gray-600 space-y-1"
             >
               {group.items.map((item) => {
                 const ItemIcon = item.icon;
@@ -141,7 +141,7 @@ export default function Sidebar({ currentPage, onNavigate, onLogout, darkMode, t
                     className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-all text-sm ${
                       isActive 
                         ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-md font-semibold' 
-                        : 'hover:bg-blue-100 dark:hover:bg-blue-800/40 text-gray-700 dark:text-gray-200 font-medium'
+                        : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200 font-medium'
                     }`}
                   >
                     <ItemIcon className="w-4 h-4 flex-shrink-0" />
@@ -158,7 +158,7 @@ export default function Sidebar({ currentPage, onNavigate, onLogout, darkMode, t
 
   const SidebarContent = () => (
     <>
-      <div className="p-4 sm:p-6 border-b border-blue-200/30">
+      <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
         <div className="flex flex-col items-center space-y-3">
           <img 
             src="/magic_logo.png" 
@@ -191,12 +191,12 @@ export default function Sidebar({ currentPage, onNavigate, onLogout, darkMode, t
         ))}
       </nav>
 
-      <div className="p-3 sm:p-4 space-y-1.5 border-t border-blue-200/30 dark:border-blue-800/30">
+      <div className="p-3 sm:p-4 space-y-1.5 border-t border-gray-200 dark:border-gray-700">
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={toggleDarkMode}
-          className="w-full flex items-center space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-800/40 transition-all text-gray-800 dark:text-gray-100 text-sm sm:text-base font-medium"
+          className="w-full flex items-center space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-all text-gray-800 dark:text-gray-100 text-sm sm:text-base font-medium"
         >
           {darkMode ? <Sun className="w-5 h-5 flex-shrink-0" /> : <Moon className="w-5 h-5 flex-shrink-0" />}
           <span className="truncate">{darkMode ? 'Light Mode' : 'Dark Mode'}</span>
@@ -230,7 +230,7 @@ export default function Sidebar({ currentPage, onNavigate, onLogout, darkMode, t
       <motion.aside
         initial={{ x: -300 }}
         animate={{ x: 0 }}
-        className="hidden lg:flex w-64 xl:w-72 bg-gradient-to-b from-blue-50/90 to-blue-100/90 dark:from-blue-900/30 dark:to-blue-800/30 backdrop-blur-md text-gray-800 dark:text-white flex-col shadow-2xl border-r border-blue-200 dark:border-blue-800"
+        className="hidden lg:flex w-64 xl:w-72 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md text-gray-800 dark:text-white flex-col shadow-xl border-r border-gray-200 dark:border-gray-700"
       >
         <SidebarContent />
       </motion.aside>
@@ -251,7 +251,7 @@ export default function Sidebar({ currentPage, onNavigate, onLogout, darkMode, t
               animate={{ x: 0 }}
               exit={{ x: -300 }}
               transition={{ type: 'spring', damping: 25 }}
-              className="lg:hidden fixed left-0 top-0 bottom-0 w-72 bg-gradient-to-b from-blue-50/95 to-blue-100/95 dark:from-blue-900/30 dark:to-blue-800/30 backdrop-blur-md text-gray-800 dark:text-white flex-col shadow-2xl z-40 border-r border-blue-200 dark:border-blue-800"
+              className="lg:hidden fixed left-0 top-0 bottom-0 w-72 bg-white/98 dark:bg-gray-900/98 backdrop-blur-md text-gray-800 dark:text-white flex-col shadow-xl z-40 border-r border-gray-200 dark:border-gray-700"
             >
               <SidebarContent />
             </motion.aside>
