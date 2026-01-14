@@ -911,28 +911,61 @@ export const exportStartupsComprehensive = (startups, format, title = 'Startups'
     case 'csv':
     case 'excel':
       const headers = [
-        'Magic Code', 'Company Name', 'Founder', 'Email', 'Mobile', 'City', 'Sector', 
-        'Domain', 'Stage', 'Status', 'Team Size', 'Total Revenue', 'Total Achievements',
-        'Onboarded Date', 'Graduated Date'
+        'Magic Code', 'Company Name', 'Founder Name', 'Founder Email', 'Founder Mobile', 
+        'Founder Age', 'Founder Gender', 'Education', 'College', 'Address',
+        'City', 'Sector', 'Domain', 'Stage of Idea', 'Stage', 'Status', 
+        'Team Size', 'Problem Solving', 'Solution',
+        'DPIIT No', 'Recognition Date', 'Bhaskar ID', 
+        'Is Registered', 'Registration Date', 'Has Patent', 'Patent Number',
+        'Website', 'Social Media', 'Referred From',
+        'Funding Received', 'Revenue Generated', 'Total Achievements',
+        'Onboarding Description', 'Agreement Date', 'Engagement Medium',
+        'Onboarded Date', 'Graduated Date', 'Quit Reason', 'Quit Date',
+        'Created At'
       ];
       const rows = startups.map(s => {
-        const totalRevenue = s.totalRevenue || (s.revenueHistory?.reduce((sum, r) => sum + (r.amount || 0), 0)) || 0;
+        const totalRevenue = s.totalRevenue || s.revenueGenerated || (s.revenueHistory?.reduce((sum, r) => sum + (r.amount || 0), 0)) || 0;
         return [
           s.magicCode || '',
-          s.companyName || '',
-          s.founderName || '',
-          s.founderEmail || '',
-          s.founderMobile || '',
+          s.companyName || s.name || '',
+          s.founderName || s.founder || '',
+          s.founderEmail || s.email || '',
+          s.founderMobile || s.phone || '',
+          s.founderAge || '',
+          s.founderGender || '',
+          s.education || '',
+          s.college || '',
+          s.address || '',
           s.city || '',
           s.sector || '',
           s.domain || '',
+          s.stageOfIdea || '',
           s.stage || '',
           s.status || '',
-          s.teamSize || '',
+          s.teamSize || s.employeeCount || '',
+          s.problemSolving || s.description || '',
+          s.solution || '',
+          s.dpiitNo || '',
+          s.recognitionDate || '',
+          s.bhaskarId || '',
+          s.isRegistered || '',
+          s.registrationDate || '',
+          s.hasPatent || '',
+          s.patentNumber || '',
+          s.website || '',
+          s.socialMedia || '',
+          s.referredFrom || '',
+          s.fundingReceived || '',
           totalRevenue,
           (s.achievements?.length || 0),
+          s.onboardingDescription || '',
+          s.agreementDate || '',
+          s.engagementMedium || '',
           s.onboardedDate || '',
-          s.graduatedDate || ''
+          s.graduatedDate || '',
+          s.quitReason || '',
+          s.quitDate || '',
+          s.createdAt || ''
         ];
       });
       exportToCSV(rows, headers, `MAGIC-${title}`);

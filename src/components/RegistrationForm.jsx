@@ -615,22 +615,6 @@ export default function RegistrationForm({ onClose, onSubmit, initialData = null
               />
             </div>
             <div className="mt-4">
-                <Input 
-                  label="Education" 
-                  name="education" 
-                  value={formData.education} 
-                  onChange={handleChange} 
-                  placeholder="e.g., B.Tech, MBA"
-                />
-                <Input 
-                  label="College / Institution" 
-                  name="college" 
-                  value={formData.college} 
-                  onChange={handleChange} 
-                placeholder="Institution name"
-              />
-            </div>
-            <div className="mt-4">
               <Textarea 
                 label="Address" 
                 name="address" 
