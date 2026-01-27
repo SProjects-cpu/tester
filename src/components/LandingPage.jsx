@@ -197,14 +197,14 @@ const LandingPage = ({ onNavigateToLogin }) => {
           
           <motion.h2
             variants={itemVariants}
-            className="text-5xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight text-gray-900 dark:text-white relative z-20"
+            className="text-5xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight text-white relative z-20"
           >
             {landingData.hero.title}
           </motion.h2>
           
           <motion.p
             variants={itemVariants}
-            className="text-xl md:text-2xl text-gray-700 dark:text-gray-200 mb-12 leading-relaxed relative z-20"
+            className="text-xl md:text-2xl text-white mb-12 leading-relaxed relative z-20"
           >
             {landingData.hero.description}
           </motion.p>
@@ -262,10 +262,10 @@ const LandingPage = ({ onNavigateToLogin }) => {
         className="container mx-auto px-4 sm:px-6 lg:px-8 py-20"
       >
         <motion.div variants={itemVariants} className="text-center mb-12">
-          <h3 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900 dark:text-white">
+          <h3 className="text-4xl md:text-5xl font-bold mb-4 text-white">
             Our Impact in Numbers
           </h3>
-          <p className="text-xl text-gray-700 dark:text-gray-200 max-w-2xl mx-auto">
+          <p className="text-xl text-white/80 max-w-2xl mx-auto">
             Real-time insights into our startup ecosystem
           </p>
         </motion.div>
@@ -513,10 +513,10 @@ const LandingPage = ({ onNavigateToLogin }) => {
         className="container mx-auto px-4 sm:px-6 lg:px-8 py-20"
       >
         <motion.div variants={itemVariants} className="text-center mb-16 relative z-20">
-          <h3 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900 dark:text-white">
+          <h3 className="text-4xl md:text-5xl font-bold mb-4 text-white">
             Why Choose MAGIC?
           </h3>
-          <p className="text-xl text-gray-700 dark:text-gray-200 max-w-2xl mx-auto">
+          <p className="text-xl text-white max-w-2xl mx-auto">
             Comprehensive support for your startup journey
           </p>
         </motion.div>
@@ -556,7 +556,7 @@ const LandingPage = ({ onNavigateToLogin }) => {
           className="container mx-auto px-4 sm:px-6 lg:px-8 py-20"
         >
           <motion.div variants={itemVariants} className="text-center mb-16 relative z-20">
-            <h3 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900 dark:text-white">
+            <h3 className="text-4xl md:text-5xl font-bold mb-4 text-white">
               Latest News & Updates
             </h3>
           </motion.div>
