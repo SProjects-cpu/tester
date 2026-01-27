@@ -17,7 +17,6 @@ import {
 } from 'lucide-react';
 import { storage } from '../utils/storage';
 import MagicBackground from './MagicBackground';
-import SmokeyCursor from './ui/smokey-cursor';
 
 const LandingPage = ({ onNavigateToLogin }) => {
   const [landingData, setLandingData] = useState(null);
@@ -126,18 +125,6 @@ const LandingPage = ({ onNavigateToLogin }) => {
 
   return (
     <MagicBackground>
-      {/* Smokey Cursor Effect - Light Rainbow Smoke */}
-      <SmokeyCursor
-        simulationResolution={128}
-        dyeResolution={1024}
-        densityDissipation={0.98}
-        velocityDissipation={0.99}
-        splatRadius={0.5}
-        splatForce={5000}
-        enableShading={true}
-        colorUpdateSpeed={10}
-      />
-      
       <div className="min-h-screen relative z-10">
         {/* Header */}
       <motion.header
